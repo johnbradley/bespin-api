@@ -1,1 +1,4 @@
 Django==1.10.1
+DukeDSClient==0.2.13
+PyYAML==3.12
+requests==2.11.1
