@@ -36,6 +36,5 @@ def pick_resource(request):
     project = remote_store.fetch_remote_project(project_name)
     filename_list = ProjectFilenameList()
     filename_list.walk_project(project)
-    print filename_list
     context = {'project': project, 'resources': filename_list.details}
     return render(request, 'pick_resource.html', context)
