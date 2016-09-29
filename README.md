@@ -3,12 +3,12 @@ Web application for running workflows in the cloud
 
 Currently a very bare-bones django application.
 
-$ virtualenv env
-$ source env/bin/activate
-$ pip install -r requirements.txt
-$ python manage.py migrate
-$ python manage.py createsuperuser
-$ python manage.py runserver
+    $ virtualenv env
+    $ source env/bin/activate
+    $ pip install -r requirements.txt
+    $ python manage.py migrate
+    $ python manage.py createsuperuser
+    $ python manage.py runserver
 
 Then:
 
