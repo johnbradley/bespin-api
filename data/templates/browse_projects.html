@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Browse Projects for {{ username }}</h2>
+<ul class="project-list">
+  {% for project_name in project_names %}
+  <li><a href="{% url 'pick_resource' %}?project_name={{project_name}}">{{ project_name }}</a></li>
+  {% endfor %}
+</ul>
+{% endblock %}

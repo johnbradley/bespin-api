@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Browse Files in {{ project.name }}</h2>
+<ul class="project-list">
+  {% for resource in resources %}
+  <li>{{ resource }}</li>
+  {% endfor %}
+</ul>
+
+{% endblock %}

@@ -1,3 +1,6 @@
 from django.contrib import admin
+from models import *
 
-# Register your models here.
+admin.site.register(DDSApplicationCredential)
+admin.site.register(DDSUserCredential)
+admin.site.register(DDSResource)

@@ -10,6 +10,7 @@ class DDSApplicationCredential(models.Model):
     """
     name = models.CharField(max_length=255, blank=False, unique=True)
     agent_key = models.CharField(max_length=32, blank=False, unique=True)
+    api_root = models.URLField()
 
 
 class DDSUserCredential(models.Model):
