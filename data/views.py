@@ -5,6 +5,7 @@ from ddsc.config import Config
 from ddsc.core.remotestore import RemoteStore
 from ddsc.core.util import ProjectFilenameList
 
+
 def _get_remote_store(request):
     # Get a DukeDS credential for the user
     user_cred = DDSUserCredential.objects.get(user=request.user)
@@ -21,6 +22,7 @@ def _get_remote_store(request):
     remote_store = RemoteStore(config)
     return remote_store
 
+
 @login_required
 def browse_projects(request):
     username = request.user.username
@@ -28,6 +30,7 @@ def browse_projects(request):
     project_names = remote_store.get_project_names()
     context = {'username': username, 'project_names': project_names}
     return render(request, 'browse_projects.html', context)
+
 
 @login_required
 def pick_resource(request):
