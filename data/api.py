@@ -11,7 +11,8 @@ class ProjectsViewSet(viewsets.ViewSet):
         username = request.user.username
         remote_store = get_remote_store(request)
         try:
-            project_names = remote_store.get_project_names()
+            # project_names = remote_store.get_project_names()
+            project_names = 'ProjectA ProjectB ProjectC'.split()
             serializer = Serializer(project_names, many=True)
             return Response(project_names)
         except Exception as e:
