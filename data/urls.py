@@ -1,9 +1,10 @@
-from . import views
-from django.conf.urls import url
-from django.views.generic import RedirectView
+from data import api
+from django.conf.urls import url, include
+from rest_framework import routers
+
+router = routers.DefaultRouter()
+router.register(r'projects', api.ProjectsViewSet, 'project')
 
 urlpatterns = [
-    url(r'^$', RedirectView.as_view(pattern_name='browse_projects')),
-    url(r'^browse_projects/$', views.browse_projects, name='browse_projects'),
-    url(r'^pick_resource/$', views.pick_resource, name='pick_resource'),
+    url(r'^', include(router.urls)),
 ]
