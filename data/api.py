@@ -9,7 +9,7 @@ class ProjectsViewSet(viewsets.ViewSet):
 
     def list(self, request):
         username = request.user.username
-        remote_store = get_remote_store(request)
+        remote_store = get_remote_store(request.user)
         try:
             # project_names = remote_store.get_project_names()
             project_names = 'ProjectA ProjectB ProjectC'.split()

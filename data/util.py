@@ -1,10 +1,18 @@
 from models import DDSUserCredential, DDSApplicationCredential
+from django.core.exceptions import PermissionDenied
 from ddsc.core.remotestore import RemoteStore
 from ddsc.config import Config
 
-def get_remote_store(request):
+def get_remote_store(user):
+    """
+    :param user: A Django model user object
+    :return: a ddsc.core.remotestore.RemoteStore object
+    """
     # Get a DukeDS credential for the user
-    user_cred = DDSUserCredential.objects.get(user=request.user)
+    if user.is_anonymous():
+        raise PermissionDenied("Requires login")
+
+    user_cred = DDSUserCredential.objects.get(user=user)
 
     # Get our agent key
     app_cred = DDSApplicationCredential.objects.first()
