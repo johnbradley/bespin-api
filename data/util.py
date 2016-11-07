@@ -3,6 +3,7 @@ from django.core.exceptions import PermissionDenied
 from ddsc.core.remotestore import RemoteStore
 from ddsc.config import Config
 
+
 def get_remote_store(user):
     """
     :param user: A Django model user object
@@ -26,3 +27,11 @@ def get_remote_store(user):
     remote_store = RemoteStore(config)
     return remote_store
 
+def get_user_projects(user):
+    """
+    Get the Duke DS Projects for a user
+    :param user:
+    :return: [dict] list of project metadata, including name and id
+    """
+    remote_store = get_remote_store(user)
+    return remote_store.data_service.get_projects().json()['results']

@@ -8,12 +8,23 @@ from mock.mock import MagicMock, Mock, patch
 
 class ProjectsTestCase(APITestCase):
 
-    @patch('data.api.get_remote_store')
-    def testListProjects(self, mock_get_remote_store):
-        mock_get_remote_store.return_value = MagicMock(get_project_names=MagicMock(return_value=['project1','project2']))
+    def setUp(self):
+        username = 'username'
+        password = 'secret'
+        django_user.objects.create_user(username, password=password)
+        self.client.login(username=username, password=password)
+
+    def testFailsUnauthenticated(self):
+        self.client.logout()
+        url = reverse('project-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @patch('data.api.get_user_projects')
+    def testListProjects(self, mock_get_user_projects):
+        mock_get_user_projects.return_value = [{'id':'abc123','name':'ProjectA'}, {'id':'def567','name':'ProjectB'}]
         url = reverse('project-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
-
 
