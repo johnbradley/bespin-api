@@ -7,12 +7,13 @@ from exceptions import DataServiceUnavailable
 
 class ProjectsViewSet(viewsets.ViewSet):
 
+    permission_classes = (permissions.IsAuthenticated,)
+
     def list(self, request):
         username = request.user.username
         remote_store = get_remote_store(request.user)
         try:
-            # project_names = remote_store.get_project_names()
-            project_names = 'ProjectA ProjectB ProjectC'.split()
+            project_names = remote_store.get_project_names()
             serializer = Serializer(project_names, many=True)
             return Response(project_names)
         except Exception as e:
