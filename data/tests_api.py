@@ -18,7 +18,7 @@ class ProjectsTestCase(APITestCase):
         self.client.logout()
         url = reverse('project-list')
         response = self.client.get(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     @patch('data.api.get_user_projects')
     def testListProjects(self, mock_get_user_projects):
