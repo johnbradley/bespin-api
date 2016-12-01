@@ -119,5 +119,6 @@ python lando_client.py start_job <JOB_ID>
 ```
 This will post a message into the queue so lando will pick it up and start running your job.
 
-
+As the job runs it will update the state field in the job
+http://10.109.253.90:8000/admin/data/job/1/change/
 
