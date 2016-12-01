@@ -80,6 +80,37 @@ Set vm instance to '.'
 
 The last two could be left blank but admin interface currently requires them.
 
+### Create your job params
+http://10.109.253.90:8000/admin/data/jobparam/
+
+You will need to create a param for each input and output file.
+
+Click Add Job Param
+
+Set Job to your job
+
+Set staging to Input or Output
+
+Set type to Duke DS File
+
+Set value '.' (could be left blank)
+
+### Create duke data service file info
+http://10.109.253.90:8000/admin/data/jobparamddsfile/
+
+Click add job param DDS file
+
+Pick your job param
+
+Enter a project id from https://dataservice.duke.edu/
+
+File id - put '.' here for OUTPUT and the file id from https://dataservice.duke.edu/#/file/.... for INPUT files
+
+For path put the path to where the file is stored/will be stored in dukedataservice.
+
+Pick your app credentials and user credentials
+
+
 
 ## Request a job to be run
 
