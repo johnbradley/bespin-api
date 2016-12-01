@@ -33,6 +33,7 @@ Click three dots, Click user Secret Key, Click copy key to clipboard
 Paste this value into the token field.
 
 ## Setup a workflow
+We will add a CWL workflow to the database.
 
 ### Create a workflow
 http://10.109.253.90:8000/admin/data/workflow/
@@ -59,7 +60,28 @@ For Url you will need to reference a cwl workflow created with the "--pack" opti
 
 You will need to consult the CWL workflow to determine the inputs and outputs.
 
+## Setup a job
+We will create a job in the database for your user.
 
+### Create a job
+http://10.109.253.90:8000/admin/data/job/
+
+Click add job
+
+Pick the version of the workflow you wish to run
+
+Pick your user
+
+Leave state at New
+
+Set vm flavor to 'm1.small'
+
+Set vm instance to '.'
+
+The last two could be left blank but admin interface currently requires them.
+
+
+## Request a job to be run
 
 
 
