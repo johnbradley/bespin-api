@@ -113,7 +113,11 @@ Pick your app credentials and user credentials
 
 
 ## Request a job to be run
-
+Right now this must be done via https://github.com/Duke-GCB/lando/blob/use_bespin_api/lando_client.py
+```
+python lando_client.py start_job <JOB_ID>
+```
+This will post a message into the queue so lando will pick it up and start running your job.
 
 
 
