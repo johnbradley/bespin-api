@@ -1,11 +1,15 @@
-# Setup Credentials
+# Using Admin interface to setup and run a job
+This is starting from an empty database with a superuser.
+
 http://10.109.253.90:8000 is the internal address for a testing version of bespin.
 
-If you are running this locally you will need to change this out below.
+If you are running this locally you will need to change this value below.
 
-This also assumes you have added a superuser.
+## Setup Credentials
 
-## Create DukeDS application credential:
+This will allow bespin to access DukeDS on your behalf for downloading and uploading files.
+
+### Create DukeDS application credential:
 http://10.109.253.90:8000/admin/data/ddsapplicationcredential/
 
 Click add dds applicatin credential
@@ -15,7 +19,7 @@ The Api root should be set to 'https://api.dataservice.duke.edu/api/v1'.
 
 This step may already be done if there is a DDS application credential already.
 
-## Create your DukeDS user credential:
+### Create your DukeDS user credential:
 http://10.109.253.90:8000/admin/data/ddsusercredential/
 
 Click add dds user credential.
@@ -28,7 +32,9 @@ Click three dots, Click user Secret Key, Click copy key to clipboard
 
 Paste this value into the token field.
 
-## Create a workflow
+## Setup a workflow
+
+### Create a workflow
 http://10.109.253.90:8000/admin/data/workflow/
 
 Click Add Workflow
@@ -37,7 +43,8 @@ Enter some name for the workflow
 
 Click Save
 
-Go to Workflow versions screen:
+
+### Create a workflow version
 http://10.109.253.90:8000/admin/data/workflowversion/
 
 Click Add Workflow Version
