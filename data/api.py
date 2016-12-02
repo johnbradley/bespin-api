@@ -2,10 +2,11 @@ from rest_framework import viewsets, status, permissions
 from util import get_user_projects
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable
-from data.models import Workflow, WorkflowVersion, Job, JobParam, JobParamDDSFile, \
-    DDSApplicationCredential, DDSUserCredential
+from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
+    DDSApplicationCredential, DDSUserCredential, URLJobInputFile
 from data.serializers import WorkflowSerializer, WorkflowVersionSerializer, JobSerializer, \
-    JobParamSerializer, JobParamDDSFileSerializer, DDSAppCredSerializer, DDSUserCredSerializer
+    DDSAppCredSerializer, DDSUserCredSerializer, JobInputFileSerializer, DDSJobInputFileSerializer, \
+    URLJobInputFileSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 
 
@@ -46,17 +47,24 @@ class JobsViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-class JobParamsViewSet(viewsets.ModelViewSet):
+class DDSJobInputFileViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    queryset = JobParam.objects.all()
-    serializer_class = JobParamSerializer
-    filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('job', 'staging')
+    queryset = DDSJobInputFile.objects.all().order_by('index')
+    serializer_class = DDSJobInputFileSerializer
 
-class JobParamDDSFilesViewSet(viewsets.ModelViewSet):
+
+class JobInputFileViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    queryset = JobParamDDSFile.objects.all()
-    serializer_class = JobParamDDSFileSerializer
+    queryset = JobInputFile.objects.all()
+    serializer_class = JobInputFileSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('job',)
+
+
+class URLJobInputFileViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = URLJobInputFile.objects.all().order_by('index')
+    serializer_class = URLJobInputFileSerializer
 
 
 class DDSAppCredViewSet(viewsets.ModelViewSet):
