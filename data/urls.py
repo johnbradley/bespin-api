@@ -12,7 +12,7 @@ router.register(r'dds-job-input-files', api.DDSJobInputFileViewSet, 'ddsjobinput
 router.register(r'url-job-input-files', api.URLJobInputFileViewSet, 'urljobinputfile')
 router.register(r'dds-app-credentials', api.DDSAppCredViewSet, 'ddsapplicationcredential')
 router.register(r'dds-user-credentials', api.DDSUserCredViewSet, 'ddsusercredential')
-
+router.register(r'job-errors', api.JobErrorViewSet, 'joberror')
 
 
 urlpatterns = [

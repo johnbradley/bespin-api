@@ -3,11 +3,12 @@ from util import get_user_projects
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
-    DDSApplicationCredential, DDSUserCredential, URLJobInputFile
+    DDSApplicationCredential, DDSUserCredential, URLJobInputFile, JobError
 from data.serializers import WorkflowSerializer, WorkflowVersionSerializer, JobSerializer, \
     DDSAppCredSerializer, DDSUserCredSerializer, JobInputFileSerializer, DDSJobInputFileSerializer, \
-    URLJobInputFileSerializer
+    URLJobInputFileSerializer, JobErrorSerializer
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import detail_route
 
 
 class ProjectsViewSet(viewsets.ViewSet):
@@ -47,6 +48,15 @@ class JobsViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
+    @detail_route(methods=['post'])
+    def start(self, request, pk=None):
+        return Response({'status': 'ok then start'})
+
+    @detail_route(methods=['post'])
+    def cancel(self, request, pk=None):
+        return Response({'status': 'ok then cancel'})
+
+
 class DDSJobInputFileViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = DDSJobInputFile.objects.all().order_by('index')
@@ -79,3 +89,11 @@ class DDSUserCredViewSet(viewsets.ModelViewSet):
     serializer_class = DDSUserCredSerializer
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('user',)
+
+
+class JobErrorViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = JobError.objects.all()
+    serializer_class = JobErrorSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('job',)

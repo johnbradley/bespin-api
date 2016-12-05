@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
-    DDSApplicationCredential, DDSUserCredential, JobOutputDir, URLJobInputFile
+    DDSApplicationCredential, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError
 
 
 class WorkflowSerializer(serializers.HyperlinkedModelSerializer):
@@ -74,3 +74,8 @@ class JobInputFileSerializer(serializers.ModelSerializer):
         model = JobInputFile
         fields = ('id', 'job', 'file_type', 'workflow_name', 'dds_files', 'url_files')
 
+
+class JobErrorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobError
+        fields = '__all__'

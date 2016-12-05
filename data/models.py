@@ -71,7 +71,10 @@ class Job(models.Model):
     workflow_input_json = models.TextField(null=True)
 
     def __unicode__(self):
-        workflow_name = self.workflow_version.workflow
+
+        workflow_name = ''
+        if self.workflow_version:
+            workflow_name = self.workflow_version.workflow
         return '{} ({}) for user {}'.format(workflow_name, self.get_state_display(), self.user)
 
 
@@ -128,3 +131,9 @@ class URLJobInputFile(models.Model):
     def __unicode__(self):
         return 'URL Job Input File {} ({})'.format(self.url, self.job_input_file.workflow_name)
 
+
+class JobError(models.Model):
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, null=False, related_name='job_errors')
+    content = models.TextField(null=False)
+    state = models.CharField(max_length=1, choices=Job.JOB_STATES)
+    created = models.DateTimeField(auto_now_add=True, blank=False)
