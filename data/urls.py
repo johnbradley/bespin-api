@@ -10,7 +10,7 @@ router.register(r'jobs', api.JobsViewSet, 'job')
 router.register(r'job-input-files', api.JobInputFileViewSet, 'jobinputfile')
 router.register(r'dds-job-input-files', api.DDSJobInputFileViewSet, 'ddsjobinputfile')
 router.register(r'url-job-input-files', api.URLJobInputFileViewSet, 'urljobinputfile')
-router.register(r'dds-app-credentials', api.DDSAppCredViewSet, 'ddsapplicationcredential')
+router.register(r'dds-endpoints', api.DDSEndpointViewSet, 'ddsendpoint')
 router.register(r'dds-user-credentials', api.DDSUserCredViewSet, 'ddsusercredential')
 router.register(r'job-errors', api.JobErrorViewSet, 'joberror')
 

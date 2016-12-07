@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 
 
-class DDSApplicationCredential(models.Model):
+class DDSEndpoint(models.Model):
     """
     Stores the agent key for this application
     """
@@ -18,6 +18,7 @@ class DDSUserCredential(models.Model):
     """
     DDS Credentials for bespin users
     """
+    endpoint = models.ForeignKey(DDSEndpoint, on_delete=models.CASCADE, null=False)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, null=False)
     token = models.CharField(max_length=32, blank=False, unique=True)
 
@@ -82,7 +83,6 @@ class JobOutputDir(models.Model):
     job = models.OneToOneField(Job, on_delete=models.CASCADE, null=False, related_name='output_dir')
     dir_name = models.CharField(max_length=255, blank=False, null=True)
     project_id = models.CharField(max_length=255, blank=False, null=True)
-    dds_app_credentials = models.ForeignKey(DDSApplicationCredential, on_delete=models.CASCADE, null=True)
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE, null=True)
 
     def __unicode__(self):
@@ -112,7 +112,6 @@ class DDSJobInputFile(models.Model):
     job_input_file = models.ForeignKey(JobInputFile, on_delete=models.CASCADE, null=False, related_name='dds_files')
     project_id = models.CharField(max_length=255, blank=False, null=True)
     file_id = models.CharField(max_length=255, blank=False, null=True)
-    dds_app_credentials = models.ForeignKey(DDSApplicationCredential, on_delete=models.CASCADE)
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE)
     destination_path = models.CharField(max_length=255, blank=False, null=True)
     index = models.IntegerField(null=True)

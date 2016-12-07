@@ -3,9 +3,9 @@ from util import get_user_projects
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
-    DDSApplicationCredential, DDSUserCredential, URLJobInputFile, JobError
+    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError
 from data.serializers import WorkflowSerializer, WorkflowVersionSerializer, JobSerializer, \
-    DDSAppCredSerializer, DDSUserCredSerializer, JobInputFileSerializer, DDSJobInputFileSerializer, \
+    DDSEndpointSerializer, DDSUserCredSerializer, JobInputFileSerializer, DDSJobInputFileSerializer, \
     URLJobInputFileSerializer, JobErrorSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
@@ -77,10 +77,10 @@ class URLJobInputFileViewSet(viewsets.ModelViewSet):
     serializer_class = URLJobInputFileSerializer
 
 
-class DDSAppCredViewSet(viewsets.ModelViewSet):
+class DDSEndpointViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    queryset = DDSApplicationCredential.objects.all()
-    serializer_class = DDSAppCredSerializer
+    queryset = DDSEndpoint.objects.all()
+    serializer_class = DDSEndpointSerializer
 
 
 class DDSUserCredViewSet(viewsets.ModelViewSet):
