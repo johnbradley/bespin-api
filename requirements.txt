@@ -9,3 +9,5 @@ pbr==1.10.0
 PyYAML==3.12
 requests==2.11.1
 six==1.10.0
+git+git://github.com/Duke-GCB/lando-messaging.git
+

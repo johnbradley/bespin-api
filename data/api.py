@@ -9,6 +9,7 @@ from data.serializers import WorkflowSerializer, WorkflowVersionSerializer, JobS
     URLJobInputFileSerializer, JobErrorSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
+from lando import LandoJob
 
 
 class ProjectsViewSet(viewsets.ViewSet):
@@ -47,14 +48,17 @@ class JobsViewSet(viewsets.ModelViewSet):
     def save_with_user(self, serializer):
         serializer.save(user=self.request.user)
 
-
     @detail_route(methods=['post'])
     def start(self, request, pk=None):
-        return Response({'status': 'ok then start'})
+        job = LandoJob(pk)
+        job.start()
+        return Response({'status': 'ok'})
 
     @detail_route(methods=['post'])
     def cancel(self, request, pk=None):
-        return Response({'status': 'ok then cancel'})
+        job = LandoJob(pk)
+        job.cancel()
+        return Response({'status': 'ok'})
 
 
 class DDSJobInputFileViewSet(viewsets.ModelViewSet):

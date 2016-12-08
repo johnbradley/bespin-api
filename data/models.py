@@ -51,16 +51,25 @@ class Job(models.Model):
     """
     Instance of a workflow that is in some state of progress.
     """
+    JOB_STATE_NEW = 'N'
+    JOB_STATE_CREATE_VM = 'V'
+    JOB_STATE_STAGING = 'S'
+    JOB_STATE_RUNNING = 'R'
+    JOB_STATE_STORE_OUTPUT = 'O'
+    JOB_STATE_TERMINATE_VM = 'T'
+    JOB_STATE_FINISHED = 'F'
+    JOB_STATE_ERROR = 'E'
+    JOB_STATE_CANCEL = 'C'
     JOB_STATES = (
-        ('N', 'New'),
-        ('V', 'Create VM'),
-        ('S', 'Staging In'),
-        ('R', 'Running'),
-        ('O', 'Store Job Output'),
-        ('T', 'Terminate VM'),
-        ('F', 'Finished'),
-        ('E', 'Errored'),
-        ('C', 'Canceled')
+        (JOB_STATE_NEW, 'New'),
+        (JOB_STATE_CREATE_VM, 'Create VM'),
+        (JOB_STATE_STAGING, 'Staging In'),
+        (JOB_STATE_RUNNING, 'Running'),
+        (JOB_STATE_STORE_OUTPUT, 'Store Job Output'),
+        (JOB_STATE_TERMINATE_VM, 'Terminate VM'),
+        (JOB_STATE_FINISHED, 'Finished'),
+        (JOB_STATE_ERROR, 'Error'),
+        (JOB_STATE_CANCEL, 'Canceled')
     )
     workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.SET_NULL, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
@@ -136,3 +145,13 @@ class JobError(models.Model):
     content = models.TextField(null=False)
     state = models.CharField(max_length=1, choices=Job.JOB_STATES)
     created = models.DateTimeField(auto_now_add=True, blank=False)
+
+
+class LandoConnection(models.Model):
+    """
+    Settings used to connect with lando to start, restart or cancel a job.
+    """
+    host = models.CharField(max_length=255, blank=False, null=False)
+    username = models.CharField(max_length=255, blank=False, null=False)
+    password = models.CharField(max_length=255, blank=False, null=False)
+    queue_name = models.CharField(max_length=255, blank=False, null=False)
