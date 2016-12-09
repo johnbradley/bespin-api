@@ -1,4 +1,4 @@
-from models import DDSUserCredential, DDSApplicationCredential
+from models import DDSUserCredential, DDSEndpoint
 from django.core.exceptions import PermissionDenied
 from ddsc.core.remotestore import RemoteStore
 from ddsc.config import Config
@@ -16,7 +16,7 @@ def get_remote_store(user):
     user_cred = DDSUserCredential.objects.get(user=user)
 
     # Get our agent key
-    app_cred = DDSApplicationCredential.objects.first()
+    app_cred = DDSEndpoint.objects.first()
 
     # Populate a config object
     config = Config()

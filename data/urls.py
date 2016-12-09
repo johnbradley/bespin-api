@@ -4,6 +4,16 @@ from rest_framework import routers
 
 router = routers.DefaultRouter()
 router.register(r'projects', api.ProjectsViewSet, 'project')
+router.register(r'workflows', api.WorkflowsViewSet, 'workflow')
+router.register(r'workflow-versions', api.WorkflowVersionsViewSet, 'workflowversion')
+router.register(r'jobs', api.JobsViewSet, 'job')
+router.register(r'job-input-files', api.JobInputFileViewSet, 'jobinputfile')
+router.register(r'dds-job-input-files', api.DDSJobInputFileViewSet, 'ddsjobinputfile')
+router.register(r'url-job-input-files', api.URLJobInputFileViewSet, 'urljobinputfile')
+router.register(r'dds-endpoints', api.DDSEndpointViewSet, 'ddsendpoint')
+router.register(r'dds-user-credentials', api.DDSUserCredViewSet, 'ddsusercredential')
+router.register(r'job-errors', api.JobErrorViewSet, 'joberror')
+
 
 urlpatterns = [
     url(r'^', include(router.urls)),
