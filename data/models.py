@@ -77,7 +77,7 @@ class Job(models.Model):
     state = models.CharField(max_length=1, choices=JOB_STATES, default='N')
     last_updated = models.DateTimeField(auto_now=True, blank=False)
     vm_flavor = models.CharField(max_length=255, blank=False, default='m1.small')
-    vm_instance_name = models.CharField(max_length=255, blank=False, null=True)
+    vm_instance_name = models.CharField(max_length=255, blank=True, null=True)
     workflow_input_json = models.TextField(null=True)
 
     def __unicode__(self):
