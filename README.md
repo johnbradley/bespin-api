@@ -1,4 +1,4 @@
-# bespin-workflows
+# bespin-api
 Web application for running workflows in the cloud
 
 Currently a very bare-bones django application.
