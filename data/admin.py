@@ -12,5 +12,3 @@ admin.site.register(DDSJobInputFile)
 admin.site.register(URLJobInputFile)
 admin.site.register(JobError)
 admin.site.register(LandoConnection)
-
-
