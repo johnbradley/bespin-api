@@ -89,6 +89,9 @@ class Job(models.Model):
 
 
 class JobOutputDir(models.Model):
+    """
+    Output directory where results of workflow will be uploaded to.
+    """
     job = models.OneToOneField(Job, on_delete=models.CASCADE, null=False, related_name='output_dir')
     dir_name = models.CharField(max_length=255, blank=False, null=True)
     project_id = models.CharField(max_length=255, blank=False, null=True)
@@ -99,6 +102,9 @@ class JobOutputDir(models.Model):
 
 
 class JobInputFile(models.Model):
+    """
+    Input file that will be downloaded before running a workflow.
+    """
     DUKE_DS_FILE = 'dds_file'
     DUKE_DS_FILE_ARRAY = 'dds_file_array'
     URL_FILE = 'url_file'
@@ -118,6 +124,9 @@ class JobInputFile(models.Model):
 
 
 class DDSJobInputFile(models.Model):
+    """
+    Settings for a DUKE_DS_FILE or DUKE_DS_FILE_ARRAY type JobInputFile.
+    """
     job_input_file = models.ForeignKey(JobInputFile, on_delete=models.CASCADE, null=False, related_name='dds_files')
     project_id = models.CharField(max_length=255, blank=False, null=True)
     file_id = models.CharField(max_length=255, blank=False, null=True)
@@ -131,6 +140,9 @@ class DDSJobInputFile(models.Model):
 
 
 class URLJobInputFile(models.Model):
+    """
+    Settings for a URL_FILE or URL_FILE_ARRAY type JobInputFile.
+    """
     job_input_file = models.ForeignKey(JobInputFile, on_delete=models.CASCADE, null=False, related_name='url_files')
     url = models.TextField(null=True)
     destination_path = models.CharField(max_length=255, blank=False, null=True)
@@ -141,6 +153,9 @@ class URLJobInputFile(models.Model):
 
 
 class JobError(models.Model):
+    """
+    Record of a particular error that happened with a job including the state the job was at when the error happened.
+    """
     job = models.ForeignKey(Job, on_delete=models.CASCADE, null=False, related_name='job_errors')
     content = models.TextField(null=False)
     state = models.CharField(max_length=1, choices=Job.JOB_STATES)
