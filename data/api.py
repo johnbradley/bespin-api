@@ -1,5 +1,5 @@
 from rest_framework import viewsets, status, permissions
-from util import get_user_projects
+from util import get_user_projects, get_user_project, get_user_project_content
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
@@ -20,6 +20,14 @@ class ProjectsViewSet(viewsets.ViewSet):
             return Response(projects)
         except Exception as e:
             raise DataServiceUnavailable(e)
+
+    def retrieve(self, request, pk=None):
+        project_info = get_user_project(request.user, pk)
+        return Response(project_info)
+
+    @detail_route(methods=['get'])
+    def content(self, request, pk=None):
+        return Response(get_user_project_content(request.user, pk))
 
 
 class WorkflowsViewSet(viewsets.ModelViewSet):
