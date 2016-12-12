@@ -27,7 +27,8 @@ class ProjectsViewSet(viewsets.ViewSet):
 
     @detail_route(methods=['get'])
     def content(self, request, pk=None):
-        return Response(get_user_project_content(request.user, pk))
+        search_str = request.GET.get('search', '')
+        return Response(get_user_project_content(request.user, pk, search_str))
 
 
 class WorkflowsViewSet(viewsets.ModelViewSet):

@@ -68,3 +68,15 @@ class ProjectsTestCase(APITestCase):
         url = reverse('project-list') + project_id + '/content/'
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    @patch('data.api.get_user_project_content')
+    def testRetrieveProjectContentWithFilter(self, mock_get_user_project_content):
+        project_id = 'abc123'
+        mock_get_user_project_content.return_value = [{'id': '12355', 'name': 'test.txt'}]
+        url = reverse('project-list') + project_id + '/content/?search=test'
+        response = self.client.get(url, format='json')
+        mock, params = mock_get_user_project_content.call_args
+        user, project_id, search = mock
+        self.assertEqual('test', search)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
