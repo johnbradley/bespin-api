@@ -7,6 +7,7 @@ class WorkflowSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Workflow
         fields = ('id', 'name', 'versions')
+        read_only_fields = ('versions',)
 
 
 class WorkflowVersionSerializer(serializers.HyperlinkedModelSerializer):
@@ -27,17 +28,16 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Job
         fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'last_updated',
-                  'vm_flavor', 'vm_instance_name', 'workflow_input_json', 'output_dir')
+                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
 
 
 class DDSEndpointSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = DDSEndpoint
-        fields = ('id','name', 'agent_key', 'api_root')
+        fields = ('id', 'name', 'api_root')
 
 
 class DDSUserCredSerializer(serializers.ModelSerializer):
-    endpoint = DDSEndpointSerializer(read_only=True)
     class Meta:
         model = DDSUserCredential
         fields = ('id', 'user', 'token', 'endpoint')
@@ -80,3 +80,16 @@ class JobErrorSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobError
         fields = '__all__'
+
+
+class AdminDDSEndpointSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = DDSEndpoint
+        fields = ('id','name', 'agent_key', 'api_root')
+
+
+class AdminDDSUserCredSerializer(serializers.ModelSerializer):
+    endpoint = AdminDDSEndpointSerializer()
+    class Meta:
+        model = DDSUserCredential
+        fields = ('id', 'user', 'token', 'endpoint')
