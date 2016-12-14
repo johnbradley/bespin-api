@@ -3,7 +3,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth.models import User as django_user
 from mock.mock import MagicMock, Mock, patch
-from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError
+from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, JobOutputDir
 from exceptions import WrappedDataServiceException
 
 
@@ -42,6 +42,7 @@ class UserLogin(object):
 class ProjectsTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
+        self.user_login.become_normal_user()
 
     def testFailsUnauthenticated(self):
         self.user_login.become_unauthorized()
@@ -51,7 +52,6 @@ class ProjectsTestCase(APITestCase):
 
     @patch('data.api.get_user_projects')
     def testListProjects(self, mock_get_user_projects):
-        self.user_login.become_normal_user()
         mock_get_user_projects.return_value = [{'id':'abc123','name':'ProjectA'}, {'id':'def567','name':'ProjectB'}]
         url = reverse('project-list')
         response = self.client.get(url, format='json')
@@ -67,7 +67,6 @@ class ProjectsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], 'ProjectA')
 
-
     @patch('data.api.get_user_project')
     def testRetrieveProjectNotFound(self, mock_get_user_project):
         project_id = 'abc123'
@@ -79,7 +78,6 @@ class ProjectsTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-
     @patch('data.api.get_user_project_content')
     def testRetrieveProjectContent(self, mock_get_user_project_content):
         project_id = 'abc123'
@@ -88,7 +86,6 @@ class ProjectsTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
-
 
     @patch('data.api.get_user_project_content')
     def testRetrieveProjectContentNotFound(self, mock_get_user_project_content):
@@ -112,13 +109,6 @@ class ProjectsTestCase(APITestCase):
         self.assertEqual('test', search)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
-
-
-class ProjectsTestCase(APITestCase):
-    def setUp(self):
-        username = 'username'
-        password = 'secret'
-        django_user.objects.create_user(username, password=password)
 
 
 class DDSEndpointTestCase(APITestCase):
@@ -188,7 +178,7 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         response = self.client.post(url, format='json',
                                     data={
-                                        'workflow_version': self.workflow_version.id,
+                                        'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
                                         'workflow_input_json': '{}',
                                     })
@@ -201,10 +191,11 @@ class JobsTestCase(APITestCase):
         other_user = self.user_login.become_other_normal_user()
         response = self.client.post(url, format='json',
                             data={
-                                'workflow_version': self.workflow_version.id,
+                                'workflow_version_id': self.workflow_version.id,
                                 'vm_project_name': 'jpb88',
                                 'workflow_input_json': '{}',
                             })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
@@ -215,7 +206,7 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         response = self.client.post(url, format='json',
                                     data={
-                                        'workflow_version': self.workflow_version.id,
+                                        'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
                                         'workflow_input_json': '{}',
                                     })
@@ -229,10 +220,11 @@ class JobsTestCase(APITestCase):
         url = reverse('job-list')
         response = self.client.post(url, format='json',
                             data={
-                                'workflow_version': self.workflow_version.id,
+                                'workflow_version_id': self.workflow_version.id,
                                 'vm_project_name': 'jpb88',
                                 'workflow_input_json': '{}',
                             })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # admin user can see both via admin endpoint
         admin_user = self.user_login.become_admin_user()
@@ -242,7 +234,6 @@ class JobsTestCase(APITestCase):
         self.assertEqual(2, len(response.data))
         self.assertIn(other_user.id, [item['user_id'] for item in response.data])
         self.assertIn(normal_user.id, [item['user_id'] for item in response.data])
-
 
 class JobInputFilesTestCase(APITestCase):
     def setUp(self):
@@ -256,15 +247,15 @@ class JobInputFilesTestCase(APITestCase):
     def testOnlySeeOwnJobInputFiles(self):
         other_user = self.user_login.become_normal_user()
         other_job = Job.objects.create(workflow_version=self.workflow_version,
-                                  vm_project_name='test',
-                                  workflow_input_json='{}',
-                                 user=other_user)
+                                       vm_project_name='test',
+                                       workflow_input_json='{}',
+                                       user=other_user)
         JobInputFile.objects.create(job=other_job, file_type='dds_file', workflow_name='models')
         this_user = self.user_login.become_other_normal_user()
         this_job = Job.objects.create(workflow_version=self.workflow_version,
-                                       vm_project_name='test',
-                                       workflow_input_json='{}',
-                                       user=this_user)
+                                      vm_project_name='test',
+                                      workflow_input_json='{}',
+                                      user=this_user)
         JobInputFile.objects.create(job=this_job, file_type='dds_file', workflow_name='data1')
 
         # User endpoint only shows current user's data
