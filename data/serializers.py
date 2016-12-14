@@ -3,14 +3,14 @@ from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInpu
     DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError
 
 
-class WorkflowSerializer(serializers.HyperlinkedModelSerializer):
+class WorkflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workflow
         fields = ('id', 'name', 'versions')
         read_only_fields = ('versions',)
 
 
-class WorkflowVersionSerializer(serializers.HyperlinkedModelSerializer):
+class WorkflowVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowVersion
         fields = ('id', 'workflow', 'object_name', 'created', 'url', 'version')
@@ -44,7 +44,7 @@ class AdminJobSerializer(serializers.ModelSerializer):
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
 
 
-class DDSEndpointSerializer(serializers.HyperlinkedModelSerializer):
+class DDSEndpointSerializer(serializers.ModelSerializer):
     class Meta:
         model = DDSEndpoint
         fields = ('id', 'name', 'api_root')
