@@ -19,8 +19,11 @@ class DDSUserCredential(models.Model):
     DDS Credentials for bespin users
     """
     endpoint = models.ForeignKey(DDSEndpoint, on_delete=models.CASCADE, null=False)
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=False)
     token = models.CharField(max_length=32, blank=False, unique=True)
+
+    class Meta:
+        unique_together = ('endpoint', 'user',)
 
 
 class Workflow(models.Model):
@@ -38,10 +41,12 @@ class WorkflowVersion(models.Model):
     Specific version of a Workflow.
     """
     workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE, related_name='versions')
-    object_name = models.CharField(max_length=255, null=True)
-    created = models.DateTimeField(auto_now_add=True, blank=False)
-    version = models.CharField(max_length=32, blank=False)
-    url = models.URLField()
+    object_name = models.CharField(max_length=255, null=True, default='#main',
+                                   help_text="Name of the object in a packed workflow to run. "
+                                             "Typically set to '#main'.")
+    created = models.DateTimeField(auto_now_add=True, blank=False, null=False)
+    version = models.CharField(max_length=32, blank=False, null=False)
+    url = models.URLField(null=False, help_text="URL to packed CWL workflow file.")
 
     def __unicode__(self):
         return '{} version: {} created: {}'.format(self.workflow.name, self.version, self.created)
@@ -76,9 +81,14 @@ class Job(models.Model):
     created = models.DateTimeField(auto_now_add=True, blank=False)
     state = models.CharField(max_length=1, choices=JOB_STATES, default='N')
     last_updated = models.DateTimeField(auto_now=True, blank=False)
-    vm_flavor = models.CharField(max_length=255, blank=False, default='m1.small')
-    vm_instance_name = models.CharField(max_length=255, blank=True, null=True)
-    workflow_input_json = models.TextField(null=True)
+    vm_flavor = models.CharField(max_length=255, blank=False, default='m1.small',
+                                 help_text="Determines CPUs and RAM VM allocation used to run this job.")
+    vm_instance_name = models.CharField(max_length=255, blank=True, null=True,
+                                        help_text="Name of the vm this job is/was running on.")
+    vm_project_name = models.CharField(max_length=255, blank=False, null=False,
+                                       help_text="Name of the cloud project where vm will be created.")
+    workflow_input_json = models.TextField(null=True,
+                                           help_text="CWL input json for use with the workflow.")
 
     def __unicode__(self):
 

@@ -34,6 +34,7 @@ class DDSUserCredentialTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('test_user')
         self.endpoint = DDSEndpoint.objects.create(name='app1', agent_key='abc123')
+        self.endpoint2 = DDSEndpoint.objects.create(name='app2', agent_key='abc124')
 
     def test_unique_parameters1(self):
         DDSUserCredential.objects.create(user=self.user, token='abc123', endpoint=self.endpoint)
@@ -45,6 +46,10 @@ class DDSUserCredentialTests(TestCase):
         other_user = User.objects.create_user('other_user')
         with self.assertRaises(IntegrityError):
             DDSUserCredential.objects.create(user=other_user, token='abc123', endpoint=self.endpoint)
+
+    def test_user_can_have_creds_for_diff_endpoints(self):
+        DDSUserCredential.objects.create(user=self.user, token='abc123', endpoint=self.endpoint)
+        DDSUserCredential.objects.create(user=self.user, token='abc124', endpoint=self.endpoint2)
 
 
 class JobTests(TestCase):
@@ -75,6 +80,13 @@ class WorkflowVersionTests(TestCase):
         self.assertEqual(CWL_URL, workflow_version.url)
         self.assertIsNotNone(workflow_version.created)
 
+    def test_default_object_name(self):
+        WorkflowVersion.objects.create(workflow=self.workflow,
+                                       version='1',
+                                       url=CWL_URL)
+        workflow_version = WorkflowVersion.objects.first()
+        self.assertEqual('#main', workflow_version.object_name)
+
 
 class JobTests(TestCase):
     def setUp(self):
@@ -87,7 +99,9 @@ class JobTests(TestCase):
         self.sample_json = "{'type': 1}"
 
     def test_create(self):
-        Job.objects.create(workflow_version=self.workflow_version, user=self.user, workflow_input_json=self.sample_json)
+        Job.objects.create(workflow_version=self.workflow_version, user=self.user,
+                           vm_project_name='jpb67',
+                           workflow_input_json=self.sample_json)
         job = Job.objects.first()
         self.assertEqual(self.workflow_version, job.workflow_version)
         self.assertEqual(self.user, job.user)
@@ -96,6 +110,7 @@ class JobTests(TestCase):
         self.assertIsNotNone(job.last_updated)
         self.assertIsNotNone(job.vm_flavor)
         self.assertEqual(None, job.vm_instance_name)
+        self.assertEqual('jpb67', job.vm_project_name)
 
     def test_state_changes(self):
         # Create job which should start in new state
