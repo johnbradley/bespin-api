@@ -2,8 +2,9 @@ from django.core.urlresolvers import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth.models import User as django_user
-from mock.mock import MagicMock, Mock, patch
-from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, JobOutputDir
+from mock.mock import MagicMock, patch
+from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, \
+    DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile
 from exceptions import WrappedDataServiceException
 
 
@@ -235,6 +236,26 @@ class JobsTestCase(APITestCase):
         self.assertIn(other_user.id, [item['user_id'] for item in response.data])
         self.assertIn(normal_user.id, [item['user_id'] for item in response.data])
 
+    def testStopRegularUserFromSettingStateOrStep(self):
+        """
+        Only admin should change job state or job step.
+        """
+        url = reverse('job-list')
+        normal_user = self.user_login.become_normal_user()
+        response = self.client.post(url, format='json',
+                                    data={
+                                        'workflow_version_id': self.workflow_version.id,
+                                        'vm_project_name': 'jpb67',
+                                        'workflow_input_json': '{}',
+                                        'state': Job.JOB_STATE_FINISHED,
+                                        'step': Job.JOB_STEP_RUNNING,
+                                    })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job = Job.objects.first()
+        self.assertEqual(Job.JOB_STATE_NEW, job.state)
+        self.assertEqual(None, job.step)
+
+
 class JobInputFilesTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
@@ -287,7 +308,7 @@ class JobErrorTestCase(APITestCase):
                                        vm_project_name='test',
                                        workflow_input_json='{}',
                                        user=other_user)
-        JobError.objects.create(job=other_job, content='Out of memory.', state='N')
+        JobError.objects.create(job=other_job, content='Out of memory.', job_step=Job.JOB_STEP_RUNNING)
         # Normal user can't write
         url = reverse('joberror-list')
         response = self.client.post(url, format='json')
@@ -298,7 +319,7 @@ class JobErrorTestCase(APITestCase):
                                        vm_project_name='test',
                                        workflow_input_json='{}',
                                        user=my_user)
-        JobError.objects.create(job=my_job, content='Out of memory.', state='N')
+        JobError.objects.create(job=my_job, content='Out of memory.', job_step=Job.JOB_STEP_RUNNING)
 
         # User endpoint only shows current user's data
         url = reverse('joberror-list')
@@ -329,8 +350,76 @@ class JobErrorTestCase(APITestCase):
         response = self.client.post(url, format='json', data={
             'job': my_job.id,
             'content': 'oops',
-            'state': 'N',
+            'job_step': Job.JOB_STEP_CREATE_VM,
 
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(1, len(JobError.objects.all()))
+
+
+class DDSJobInputFileTestCase(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+        workflow = Workflow.objects.create(name='RnaSeq')
+        cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
+        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
+                                                               version="1",
+                                                               url=cwl_url)
+        self.my_user = self.user_login.become_normal_user()
+        self.my_job = Job.objects.create(workflow_version=self.workflow_version,
+                                       vm_project_name='test',
+                                       workflow_input_json='{}',
+                                       user=self.my_user)
+        self.job_input_file = JobInputFile.objects.create(job=self.my_job, file_type='dds_file', workflow_name='data1')
+        endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret', api_root='https://someserver.com/api')
+        self.cred = DDSUserCredential.objects.create(endpoint=endpoint, user=self.my_user, token='secret2')
+
+    def testPostAndRead(self):
+        url = reverse('ddsjobinputfile-list')
+        response = self.client.post(url, format='json', data={
+            'job_input_file': self.job_input_file.id,
+            'project_id': '12356',
+            'file_id': '345987',
+            'dds_user_credentials': self.cred.id,
+            'destination_path': 'data.txt',
+            'index': '1',
+
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(1, len(DDSJobInputFile.objects.all()))
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual('data.txt', response.data[0]['destination_path'])
+
+
+class URLJobInputFileTestCase(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+        workflow = Workflow.objects.create(name='RnaSeq')
+        cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
+        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
+                                                               version="1",
+                                                               url=cwl_url)
+        self.my_user = self.user_login.become_normal_user()
+        self.my_job = Job.objects.create(workflow_version=self.workflow_version,
+                                       vm_project_name='test',
+                                       workflow_input_json='{}',
+                                       user=self.my_user)
+        self.job_input_file = JobInputFile.objects.create(job=self.my_job, file_type='dds_file', workflow_name='data1')
+
+    def testPostAndRead(self):
+        url = reverse('urljobinputfile-list')
+        response = self.client.post(url, format='json', data={
+            'job_input_file': self.job_input_file.id,
+            'url': 'http://stuff.com/data.txt',
+            'destination_path': 'data.txt',
+            'index': '1',
+
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(1, len(URLJobInputFile.objects.all()))
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual('http://stuff.com/data.txt', response.data[0]['url'])

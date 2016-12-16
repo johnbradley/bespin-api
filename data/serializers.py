@@ -26,9 +26,11 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
     workflow_version = WorkflowVersionSerializer(required=False)
     output_dir = JobOutputDirSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
+    state = serializers.CharField(read_only=True)
+    step = serializers.CharField(read_only=True)
     class Meta:
         model = Job
-        fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'last_updated',
+        fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
 
 

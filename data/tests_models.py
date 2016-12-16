@@ -1,5 +1,4 @@
 from django.test import TestCase
-import datetime
 from models import DDSEndpoint, DDSUserCredential
 from models import Workflow, WorkflowVersion
 from models import Job, JobInputFile, DDSJobInputFile, URLJobInputFile, JobOutputDir, JobError
@@ -119,12 +118,12 @@ class JobTests(TestCase):
         self.assertEqual(Job.JOB_STATE_NEW, job.state)
 
         # Set state to create VM
-        job.state = Job.JOB_STATE_CREATE_VM
+        job.state = Job.JOB_STATE_RUNNING
         job_created = job.created
         job_updated = job.last_updated
         job.save()
         job = Job.objects.first()
-        self.assertEqual(Job.JOB_STATE_CREATE_VM, job.state)
+        self.assertEqual(Job.JOB_STATE_RUNNING, job.state)
         # last_updated should have changed
         self.assertEqual(job_created, job.created)
         self.assertLess(job_updated, job.last_updated)
@@ -286,9 +285,9 @@ class JobErrorTests(TestCase):
     def test_basic_functionality(self):
         JobError.objects.create(job=self.job,
                                 content="Openstack ran out of floating IPs.",
-                                state=Job.JOB_STATE_CREATE_VM)
+                                job_step=Job.JOB_STEP_CREATE_VM)
         job_error = JobError.objects.first()
         self.assertEqual(self.job, job_error.job)
         self.assertEqual("Openstack ran out of floating IPs.", job_error.content)
-        self.assertEqual(Job.JOB_STATE_CREATE_VM, job_error.state)
+        self.assertEqual(Job.JOB_STEP_CREATE_VM, job_error.job_step)
         self.assertIsNotNone(job_error.created)

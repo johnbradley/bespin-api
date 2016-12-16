@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, permissions
 from util import get_user_projects, get_user_project, get_user_project_content
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable
@@ -85,7 +85,7 @@ class DDSJobInputFileViewSet(viewsets.ModelViewSet):
     serializer_class = DDSJobInputFileSerializer
 
     def get_queryset(self):
-        return DDSJobInputFile.objects.all().filter(user=self.request.user)
+        return DDSJobInputFile.objects.all().filter(job_input_file__job__user=self.request.user)
 
 
 class JobInputFileViewSet(viewsets.ModelViewSet):
@@ -95,7 +95,7 @@ class JobInputFileViewSet(viewsets.ModelViewSet):
     filter_fields = ('job',)
 
     def get_queryset(self):
-        return JobInputFile.objects.filter(job__user=self.request.user)
+        return JobInputFile.objects.all().filter(job__user=self.request.user)
 
 
 class AdminJobInputFileViewSet(viewsets.ReadOnlyModelViewSet):
