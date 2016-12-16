@@ -73,6 +73,12 @@ class JobsViewSet(viewsets.ModelViewSet):
         job.cancel()
         return Response({'status': 'ok'})
 
+    @detail_route(methods=['post'])
+    def restart(self, request, pk=None):
+        job = LandoJob(pk)
+        job.restart_job()
+        return Response({'status': 'ok'})
+
 
 class AdminJobsViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser,)

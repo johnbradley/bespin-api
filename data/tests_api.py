@@ -255,6 +255,63 @@ class JobsTestCase(APITestCase):
         self.assertEqual(Job.JOB_STATE_NEW, job.state)
         self.assertEqual(None, job.step)
 
+    @patch('data.lando.LandoJob._make_client')
+    def test_job_start(self, mock_make_client):
+        normal_user = self.user_login.become_normal_user()
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 workflow_input_json={},
+                                 user=normal_user)
+
+        url = reverse('job-list') + str(job.id) + '/start/'
+
+        # Post to /start/ for job in NEW state should work
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Post to /start/ for job in RUNNING state should fail
+        job.state = Job.JOB_STATE_RUNNING
+        job.save()
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('data.lando.LandoJob._make_client')
+    def test_job_cancel(self, mock_make_client):
+        normal_user = self.user_login.become_normal_user()
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 workflow_input_json={},
+                                 user=normal_user)
+        url = reverse('job-list') + str(job.id) + '/cancel/'
+        # Post to /cancel/ for job should work
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch('data.lando.LandoJob._make_client')
+    def test_job_restart(self, mock_make_client):
+        normal_user = self.user_login.become_normal_user()
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 workflow_input_json={},
+                                 user=normal_user)
+        url = reverse('job-list') + str(job.id) + '/restart/'
+
+        # Post to /restart/ for job in NEW state should fail (user should use /start/)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Post to /restart/ for job in ERROR state should work
+        job.state = Job.JOB_STATE_ERROR
+        job.save()
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Post to /restart/ for job in CANCEL state should work
+        job.state = Job.JOB_STATE_CANCEL
+        job.save()
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
 
 class JobInputFilesTestCase(APITestCase):
     def setUp(self):
