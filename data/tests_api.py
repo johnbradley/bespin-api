@@ -255,6 +255,26 @@ class JobsTestCase(APITestCase):
         self.assertEqual(Job.JOB_STATE_NEW, job.state)
         self.assertEqual(None, job.step)
 
+    def testAdminUserUpdatesStateAndStep(self):
+        """
+        Admin should be able to change job state and job step.
+        """
+        admin_user = self.user_login.become_admin_user()
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 workflow_input_json={},
+                                 user=admin_user)
+        url = reverse('admin_job-list') + '{}/'.format(job.id)
+        response = self.client.put(url, format='json',
+                                    data={
+                                        'state': Job.JOB_STATE_RUNNING,
+                                        'step': Job.JOB_STEP_CREATE_VM,
+                                    })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        job = Job.objects.first()
+        self.assertEqual(Job.JOB_STATE_RUNNING, job.state)
+        self.assertEqual(Job.JOB_STEP_CREATE_VM, job.step)
+
     @patch('data.lando.LandoJob._make_client')
     def test_job_start(self, mock_make_client):
         normal_user = self.user_login.become_normal_user()
@@ -408,7 +428,6 @@ class JobErrorTestCase(APITestCase):
             'job': my_job.id,
             'content': 'oops',
             'job_step': Job.JOB_STEP_CREATE_VM,
-
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(1, len(JobError.objects.all()))

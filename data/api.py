@@ -6,7 +6,7 @@ from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInpu
     DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError
 from data.serializers import WorkflowSerializer, WorkflowVersionSerializer, JobSerializer, \
     DDSEndpointSerializer, DDSUserCredSerializer, JobInputFileSerializer, DDSJobInputFileSerializer, \
-    URLJobInputFileSerializer, JobErrorSerializer
+    URLJobInputFileSerializer, JobErrorSerializer, AdminJobSerializer
 from data.serializers import AdminDDSUserCredSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
@@ -82,7 +82,7 @@ class JobsViewSet(viewsets.ModelViewSet):
 
 class AdminJobsViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
-    serializer_class = JobSerializer
+    serializer_class = AdminJobSerializer
     queryset = Job.objects.all()
 
 
