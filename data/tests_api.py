@@ -319,12 +319,14 @@ class JobsTestCase(APITestCase):
         # Post to /restart/ for job in NEW state should fail (user should use /start/)
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        mock_make_client().restart_job.assert_not_called()
 
         # Post to /restart/ for job in ERROR state should work
         job.state = Job.JOB_STATE_ERROR
         job.save()
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_make_client().restart_job.assert_called_with(str(1))
 
         # Post to /restart/ for job in CANCEL state should work
         job.state = Job.JOB_STATE_CANCEL

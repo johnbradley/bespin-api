@@ -53,7 +53,7 @@ class LandoJob(object):
         """
         job = self.get_job()
         if job.state == Job.JOB_STATE_ERROR or job.state == Job.JOB_STATE_CANCEL:
-            self._make_client().start_job(self.job_id)
+            self._make_client().restart_job(self.job_id)
         else:
             raise ValidationError("Job is not at ERROR or CANCEL state. Current state: {}.".format(job.get_state_display()))
 
