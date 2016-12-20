@@ -2,7 +2,7 @@ from django.core.urlresolvers import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth.models import User as django_user
-from mock.mock import MagicMock, patch
+from mock.mock import MagicMock, patch, Mock
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile
 from exceptions import WrappedDataServiceException
@@ -53,7 +53,7 @@ class ProjectsTestCase(APITestCase):
 
     @patch('data.api.get_user_projects')
     def testListProjects(self, mock_get_user_projects):
-        mock_get_user_projects.return_value = [{'id':'abc123','name':'ProjectA'}, {'id':'def567','name':'ProjectB'}]
+        mock_get_user_projects.return_value = [Mock(id='abc123'), Mock(id='def567')]
         url = reverse('project-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -62,7 +62,10 @@ class ProjectsTestCase(APITestCase):
     @patch('data.api.get_user_project')
     def testRetrieveProject(self, mock_get_user_project):
         project_id = 'abc123'
-        mock_get_user_project.return_value = {'id': 'abc123', 'name': 'ProjectA'}
+        mock_dds_project = Mock()
+        # name is special on instantiation, so configure()
+        mock_dds_project.configure_mock(id=project_id, name='ProjectA')
+        mock_get_user_project.return_value = mock_dds_project
         url = reverse('project-list') + project_id + '/'
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -186,8 +189,8 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(normal_user.id, response.data[0]['user_id'])
+        self.assertEqual(1, len(response.data['results']))
+        self.assertEqual(normal_user.id, response.data['results'][0]['user_id'])
 
         other_user = self.user_login.become_other_normal_user()
         response = self.client.post(url, format='json',
@@ -199,8 +202,8 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual(other_user.id, response.data[0]['user_id'])
+        self.assertEqual(1, len(response.data['results']))
+        self.assertEqual(other_user.id, response.data['results'][0]['user_id'])
 
     def testAdminSeeAllData(self):
         url = reverse('job-list')
@@ -232,9 +235,9 @@ class JobsTestCase(APITestCase):
         url = reverse('admin_job-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(2, len(response.data))
-        self.assertIn(other_user.id, [item['user_id'] for item in response.data])
-        self.assertIn(normal_user.id, [item['user_id'] for item in response.data])
+        self.assertEqual(2, len(response.data['results']))
+        self.assertIn(other_user.id, [item['user_id'] for item in response.data['results']])
+        self.assertIn(normal_user.id, [item['user_id'] for item in response.data['results']])
 
     def testStopRegularUserFromSettingStateOrStep(self):
         """
@@ -362,14 +365,14 @@ class JobInputFilesTestCase(APITestCase):
         url = reverse('jobinputfile-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data))
+        self.assertEqual(1, len(response.data['results']))
 
         # Admin endpoint shows all user's data
         self.user_login.become_admin_user()
         url = reverse('admin_jobinputfile-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(2, len(response.data))
+        self.assertEqual(2, len(response.data['results']))
 
 
 class JobErrorTestCase(APITestCase):
@@ -404,14 +407,14 @@ class JobErrorTestCase(APITestCase):
         url = reverse('joberror-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data))
+        self.assertEqual(1, len(response.data['results']))
 
         # Admin endpoint shows all user's data
         self.user_login.become_admin_user()
         url = reverse('admin_joberror-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(2, len(response.data))
+        self.assertEqual(2, len(response.data['results']))
 
     def testNormalEndpointNoWrite(self):
         self.user_login.become_normal_user()
@@ -467,8 +470,8 @@ class DDSJobInputFileTestCase(APITestCase):
         self.assertEqual(1, len(DDSJobInputFile.objects.all()))
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual('data.txt', response.data[0]['destination_path'])
+        self.assertEqual(1, len(response.data['results']))
+        self.assertEqual('data.txt', response.data['results'][0]['destination_path'])
 
 
 class URLJobInputFileTestCase(APITestCase):
@@ -499,5 +502,5 @@ class URLJobInputFileTestCase(APITestCase):
         self.assertEqual(1, len(URLJobInputFile.objects.all()))
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual('http://stuff.com/data.txt', response.data[0]['url'])
+        self.assertEqual(1, len(response.data['results']))
+        self.assertEqual('http://stuff.com/data.txt', response.data['results'][0]['url'])

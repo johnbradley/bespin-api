@@ -6,7 +6,7 @@ from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInpu
     DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError
 from data.serializers import WorkflowSerializer, WorkflowVersionSerializer, JobSerializer, \
     DDSEndpointSerializer, DDSUserCredSerializer, JobInputFileSerializer, DDSJobInputFileSerializer, \
-    URLJobInputFileSerializer, JobErrorSerializer, AdminJobSerializer
+    URLJobInputFileSerializer, JobErrorSerializer, AdminJobSerializer, DDSProjectSerializer
 from data.serializers import AdminDDSUserCredSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
@@ -15,17 +15,21 @@ from lando import LandoJob
 
 class ProjectsViewSet(viewsets.ViewSet):
     permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = DDSProjectSerializer
+    resource_name = 'projects'
 
     def list(self, request):
         try:
             projects = get_user_projects(request.user)
-            return Response(projects)
+            serializer = self.serializer_class(instance=projects, many=True)
+            return Response(serializer.data)
         except Exception as e:
             raise DataServiceUnavailable(e)
 
     def retrieve(self, request, pk=None):
-        project_info = get_user_project(request.user, pk)
-        return Response(project_info)
+        project = get_user_project(request.user, pk)
+        serializer = self.serializer_class(project)
+        return Response(serializer.data)
 
     @detail_route(methods=['get'])
     def content(self, request, pk=None):
@@ -59,7 +63,7 @@ class JobsViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     def get_queryset(self):
-        return Job.objects.all().filter(user=self.request.user)
+        return Job.objects.filter(user=self.request.user)
 
     @detail_route(methods=['post'])
     def start(self, request, pk=None):
@@ -91,7 +95,7 @@ class DDSJobInputFileViewSet(viewsets.ModelViewSet):
     serializer_class = DDSJobInputFileSerializer
 
     def get_queryset(self):
-        return DDSJobInputFile.objects.all().filter(job_input_file__job__user=self.request.user)
+        return DDSJobInputFile.objects.filter(job_input_file__job__user=self.request.user)
 
 
 class JobInputFileViewSet(viewsets.ModelViewSet):
@@ -101,7 +105,7 @@ class JobInputFileViewSet(viewsets.ModelViewSet):
     filter_fields = ('job',)
 
     def get_queryset(self):
-        return JobInputFile.objects.all().filter(job__user=self.request.user)
+        return JobInputFile.objects.filter(job__user=self.request.user)
 
 
 class AdminJobInputFileViewSet(viewsets.ReadOnlyModelViewSet):
