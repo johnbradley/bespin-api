@@ -95,7 +95,7 @@ class DDSJobInputFileViewSet(viewsets.ModelViewSet):
     serializer_class = DDSJobInputFileSerializer
 
     def get_queryset(self):
-        return DDSJobInputFile.objects.all().filter(job_input_file__job__user=self.request.user)
+        return DDSJobInputFile.objects.filter(job_input_file__job__user=self.request.user)
 
 
 class JobInputFileViewSet(viewsets.ModelViewSet):
@@ -105,7 +105,7 @@ class JobInputFileViewSet(viewsets.ModelViewSet):
     filter_fields = ('job',)
 
     def get_queryset(self):
-        return JobInputFile.objects.all().filter(job__user=self.request.user)
+        return JobInputFile.objects.filter(job__user=self.request.user)
 
 
 class AdminJobInputFileViewSet(viewsets.ReadOnlyModelViewSet):
