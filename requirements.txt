@@ -6,7 +6,7 @@ djangorestframework-jsonapi==2.1.1
 DukeDSClient==0.2.14
 funcsigs==1.0.2
 inflection==0.3.1
-lando-messaging==0.1
+-e git+https://github.com/Duke-GCB/lando-messaging.git@06dd93b1cde8083e4a11c96f3f3e77658932c674#egg=lando_messaging-master
 mock==2.0.0
 pbr==1.10.0
 pika==0.10.0
