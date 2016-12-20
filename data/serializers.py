@@ -103,6 +103,16 @@ class AdminDDSEndpointSerializer(serializers.HyperlinkedModelSerializer):
 
 class AdminDDSUserCredSerializer(serializers.ModelSerializer):
     endpoint = AdminDDSEndpointSerializer()
+
     class Meta:
         model = DDSUserCredential
         fields = ('id', 'user', 'token', 'endpoint')
+
+
+class DDSProjectSerializer(serializers.Serializer):
+    """
+    Serializer for dds_resources.DDSProject
+    """
+    pk = serializers.UUIDField()
+    name = serializers.CharField()
+    description = serializers.CharField()
