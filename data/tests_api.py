@@ -2,7 +2,7 @@ from django.core.urlresolvers import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth.models import User as django_user
-from mock.mock import MagicMock, patch
+from mock.mock import MagicMock, patch, Mock
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile
 from exceptions import WrappedDataServiceException
@@ -470,8 +470,8 @@ class DDSJobInputFileTestCase(APITestCase):
         self.assertEqual(1, len(DDSJobInputFile.objects.all()))
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual('data.txt', response.data[0]['destination_path'])
+        self.assertEqual(1, len(response.data['results']))
+        self.assertEqual('data.txt', response.data['results'][0]['destination_path'])
 
 
 class URLJobInputFileTestCase(APITestCase):
@@ -502,5 +502,5 @@ class URLJobInputFileTestCase(APITestCase):
         self.assertEqual(1, len(URLJobInputFile.objects.all()))
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data))
-        self.assertEqual('http://stuff.com/data.txt', response.data[0]['url'])
+        self.assertEqual(1, len(response.data['results']))
+        self.assertEqual('http://stuff.com/data.txt', response.data['results'][0]['url'])
