@@ -63,7 +63,7 @@ class JobsViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     def get_queryset(self):
-        return Job.objects.all().filter(user=self.request.user)
+        return Job.objects.filter(user=self.request.user)
 
     @detail_route(methods=['post'])
     def start(self, request, pk=None):
