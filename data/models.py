@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.conf import settings
-from django.core.exceptions import ValidationError
 
 
 class DDSEndpoint(models.Model):
@@ -19,8 +18,11 @@ class DDSUserCredential(models.Model):
     DDS Credentials for bespin users
     """
     endpoint = models.ForeignKey(DDSEndpoint, on_delete=models.CASCADE, null=False)
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=False)
     token = models.CharField(max_length=32, blank=False, unique=True)
+
+    class Meta:
+        unique_together = ('endpoint', 'user',)
 
 
 class Workflow(models.Model):
@@ -38,10 +40,12 @@ class WorkflowVersion(models.Model):
     Specific version of a Workflow.
     """
     workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE, related_name='versions')
-    object_name = models.CharField(max_length=255, null=True)
-    created = models.DateTimeField(auto_now_add=True, blank=False)
-    version = models.CharField(max_length=32, blank=False)
-    url = models.URLField()
+    object_name = models.CharField(max_length=255, null=True, default='#main',
+                                   help_text="Name of the object in a packed workflow to run. "
+                                             "Typically set to '#main'.")
+    created = models.DateTimeField(auto_now_add=True, blank=False, null=False)
+    version = models.CharField(max_length=32, blank=False, null=False)
+    url = models.URLField(null=False, help_text="URL to packed CWL workflow file.")
 
     def __unicode__(self):
         return '{} version: {} created: {}'.format(self.workflow.name, self.version, self.created)
@@ -52,36 +56,49 @@ class Job(models.Model):
     Instance of a workflow that is in some state of progress.
     """
     JOB_STATE_NEW = 'N'
-    JOB_STATE_CREATE_VM = 'V'
-    JOB_STATE_STAGING = 'S'
     JOB_STATE_RUNNING = 'R'
-    JOB_STATE_STORE_OUTPUT = 'O'
-    JOB_STATE_TERMINATE_VM = 'T'
     JOB_STATE_FINISHED = 'F'
     JOB_STATE_ERROR = 'E'
     JOB_STATE_CANCEL = 'C'
     JOB_STATES = (
         (JOB_STATE_NEW, 'New'),
-        (JOB_STATE_CREATE_VM, 'Create VM'),
-        (JOB_STATE_STAGING, 'Staging In'),
         (JOB_STATE_RUNNING, 'Running'),
-        (JOB_STATE_STORE_OUTPUT, 'Store Job Output'),
-        (JOB_STATE_TERMINATE_VM, 'Terminate VM'),
         (JOB_STATE_FINISHED, 'Finished'),
         (JOB_STATE_ERROR, 'Error'),
         (JOB_STATE_CANCEL, 'Canceled')
     )
+
+    JOB_STEP_CREATE_VM = 'V'
+    JOB_STEP_STAGING = 'S'
+    JOB_STEP_RUNNING = 'R'
+    JOB_STEP_STORE_OUTPUT = 'O'
+    JOB_STEP_TERMINATE_VM = 'T'
+    JOB_STEPS = (
+        (JOB_STEP_CREATE_VM, 'Create VM'),
+        (JOB_STEP_STAGING, 'Staging In'),
+        (JOB_STEP_RUNNING, 'Running Workflow'),
+        (JOB_STEP_STORE_OUTPUT, 'Store Job Output'),
+        (JOB_STEP_TERMINATE_VM, 'Terminate VM'),
+    )
+
     workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.SET_NULL, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
     created = models.DateTimeField(auto_now_add=True, blank=False)
-    state = models.CharField(max_length=1, choices=JOB_STATES, default='N')
+    state = models.CharField(max_length=1, choices=JOB_STATES, default='N',
+                             help_text="High level state of the project")
+    step = models.CharField(max_length=1, choices=JOB_STEPS, null=True,
+                            help_text="Job step (progress within Running state)")
     last_updated = models.DateTimeField(auto_now=True, blank=False)
-    vm_flavor = models.CharField(max_length=255, blank=False, default='m1.small')
-    vm_instance_name = models.CharField(max_length=255, blank=True, null=True)
-    workflow_input_json = models.TextField(null=True)
+    vm_flavor = models.CharField(max_length=255, blank=False, default='m1.small',
+                                 help_text="Determines CPUs and RAM VM allocation used to run this job.")
+    vm_instance_name = models.CharField(max_length=255, blank=True, null=True,
+                                        help_text="Name of the vm this job is/was running on.")
+    vm_project_name = models.CharField(max_length=255, blank=False, null=False,
+                                       help_text="Name of the cloud project where vm will be created.")
+    workflow_input_json = models.TextField(null=True,
+                                           help_text="CWL input json for use with the workflow.")
 
     def __unicode__(self):
-
         workflow_name = ''
         if self.workflow_version:
             workflow_name = self.workflow_version.workflow
@@ -158,7 +175,7 @@ class JobError(models.Model):
     """
     job = models.ForeignKey(Job, on_delete=models.CASCADE, null=False, related_name='job_errors')
     content = models.TextField(null=False)
-    state = models.CharField(max_length=1, choices=Job.JOB_STATES)
+    job_step = models.CharField(max_length=1, choices=Job.JOB_STEPS)
     created = models.DateTimeField(auto_now_add=True, blank=False)
 
 

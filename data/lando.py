@@ -46,5 +46,16 @@ class LandoJob(object):
         job = self.get_job()  # make sure the job exists
         self._make_client().cancel_job(self.job_id)
 
+    def restart_job(self):
+        """
+        Place message in lando's queue to restart a job that had an error or was canceled.
+        The job must be at the ERROR or CANCEL state or this will raise ValidationError.
+        """
+        job = self.get_job()
+        if job.state == Job.JOB_STATE_ERROR or job.state == Job.JOB_STATE_CANCEL:
+            self._make_client().restart_job(self.job_id)
+        else:
+            raise ValidationError("Job is not at ERROR or CANCEL state. Current state: {}.".format(job.get_state_display()))
+
     def get_job(self):
         return Job.objects.get(pk=self.job_id)

@@ -7,6 +7,7 @@ class WorkflowSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Workflow
         fields = ('id', 'name', 'versions')
+        read_only_fields = ('versions',)
 
 
 class WorkflowVersionSerializer(serializers.HyperlinkedModelSerializer):
@@ -21,23 +22,35 @@ class JobOutputDirSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class JobSerializer(serializers.HyperlinkedModelSerializer):
-    workflow_version = WorkflowVersionSerializer(read_only=True)
-    output_dir = JobOutputDirSerializer(read_only=True)
+class JobSerializer(serializers.ModelSerializer):
+    output_dir = JobOutputDirSerializer(required=False, read_only=True)
+    vm_project_name = serializers.CharField(required=False)
+    state = serializers.CharField(read_only=True)
+    step = serializers.CharField(read_only=True)
     class Meta:
         model = Job
-        fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'last_updated',
-                  'vm_flavor', 'vm_instance_name', 'workflow_input_json', 'output_dir')
+        fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'step', 'last_updated',
+                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
+
+
+class AdminJobSerializer(serializers.ModelSerializer):
+    workflow_version = WorkflowVersionSerializer(required=False)
+    output_dir = JobOutputDirSerializer(required=False, read_only=True)
+    vm_project_name = serializers.CharField(required=False)
+    user_id = serializers.IntegerField(required=False)
+    class Meta:
+        model = Job
+        fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'step', 'last_updated',
+                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
 
 
 class DDSEndpointSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = DDSEndpoint
-        fields = ('id','name', 'agent_key', 'api_root')
+        fields = ('id', 'name', 'api_root')
 
 
 class DDSUserCredSerializer(serializers.ModelSerializer):
-    endpoint = DDSEndpointSerializer(read_only=True)
     class Meta:
         model = DDSUserCredential
         fields = ('id', 'user', 'token', 'endpoint')
@@ -80,3 +93,16 @@ class JobErrorSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobError
         fields = '__all__'
+
+
+class AdminDDSEndpointSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = DDSEndpoint
+        fields = ('id','name', 'agent_key', 'api_root')
+
+
+class AdminDDSUserCredSerializer(serializers.ModelSerializer):
+    endpoint = AdminDDSEndpointSerializer()
+    class Meta:
+        model = DDSUserCredential
+        fields = ('id', 'user', 'token', 'endpoint')
