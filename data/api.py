@@ -53,15 +53,6 @@ class JobsViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobSerializer
 
-    def perform_create(self, serializer):
-        self.save_with_user(serializer)
-
-    def perform_update(self, serializer):
-        self.save_with_user(serializer)
-
-    def save_with_user(self, serializer):
-        serializer.save(user=self.request.user)
-
     def get_queryset(self):
         return Job.objects.filter(user=self.request.user)
 

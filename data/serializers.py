@@ -27,9 +27,11 @@ class JobSerializer(serializers.ModelSerializer):
     vm_project_name = serializers.CharField(required=False)
     state = serializers.CharField(read_only=True)
     step = serializers.CharField(read_only=True)
+    user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
+
     class Meta:
         model = Job
-        fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'step', 'last_updated',
+        fields = ('id', 'workflow_version', 'user', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
 
 

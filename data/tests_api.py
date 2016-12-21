@@ -190,7 +190,7 @@ class JobsTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data['results']))
-        self.assertEqual(normal_user.id, response.data['results'][0]['user_id'])
+        self.assertEqual(normal_user.id, response.data['results'][0]['user'])
 
         other_user = self.user_login.become_other_normal_user()
         response = self.client.post(url, format='json',
@@ -203,7 +203,7 @@ class JobsTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data['results']))
-        self.assertEqual(other_user.id, response.data['results'][0]['user_id'])
+        self.assertEqual(other_user.id, response.data['results'][0]['user'])
 
     def testAdminSeeAllData(self):
         url = reverse('job-list')
