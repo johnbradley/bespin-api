@@ -1,6 +1,13 @@
+#!/usr/bin/env bash
+# Tests out the end user API.
+# Creates a job with some input files.
+# Assumes you are already running the webserver.
+# You must setup a workflow version in the admin interface (http://127.0.0.1:8000/admin/ ) before running this script.
+# You should fill in the TOKEN with a auth token created through the admin interface.
+
 set -e
 # bespin-api token
-TOKEN="FILL_THIS_IN"
+TOKEN='FILL_ME_IN'
 # bespin-api url
 BASE_URL=http://127.0.0.1:8000/api
 
