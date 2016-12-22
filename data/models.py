@@ -45,7 +45,7 @@ class WorkflowVersion(models.Model):
                                    help_text="Name of the object in a packed workflow to run. "
                                              "Typically set to '#main'.")
     created = models.DateTimeField(auto_now_add=True, blank=False, null=False)
-    version = models.CharField(max_length=32, blank=False, null=False)
+    version = models.IntegerField(null=False)
     url = models.URLField(null=False, help_text="URL to packed CWL workflow file.")
 
     def __unicode__(self):

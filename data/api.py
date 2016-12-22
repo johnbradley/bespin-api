@@ -167,6 +167,6 @@ class AdminJobErrorViewSet(viewsets.ModelViewSet):
 
 
 class JobOutputDirViewSet(viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAdminUser,)
+    permission_classes = (permissions.IsAuthenticated,)
     queryset = JobOutputDir.objects.all()
     serializer_class = JobOutputDirSerializer

@@ -13,7 +13,7 @@ router.register(r'url-job-input-files', api.URLJobInputFileViewSet, 'urljobinput
 router.register(r'dds-endpoints', api.DDSEndpointViewSet, 'ddsendpoint')
 router.register(r'dds-user-credentials', api.DDSUserCredViewSet, 'ddsusercredential')
 router.register(r'job-errors', api.JobErrorViewSet, 'joberror')
-router.register(r'job-output-dirs', api.JobOutputDirViewSet, 'job-output-dir')
+router.register(r'job-output-dirs', api.JobOutputDirViewSet, 'joboutputdir')
 
 
 # Routes that require admin user

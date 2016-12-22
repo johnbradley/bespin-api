@@ -70,7 +70,7 @@ class WorkflowVersionTests(TestCase):
         workflow_version = WorkflowVersion.objects.first()
         self.assertEqual(self.workflow, workflow_version.workflow)
         self.assertEqual('#main', workflow_version.object_name)
-        self.assertEqual('1', workflow_version.version)
+        self.assertEqual(1, workflow_version.version)
         self.assertEqual(CWL_URL, workflow_version.url)
         self.assertIsNotNone(workflow_version.created)
 
@@ -83,7 +83,7 @@ class WorkflowVersionTests(TestCase):
 
     def test_create_with_description(self):
         desc = """This is a detailed description of the job."""
-        WorkflowVersion.objects.create(workflow=self.workflow, description=desc)
+        WorkflowVersion.objects.create(workflow=self.workflow, description=desc, version=1)
         wv = WorkflowVersion.objects.first()
         self.assertEqual(desc, wv.description)
 
