@@ -51,11 +51,6 @@ class DDSUserCredentialTests(TestCase):
         DDSUserCredential.objects.create(user=self.user, token='abc124', endpoint=self.endpoint2)
 
 
-class JobTests(TestCase):
-    def test_basic_functionality(self):
-        Job.objects.create()
-
-
 class WorkflowTests(TestCase):
     def test_basic_functionality(self):
         Workflow.objects.create(name='RnaSeq')
@@ -75,7 +70,7 @@ class WorkflowVersionTests(TestCase):
         workflow_version = WorkflowVersion.objects.first()
         self.assertEqual(self.workflow, workflow_version.workflow)
         self.assertEqual('#main', workflow_version.object_name)
-        self.assertEqual('1', workflow_version.version)
+        self.assertEqual(1, workflow_version.version)
         self.assertEqual(CWL_URL, workflow_version.url)
         self.assertIsNotNone(workflow_version.created)
 
@@ -85,6 +80,12 @@ class WorkflowVersionTests(TestCase):
                                        url=CWL_URL)
         workflow_version = WorkflowVersion.objects.first()
         self.assertEqual('#main', workflow_version.object_name)
+
+    def test_create_with_description(self):
+        desc = """This is a detailed description of the job."""
+        WorkflowVersion.objects.create(workflow=self.workflow, description=desc, version=1)
+        wv = WorkflowVersion.objects.first()
+        self.assertEqual(desc, wv.description)
 
 
 class JobTests(TestCase):
@@ -110,6 +111,11 @@ class JobTests(TestCase):
         self.assertIsNotNone(job.vm_flavor)
         self.assertEqual(None, job.vm_instance_name)
         self.assertEqual('jpb67', job.vm_project_name)
+
+    def test_create_with_name(self):
+        Job.objects.create(name='Rna Seq for B-Lab', user=self.user)
+        job = Job.objects.first()
+        self.assertEqual('Rna Seq for B-Lab', job.name)
 
     def test_state_changes(self):
         # Create job which should start in new state

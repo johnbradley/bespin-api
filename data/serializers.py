@@ -13,10 +13,15 @@ class WorkflowSerializer(serializers.ModelSerializer):
 class WorkflowVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowVersion
-        fields = ('id', 'workflow', 'object_name', 'created', 'url', 'version')
+        fields = ('id', 'workflow', 'description', 'object_name', 'created', 'url', 'version')
 
 
 class JobOutputDirSerializer(serializers.ModelSerializer):
+    def validate(self, data):
+        # Users can only use their own credentials
+        if data['dds_user_credentials'].user.id != data['job'].user.id:
+            raise serializers.ValidationError("You cannot use another user's credentials.")
+        return data
     class Meta:
         model = JobOutputDir
         fields = '__all__'
@@ -27,9 +32,11 @@ class JobSerializer(serializers.ModelSerializer):
     vm_project_name = serializers.CharField(required=False)
     state = serializers.CharField(read_only=True)
     step = serializers.CharField(read_only=True)
+    user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
+
     class Meta:
         model = Job
-        fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'step', 'last_updated',
+        fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
 
 
@@ -51,12 +58,19 @@ class DDSEndpointSerializer(serializers.ModelSerializer):
 
 
 class DDSUserCredSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
     class Meta:
         model = DDSUserCredential
         fields = ('id', 'user', 'token', 'endpoint')
 
 
 class DDSJobInputFileSerializer(serializers.ModelSerializer):
+    def validate(self, data):
+        # Users can only use their own credentials
+        if data['dds_user_credentials'].user.id != data['job_input_file'].job.user.id:
+            raise serializers.ValidationError("You cannot use another user's credentials.")
+        return data
+
     class Meta:
         model = DDSJobInputFile
         fields = '__all__'
