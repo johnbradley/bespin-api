@@ -15,7 +15,6 @@ router.register(r'dds-user-credentials', api.DDSUserCredViewSet, 'ddsusercredent
 router.register(r'job-errors', api.JobErrorViewSet, 'joberror')
 router.register(r'job-output-dirs', api.JobOutputDirViewSet, 'joboutputdir')
 
-
 # Routes that require admin user
 router.register(r'admin/jobs', api.AdminJobsViewSet, 'admin_job')
 router.register(r'admin/job-input-files', api.AdminJobInputFileViewSet, 'admin_jobinputfile')
@@ -25,3 +24,4 @@ router.register(r'admin/job-errors', api.AdminJobErrorViewSet, 'admin_joberror')
 urlpatterns = [
     url(r'^', include(router.urls)),
 ]
+
