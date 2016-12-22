@@ -182,6 +182,7 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         response = self.client.post(url, format='json',
                                     data={
+                                        'name': 'my job',
                                         'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
                                         'workflow_input_json': '{}',
@@ -195,6 +196,7 @@ class JobsTestCase(APITestCase):
         other_user = self.user_login.become_other_normal_user()
         response = self.client.post(url, format='json',
                             data={
+                                'name': 'my job2',
                                 'workflow_version_id': self.workflow_version.id,
                                 'vm_project_name': 'jpb88',
                                 'workflow_input_json': '{}',
@@ -210,6 +212,7 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         response = self.client.post(url, format='json',
                                     data={
+                                        'name': 'my job',
                                         'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
                                         'workflow_input_json': '{}',
@@ -224,6 +227,7 @@ class JobsTestCase(APITestCase):
         url = reverse('job-list')
         response = self.client.post(url, format='json',
                             data={
+                                'name': 'my job2',
                                 'workflow_version_id': self.workflow_version.id,
                                 'vm_project_name': 'jpb88',
                                 'workflow_input_json': '{}',
@@ -247,6 +251,7 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         response = self.client.post(url, format='json',
                                     data={
+                                        'name': 'my job',
                                         'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
                                         'workflow_input_json': '{}',
