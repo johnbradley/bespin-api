@@ -17,6 +17,11 @@ class WorkflowVersionSerializer(serializers.ModelSerializer):
 
 
 class JobOutputDirSerializer(serializers.ModelSerializer):
+    def validate(self, data):
+        # Users can only use their own credentials
+        if data['dds_user_credentials'].user.id != data['job'].user.id:
+            raise serializers.ValidationError("You cannot use another user's credentials.")
+        return data
     class Meta:
         model = JobOutputDir
         fields = '__all__'
@@ -60,6 +65,12 @@ class DDSUserCredSerializer(serializers.ModelSerializer):
 
 
 class DDSJobInputFileSerializer(serializers.ModelSerializer):
+    def validate(self, data):
+        # Users can only use their own credentials
+        if data['dds_user_credentials'].user.id != data['job_input_file'].job.user.id:
+            raise serializers.ValidationError("You cannot use another user's credentials.")
+        return data
+
     class Meta:
         model = DDSJobInputFile
         fields = '__all__'
