@@ -40,6 +40,7 @@ class WorkflowVersion(models.Model):
     Specific version of a Workflow.
     """
     workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE, related_name='versions')
+    description = models.TextField()
     object_name = models.CharField(max_length=255, null=True, default='#main',
                                    help_text="Name of the object in a packed workflow to run. "
                                              "Typically set to '#main'.")
@@ -83,6 +84,9 @@ class Job(models.Model):
 
     workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.SET_NULL, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
+    name = models.CharField(max_length=255, blank=False, null=False,
+                                        help_text="User specified name for this job.")
+
     created = models.DateTimeField(auto_now_add=True, blank=False)
     state = models.CharField(max_length=1, choices=JOB_STATES, default='N',
                              help_text="High level state of the project")

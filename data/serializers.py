@@ -13,7 +13,7 @@ class WorkflowSerializer(serializers.ModelSerializer):
 class WorkflowVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowVersion
-        fields = ('id', 'workflow', 'object_name', 'created', 'url', 'version')
+        fields = ('id', 'workflow', 'description', 'object_name', 'created', 'url', 'version')
 
 
 class JobOutputDirSerializer(serializers.ModelSerializer):
@@ -31,7 +31,7 @@ class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Job
-        fields = ('id', 'workflow_version', 'user', 'created', 'state', 'step', 'last_updated',
+        fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
 
 
@@ -53,6 +53,7 @@ class DDSEndpointSerializer(serializers.ModelSerializer):
 
 
 class DDSUserCredSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
     class Meta:
         model = DDSUserCredential
         fields = ('id', 'user', 'token', 'endpoint')

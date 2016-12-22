@@ -3,11 +3,11 @@ from util import get_user_projects, get_user_project, get_user_project_content
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
-    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError
+    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir
 from data.serializers import WorkflowSerializer, WorkflowVersionSerializer, JobSerializer, \
     DDSEndpointSerializer, DDSUserCredSerializer, JobInputFileSerializer, DDSJobInputFileSerializer, \
     URLJobInputFileSerializer, JobErrorSerializer, AdminJobSerializer, DDSProjectSerializer
-from data.serializers import AdminDDSUserCredSerializer
+from data.serializers import AdminDDSUserCredSerializer, JobOutputDirSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
 from lando import LandoJob
@@ -164,3 +164,9 @@ class AdminJobErrorViewSet(viewsets.ModelViewSet):
     serializer_class = JobErrorSerializer
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('job',)
+
+
+class JobOutputDirViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAdminUser,)
+    queryset = JobOutputDir.objects.all()
+    serializer_class = JobOutputDirSerializer
