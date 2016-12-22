@@ -6,6 +6,7 @@ from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInpu
 class WorkflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workflow
+        resource_name = 'workflows'
         fields = ('id', 'name', 'versions')
         read_only_fields = ('versions',)
 
@@ -13,6 +14,7 @@ class WorkflowSerializer(serializers.ModelSerializer):
 class WorkflowVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowVersion
+        resource_name = 'workflow-versions'
         fields = ('id', 'workflow', 'description', 'object_name', 'created', 'url', 'version')
 
 
@@ -36,6 +38,7 @@ class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Job
+        resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
 
