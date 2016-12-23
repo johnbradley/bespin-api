@@ -13,17 +13,17 @@ class JSONRootObjectRenderer(JSONRenderer):
         response_data = {}
 
         #determine the resource name for this request - default to results if not defined
-        resource = getattr(renderer_context.get('view').get_serializer().Meta, 'resource_name', 'results')
-
+        view = renderer_context.get('view')
+        if hasattr(view, 'get_serializer') and hasattr(view.get_serializer().Meta, 'resource_name'):
+            resource_name = view.get_serializer().Meta.resource_name
+            response_data[resource_name] = data
+        else:
+            response_data = data
         #check if the results have been paginated
         # if data.get('paginated_results'):
         #     #add the resource key and copy the results
         #     response_data['meta'] = data.get('meta')
         #     response_data[resource] = data.get('paginated_results')
         # else:
-        response_data[resource] = data
-
-        #call super to render the response
         response = super(JSONRootObjectRenderer, self).render(response_data, accepted_media_type, renderer_context)
-
         return response
