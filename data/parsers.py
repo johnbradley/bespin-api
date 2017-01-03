@@ -1,13 +1,37 @@
-from rest_framework.parsers import JSONParser
-
+from rest_framework.parsers import JSONParser, ParseError
+from renderers import JSONRootObjectRenderer
+import six
 
 class JSONRootObjectParser(JSONParser):
+    """
+    A parser that expects incoming content to be wrapped in a root object for compatibility with
+    Ember's DS.RESTAdapter. The root key should match a resource_name on a serializer's Meta class
+
+    Example:
+
+    {
+        "users": {
+            "name": "Ben Franklin",
+            "email": "bfranklin@usa.gov"
+        }
+    }
+
+    """
+    media_type = 'application/vnd.rootobject+json'
+    renderer_class = JSONRootObjectRenderer
+
     def parse(self, stream, media_type=None, parser_context=None):
         parsed = super(JSONRootObjectParser, self).parse(stream, media_type, parser_context)
-        # Quick hack - we just assume if there's one key in the dictionary that the value is the payload
-        # Should protect against this a little better. Maybe set parser to a different content-type?
-        if len(parsed) == 1:
-            return parsed.get(parsed.keys()[0])
-        else:
-            return parsed
+        view = parser_context.get('view')
+        try:
+            # Check that the serializer for the given route matches the resource name in the parsed data
+            resource_name = view.get_serializer().Meta.resource_name
+        except AttributeError as exc:
+            # When our serializer object has no resource name we don't know what to expect.
+            raise ParseError('JSON parse error - %s' % six.text_type(exc))
+        try:
+            return parsed[resource_name]
+        except KeyError as exc:
+            # When our resource_name is defined but not found in the data, we should not try to extract it
+            raise ParseError('JSON parse error - %s' % six.text_type(exc))
 

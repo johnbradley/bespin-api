@@ -140,10 +140,12 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_RENDERER_CLASSES': (
-        'data.renderers.JSONRootObjectRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
+        'rest_framework.renderers.JSONRenderer',
+        'data.renderers.JSONRootObjectRenderer',
     ),
     'DEFAULT_PARSER_CLASSES': (
+        'rest_framework.parsers.JSONParser',
         'data.parsers.JSONRootObjectParser',
-    )
+    ),
 }
