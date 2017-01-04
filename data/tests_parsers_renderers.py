@@ -43,6 +43,9 @@ class JSONRootObjectRendererTestCase(ParserRendererTestCase):
         rendered = self._render()
         self.assertEqual(json.loads(rendered), self.data)
 
+    def test_media_type(self):
+        self.assertEqual(self.renderer.media_type, 'application/vnd.rootobject+json')
+
 
 class JSONRootObjectParserTestCase(ParserRendererTestCase):
 
@@ -71,3 +74,6 @@ class JSONRootObjectParserTestCase(ParserRendererTestCase):
         self.assertTrue(hasattr(self.mock_serializer.Meta, 'resource_name'))
         with self.assertRaises(ParseError):
             self._parse()
+
+    def test_media_type(self):
+        self.assertEqual(self.parser.media_type, 'application/vnd.rootobject+json')
