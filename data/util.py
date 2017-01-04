@@ -7,12 +7,11 @@ from ddsc.config import Config
 
 class DDSProject(object):
     """
-    A simple object to represent a DDSProject, including a pk field
-    for easier serialization with JSON API
+    A simple object to represent a DDSProject
     """
 
     def __init__(self, project_dict):
-        self.pk = project_dict.get('id')
+        self.id = project_dict.get('id')
         self.name = project_dict.get('name')
         self.description = project_dict.get('description')
 

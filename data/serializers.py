@@ -140,7 +140,7 @@ class DDSProjectSerializer(serializers.Serializer):
     """
     Serializer for dds_resources.DDSProject
     """
-    pk = serializers.UUIDField()
+    id = serializers.UUIDField()
     name = serializers.CharField()
     description = serializers.CharField()
 

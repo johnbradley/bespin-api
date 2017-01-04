@@ -35,6 +35,9 @@ class ProjectsViewSet(viewsets.ViewSet):
         search_str = request.GET.get('search', '')
         return Response(get_user_project_content(request.user, pk, search_str))
 
+    def get_serializer(self):
+        return self.serializer_class()
+
 
 class WorkflowsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
