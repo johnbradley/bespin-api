@@ -6,6 +6,7 @@ from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInpu
 class WorkflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workflow
+        resource_name = 'workflows'
         fields = ('id', 'name', 'versions')
         read_only_fields = ('versions',)
 
@@ -13,6 +14,7 @@ class WorkflowSerializer(serializers.ModelSerializer):
 class WorkflowVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowVersion
+        resource_name = 'workflow-versions'
         fields = ('id', 'workflow', 'description', 'object_name', 'created', 'url', 'version')
 
 
@@ -24,6 +26,7 @@ class JobOutputDirSerializer(serializers.ModelSerializer):
         return data
     class Meta:
         model = JobOutputDir
+        resource_name = 'job-output-dirs'
         fields = '__all__'
 
 
@@ -36,6 +39,7 @@ class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Job
+        resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
 
@@ -47,6 +51,7 @@ class AdminJobSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(required=False)
     class Meta:
         model = Job
+        resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
 
@@ -54,6 +59,7 @@ class AdminJobSerializer(serializers.ModelSerializer):
 class DDSEndpointSerializer(serializers.ModelSerializer):
     class Meta:
         model = DDSEndpoint
+        resource_name = 'dds-endpoints'
         fields = ('id', 'name', 'api_root')
 
 
@@ -61,6 +67,7 @@ class DDSUserCredSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
     class Meta:
         model = DDSUserCredential
+        resource_name = 'dds-user-credentials'
         fields = ('id', 'user', 'token', 'endpoint')
 
 
@@ -73,12 +80,14 @@ class DDSJobInputFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DDSJobInputFile
+        resource_name = 'dds-job-input-files'
         fields = '__all__'
 
 
 class URLJobInputFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = URLJobInputFile
+        resource_name = 'url-job-input-files'
         fields = '__all__'
 
 
@@ -100,18 +109,21 @@ class JobInputFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JobInputFile
+        resource_name = 'job-input-files'
         fields = ('id', 'job', 'file_type', 'workflow_name', 'dds_files', 'url_files')
 
 
 class JobErrorSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobError
+        resource_name = 'job-errors'
         fields = '__all__'
 
 
 class AdminDDSEndpointSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = DDSEndpoint
+        resource_name = 'dds-endpoints'
         fields = ('id','name', 'agent_key', 'api_root')
 
 
@@ -120,6 +132,7 @@ class AdminDDSUserCredSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DDSUserCredential
+        resource_name = 'dds-user-credentials'
         fields = ('id', 'user', 'token', 'endpoint')
 
 
@@ -127,6 +140,9 @@ class DDSProjectSerializer(serializers.Serializer):
     """
     Serializer for dds_resources.DDSProject
     """
-    pk = serializers.UUIDField()
+    id = serializers.UUIDField()
     name = serializers.CharField()
     description = serializers.CharField()
+
+    class Meta:
+        resource_name = 'projects'

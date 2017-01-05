@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions
 from util import get_user_projects, get_user_project, get_user_project_content
 from rest_framework.response import Response
-from exceptions import DataServiceUnavailable
+from exceptions import DataServiceUnavailable, WrappedDataServiceException
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
     DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir
 from data.serializers import WorkflowSerializer, WorkflowVersionSerializer, JobSerializer, \
@@ -13,23 +13,28 @@ from rest_framework.decorators import detail_route
 from lando import LandoJob
 
 
-class ProjectsViewSet(viewsets.ViewSet):
+class ProjectsViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    This class interfaces with DukeDS API to provide project listing and details.
+    Though it is not backed by django models, the ReadOnlyModelViewSet base class
+    still works well
+    """
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = DDSProjectSerializer
-    resource_name = 'projects'
 
-    def list(self, request):
+    def _ds_operation(self, func, *args):
         try:
-            projects = get_user_projects(request.user)
-            serializer = self.serializer_class(instance=projects, many=True)
-            return Response(serializer.data)
+            return func(*args)
+        except WrappedDataServiceException:
+            raise # passes along status code, e.g. 404
         except Exception as e:
             raise DataServiceUnavailable(e)
 
-    def retrieve(self, request, pk=None):
-        project = get_user_project(request.user, pk)
-        serializer = self.serializer_class(project)
-        return Response(serializer.data)
+    def get_queryset(self):
+        return self._ds_operation(get_user_projects, self.request.user)
+
+    def get_object(self):
+        return self._ds_operation(get_user_project, self.request.user, self.kwargs.get('pk'))
 
     @detail_route(methods=['get'])
     def content(self, request, pk=None):

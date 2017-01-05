@@ -148,8 +148,8 @@ class DDSUserCredentialTestCase(APITestCase):
         url = reverse('ddsusercredential-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data['results']))
-        self.assertEqual('secret1', response.data['results'][0]['token'])
+        self.assertEqual(1, len(response.data))
+        self.assertEqual('secret1', response.data[0]['token'])
 
     def testUserCanCreate(self):
         user = self.user_login.become_normal_user()
@@ -228,9 +228,9 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data['results']))
-        self.assertEqual(normal_user.id, response.data['results'][0]['user'])
-        self.assertEqual('my job', response.data['results'][0]['name'])
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(normal_user.id, response.data[0]['user'])
+        self.assertEqual('my job', response.data[0]['name'])
 
         other_user = self.user_login.become_other_normal_user()
         response = self.client.post(url, format='json',
@@ -243,8 +243,8 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data['results']))
-        self.assertEqual(other_user.id, response.data['results'][0]['user'])
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(other_user.id, response.data[0]['user'])
 
     def testAdminSeeAllData(self):
         url = reverse('job-list')
@@ -278,9 +278,9 @@ class JobsTestCase(APITestCase):
         url = reverse('admin_job-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(2, len(response.data['results']))
-        self.assertIn(other_user.id, [item['user_id'] for item in response.data['results']])
-        self.assertIn(normal_user.id, [item['user_id'] for item in response.data['results']])
+        self.assertEqual(2, len(response.data))
+        self.assertIn(other_user.id, [item['user_id'] for item in response.data])
+        self.assertIn(normal_user.id, [item['user_id'] for item in response.data])
 
     def testStopRegularUserFromSettingStateOrStep(self):
         """
@@ -423,14 +423,14 @@ class JobInputFilesTestCase(APITestCase):
         url = reverse('jobinputfile-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data['results']))
+        self.assertEqual(1, len(response.data))
 
         # Admin endpoint shows all user's data
         self.user_login.become_admin_user()
         url = reverse('admin_jobinputfile-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(2, len(response.data['results']))
+        self.assertEqual(2, len(response.data))
 
 
 class JobErrorTestCase(APITestCase):
@@ -465,14 +465,14 @@ class JobErrorTestCase(APITestCase):
         url = reverse('joberror-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data['results']))
+        self.assertEqual(1, len(response.data))
 
         # Admin endpoint shows all user's data
         self.user_login.become_admin_user()
         url = reverse('admin_joberror-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(2, len(response.data['results']))
+        self.assertEqual(2, len(response.data))
 
     def testNormalEndpointNoWrite(self):
         self.user_login.become_normal_user()
@@ -530,8 +530,8 @@ class DDSJobInputFileTestCase(APITestCase):
         self.assertEqual(1, len(DDSJobInputFile.objects.all()))
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data['results']))
-        self.assertEqual('data.txt', response.data['results'][0]['destination_path'])
+        self.assertEqual(1, len(response.data))
+        self.assertEqual('data.txt', response.data[0]['destination_path'])
 
     def testUsingOthersCreds(self):
         url = reverse('ddsjobinputfile-list')
@@ -575,8 +575,8 @@ class URLJobInputFileTestCase(APITestCase):
         self.assertEqual(1, len(URLJobInputFile.objects.all()))
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data['results']))
-        self.assertEqual('http://stuff.com/data.txt', response.data['results'][0]['url'])
+        self.assertEqual(1, len(response.data))
+        self.assertEqual('http://stuff.com/data.txt', response.data[0]['url'])
 
 
 class JobOutputDirTestCase(APITestCase):
@@ -604,8 +604,8 @@ class JobOutputDirTestCase(APITestCase):
         url = reverse('joboutputdir-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(1, len(response.data['results']))
-        job_output_dir = response.data['results'][0]
+        self.assertEqual(1, len(response.data))
+        job_output_dir = response.data[0]
         self.assertEqual(self.my_job.id, job_output_dir['job'])
         self.assertEqual('results', job_output_dir['dir_name'])
         self.assertEqual('1', job_output_dir['project_id'])
@@ -635,4 +635,3 @@ class JobOutputDirTestCase(APITestCase):
             'dds_user_credentials': self.others_cred.id
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
