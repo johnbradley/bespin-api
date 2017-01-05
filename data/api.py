@@ -22,21 +22,19 @@ class ProjectsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = DDSProjectSerializer
 
-    def get_queryset(self):
+    def _ds_operation(self, func, *args):
         try:
-            return get_user_projects(self.request.user)
+            return func(*args)
         except WrappedDataServiceException:
             raise # passes along status code, e.g. 404
         except Exception as e:
             raise DataServiceUnavailable(e)
 
+    def get_queryset(self):
+        return self._ds_operation(get_user_projects, self.request.user)
+
     def get_object(self):
-        try:
-            return get_user_project(self.request.user, self.kwargs.get('pk'))
-        except WrappedDataServiceException:
-            raise # passes along status code, e.g. 404
-        except Exception as e:
-            raise DataServiceUnavailable(e)
+        return self._ds_operation(get_user_project, self.request.user, self.kwargs.get('pk'))
 
     @detail_route(methods=['get'])
     def content(self, request, pk=None):
