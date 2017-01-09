@@ -1,5 +1,5 @@
 from rest_framework import viewsets, permissions
-from util import get_user_projects, get_user_project, get_user_project_content
+from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
@@ -38,12 +38,19 @@ class DDSProjectsViewSet(DDSOperationMixin, viewsets.ReadOnlyModelViewSet):
         return self._ds_operation(get_user_project, self.request.user, project_id)
 
 
-class DDSProjectContentsViewSet(DDSOperationMixin, viewsets.mixins.RetrieveModelMixin, viewsets.GenericViewSet ):
-    serializer_class = DDSProjectContentSerializer
+class DDSResourcesViewSet(DDSOperationMixin, viewsets.ReadOnlyModelViewSet):
+    serializer_class = DDSResourceSerializer
 
-    def get_object(self):
-        project_id = self.kwargs.get('pk')
-        return self._ds_operation(get_user_project_content, self.request.user, project_id)
+    def get_queryset(self):
+        # check for project id or folder_id
+        folder_id = self.request.query_params.get('folder_id', None)
+        project_id = self.request.query_params.get('project_id', None)
+        if folder_id:
+            return self._ds_operation(get_user_folder_content, self.request.user, folder_id)
+        elif project_id:
+            return self._ds_operation(get_user_project_content, self.request.user, project_id)
+        else:
+            raise BespinAPIException(400, 'Getting dds-resources requires either a project_id or folder_id query parameter')
 
 
 class WorkflowsViewSet(viewsets.ReadOnlyModelViewSet):

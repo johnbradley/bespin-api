@@ -28,13 +28,6 @@ class DDSResource(DDSBase):
         self.id = resource_dict.get('id')
         self.name = resource_dict.get('name')
         self.kind = resource_dict.get('kind')
-        self.ancestors = resource_dict.get('ancestors')
-
-class DDSProjectContent(object):
-
-    def __init__(self, project, children=[]):
-        self.project = project
-        self.children = children
 
 
 def get_remote_store(user):
@@ -90,7 +83,7 @@ def get_user_project(user, dds_project_id):
         raise WrappedDataServiceException(dse)
 
 
-def get_user_project_content(user, dds_project_id, search_str=''):
+def get_user_project_content(user, dds_project_id, search_str=None):
     """
     Get all files and folders contained in a project (includes nested files and folders).
     :param user: User who has DukeDS credentials
@@ -100,8 +93,23 @@ def get_user_project_content(user, dds_project_id, search_str=''):
     """
     try:
         remote_store = get_remote_store(user)
-        children = remote_store.data_service.get_project_children(dds_project_id, name_contains=search_str).json()['results']
-        children = DDSResource.from_list(children)
-        return DDSProjectContent(dds_project_id, children)
+        resources = remote_store.data_service.get_project_children(dds_project_id, name_contains=search_str).json()['results']
+        return DDSResource.from_list(resources)
+    except DataServiceError as dse:
+        raise WrappedDataServiceException(dse)
+
+
+def get_user_folder_content(user, dds_folder_id, search_str=None):
+    """
+    Get all files and folders contained in a project (includes nested files and folders).
+    :param user: User who has DukeDS credentials
+    :param dds_folder_id: str: duke data service folder id
+    :param search_str: str: searches name of a file
+    :return: [dict]: list of dicts for a file or folder
+    """
+    try:
+        remote_store = get_remote_store(user)
+        resources = remote_store.data_service.get_folder_children(dds_folder_id, name_contains=search_str).json()['results']
+        return DDSResource.from_list(resources)
     except DataServiceError as dse:
         raise WrappedDataServiceException(dse)

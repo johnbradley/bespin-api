@@ -4,7 +4,7 @@ from rest_framework import routers
 
 router = routers.DefaultRouter()
 router.register(r'dds-projects', api.DDSProjectsViewSet, 'dds-projects')
-router.register(r'dds-project-contents', api.DDSProjectContentsViewSet, 'dds-project-contents')
+router.register(r'dds-resources', api.DDSResourcesViewSet, 'dds-resources')
 router.register(r'workflows', api.WorkflowsViewSet, 'workflow')
 router.register(r'workflow-versions', api.WorkflowVersionsViewSet, 'workflowversion')
 router.register(r'jobs', api.JobsViewSet, 'job')
