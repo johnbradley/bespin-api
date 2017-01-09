@@ -10,7 +10,7 @@ from rest_framework.decorators import detail_route
 from lando import LandoJob
 
 
-class DDSReadOnlyViewSet(viewsets.ReadOnlyModelViewSet):
+class DDSOperationMixin(object):
     permission_classes = (permissions.IsAuthenticated,)
 
     def _ds_operation(self, func, *args):
@@ -22,7 +22,7 @@ class DDSReadOnlyViewSet(viewsets.ReadOnlyModelViewSet):
             raise DataServiceUnavailable(e)
 
 
-class DDSProjectsViewSet(DDSReadOnlyViewSet):
+class DDSProjectsViewSet(DDSOperationMixin, viewsets.ReadOnlyModelViewSet):
     """
     This class interfaces with DukeDS API to provide project listing and details.
     Though it is not backed by django models, the ReadOnlyModelViewSet base class
@@ -36,6 +36,14 @@ class DDSProjectsViewSet(DDSReadOnlyViewSet):
     def get_object(self):
         project_id = self.kwargs.get('pk')
         return self._ds_operation(get_user_project, self.request.user, project_id)
+
+
+class DDSProjectContentsViewSet(DDSOperationMixin, viewsets.mixins.RetrieveModelMixin, viewsets.GenericViewSet ):
+    serializer_class = DDSProjectContentSerializer
+
+    def get_object(self):
+        project_id = self.kwargs.get('pk')
+        return self._ds_operation(get_user_project_content, self.request.user, project_id)
 
 
 class WorkflowsViewSet(viewsets.ReadOnlyModelViewSet):

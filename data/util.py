@@ -5,7 +5,13 @@ from ddsc.core.remotestore import RemoteStore
 from ddsc.core.ddsapi import DataServiceError
 from ddsc.config import Config
 
-class DDSProject(object):
+class DDSBase(object):
+    @classmethod
+    def from_list(cls, project_dicts):
+        return [cls(p) for p in project_dicts]
+
+
+class DDSProject(DDSBase):
     """
     A simple object to represent a DDSProject
     """
@@ -15,9 +21,20 @@ class DDSProject(object):
         self.name = project_dict.get('name')
         self.description = project_dict.get('description')
 
-    @classmethod
-    def from_list(cls, project_dicts):
-        return [cls(p) for p in project_dicts]
+
+class DDSResource(DDSBase):
+
+    def __init__(self, resource_dict):
+        self.id = resource_dict.get('id')
+        self.name = resource_dict.get('name')
+        self.kind = resource_dict.get('kind')
+        self.ancestors = resource_dict.get('ancestors')
+
+class DDSProjectContent(object):
+
+    def __init__(self, project, children=[]):
+        self.project = project
+        self.children = children
 
 
 def get_remote_store(user):
@@ -84,6 +101,7 @@ def get_user_project_content(user, dds_project_id, search_str=''):
     try:
         remote_store = get_remote_store(user)
         children = remote_store.data_service.get_project_children(dds_project_id, name_contains=search_str).json()['results']
+        children = DDSResource.from_list(children)
         return DDSProjectContent(dds_project_id, children)
     except DataServiceError as dse:
         raise WrappedDataServiceException(dse)

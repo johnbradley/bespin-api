@@ -146,3 +146,21 @@ class DDSProjectSerializer(serializers.Serializer):
 
     class Meta:
         resource_name = 'dds-projects'
+
+
+class DDSResourceSerializer(serializers.Serializer):
+    kind = serializers.CharField()
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    ancestors = serializers.ListField()
+
+    class Meta:
+        resource_name = 'dds-resources'
+
+
+class DDSProjectContentSerializer(serializers.Serializer):
+    project = serializers.UUIDField()
+    children = DDSResourceSerializer(many=True)
+
+    class Meta:
+        resource_name = 'dds-project-contents'
