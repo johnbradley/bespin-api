@@ -3,7 +3,7 @@ from django.conf.urls import url, include
 from rest_framework import routers
 
 router = routers.DefaultRouter()
-router.register(r'projects', api.ProjectsViewSet, 'project')
+router.register(r'dds-projects', api.DDSProjectsViewSet, 'dds-projects')
 router.register(r'workflows', api.WorkflowsViewSet, 'workflow')
 router.register(r'workflow-versions', api.WorkflowVersionsViewSet, 'workflowversion')
 router.register(r'jobs', api.JobsViewSet, 'job')

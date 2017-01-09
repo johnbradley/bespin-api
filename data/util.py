@@ -83,6 +83,7 @@ def get_user_project_content(user, dds_project_id, search_str=''):
     """
     try:
         remote_store = get_remote_store(user)
-        return remote_store.data_service.get_project_children(dds_project_id, name_contains=search_str).json()['results']
+        children = remote_store.data_service.get_project_children(dds_project_id, name_contains=search_str).json()['results']
+        return DDSProjectContent(dds_project_id, children)
     except DataServiceError as dse:
         raise WrappedDataServiceException(dse)

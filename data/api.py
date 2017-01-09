@@ -1,26 +1,17 @@
 from rest_framework import viewsets, permissions
 from util import get_user_projects, get_user_project, get_user_project_content
 from rest_framework.response import Response
-from exceptions import DataServiceUnavailable, WrappedDataServiceException
+from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
     DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir
-from data.serializers import WorkflowSerializer, WorkflowVersionSerializer, JobSerializer, \
-    DDSEndpointSerializer, DDSUserCredSerializer, JobInputFileSerializer, DDSJobInputFileSerializer, \
-    URLJobInputFileSerializer, JobErrorSerializer, AdminJobSerializer, DDSProjectSerializer
-from data.serializers import AdminDDSUserCredSerializer, JobOutputDirSerializer
+from data.serializers import *
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
 from lando import LandoJob
 
 
-class ProjectsViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    This class interfaces with DukeDS API to provide project listing and details.
-    Though it is not backed by django models, the ReadOnlyModelViewSet base class
-    still works well
-    """
+class DDSReadOnlyViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = DDSProjectSerializer
 
     def _ds_operation(self, func, *args):
         try:
@@ -30,16 +21,21 @@ class ProjectsViewSet(viewsets.ReadOnlyModelViewSet):
         except Exception as e:
             raise DataServiceUnavailable(e)
 
+
+class DDSProjectsViewSet(DDSReadOnlyViewSet):
+    """
+    This class interfaces with DukeDS API to provide project listing and details.
+    Though it is not backed by django models, the ReadOnlyModelViewSet base class
+    still works well
+    """
+    serializer_class = DDSProjectSerializer
+
     def get_queryset(self):
         return self._ds_operation(get_user_projects, self.request.user)
 
     def get_object(self):
-        return self._ds_operation(get_user_project, self.request.user, self.kwargs.get('pk'))
-
-    @detail_route(methods=['get'])
-    def content(self, request, pk=None):
-        search_str = request.GET.get('search', '')
-        return Response(get_user_project_content(request.user, pk, search_str))
+        project_id = self.kwargs.get('pk')
+        return self._ds_operation(get_user_project, self.request.user, project_id)
 
 
 class WorkflowsViewSet(viewsets.ReadOnlyModelViewSet):

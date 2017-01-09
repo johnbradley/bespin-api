@@ -145,4 +145,4 @@ class DDSProjectSerializer(serializers.Serializer):
     description = serializers.CharField()
 
     class Meta:
-        resource_name = 'projects'
+        resource_name = 'dds-projects'
