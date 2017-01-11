@@ -10,7 +10,7 @@ from rest_framework.decorators import detail_route
 from lando import LandoJob
 
 
-class DDSOperationMixin(object):
+class DDSViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def _ds_operation(self, func, *args):
@@ -22,9 +22,9 @@ class DDSOperationMixin(object):
             raise DataServiceUnavailable(e)
 
 
-class DDSProjectsViewSet(DDSOperationMixin, viewsets.ReadOnlyModelViewSet):
+class DDSProjectsViewSet(DDSViewSet):
     """
-    This class interfaces with DukeDS API to provide project listing and details.
+    Interfaces with DukeDS API to provide project listing and details.
     Though it is not backed by django models, the ReadOnlyModelViewSet base class
     still works well
     """
@@ -38,7 +38,12 @@ class DDSProjectsViewSet(DDSOperationMixin, viewsets.ReadOnlyModelViewSet):
         return self._ds_operation(get_user_project, self.request.user, project_id)
 
 
-class DDSResourcesViewSet(DDSOperationMixin, viewsets.ReadOnlyModelViewSet):
+class DDSResourcesViewSet(DDSViewSet):
+    """
+    Interfaces with DukeDS API to list files and folders using query parameters. To list the root level
+    of a project, GET with ?project_id=:project_id, and to list a folder within a project,
+    GET with ?folder_id=:folder_id
+    """
     serializer_class = DDSResourceSerializer
 
     def get_queryset(self):
