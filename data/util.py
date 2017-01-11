@@ -28,6 +28,7 @@ class DDSResource(DDSBase):
         self.id = resource_dict.get('id')
         self.name = resource_dict.get('name')
         self.kind = resource_dict.get('kind')
+        self.project = resource_dict.get('project').get('id')
 
 
 def get_remote_store(user):
