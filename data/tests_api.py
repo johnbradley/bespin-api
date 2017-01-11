@@ -6,6 +6,7 @@ from mock.mock import MagicMock, patch, Mock
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputDir
 from exceptions import WrappedDataServiceException
+from util import DDSProject, DDSResource
 
 
 class UserLogin(object):
@@ -81,6 +82,52 @@ class DDSProjectsTestCase(APITestCase):
         url = reverse('dds-projects-list') + project_id + '/'
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class DDSResourcesTestCase(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+        self.user_login.become_normal_user()
+
+    def testFailsUnauthenticated(self):
+        self.user_login.become_unauthorized()
+        url = reverse('dds-resources-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @patch('data.api.get_user_project_content')
+    def testListsResourcesByProject(self, mock_get_user_project_content):
+        project_id = 'abc123'
+        mock_get_user_project_content.return_value = DDSResource.from_list([{'id': '12355', 'name': 'test.txt'}])
+        url = reverse('dds-resources-list')
+        response = self.client.get(url, data={'project_id': project_id}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    @patch('data.api.get_user_folder_content')
+    def testListsResourcesByFolder(self, mock_get_user_folder_content):
+        folder_id = 'def456'
+        mock_get_user_folder_content.return_value = DDSResource.from_list([{'id': '12355', 'name': 'test.txt'}])
+        url = reverse('dds-resources-list')
+        response = self.client.get(url, data={'folder_id': folder_id}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    @patch('data.api.get_user_project_content')
+    def testFailsWhenProjectNotFound(self, mock_get_user_project_content):
+        project_id = 'abc123'
+        dds_error = MagicMock()
+        dds_error.status_code = 404
+        dds_error.message = 'Not Found'
+        mock_get_user_project_content.side_effect = WrappedDataServiceException(dds_error)
+        url = reverse('dds-resources-list')
+        response = self.client.get(url, data={'project_id': project_id}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def testFailsWithoutProjectOrFolderID(self):
+        url = reverse('dds-resources-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class DDSEndpointTestCase(APITestCase):
