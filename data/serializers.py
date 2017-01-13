@@ -153,6 +153,7 @@ class DDSResourceSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     name = serializers.CharField()
     project = serializers.UUIDField()
+    folder = serializers.UUIDField()
 
     class Meta:
         resource_name = 'dds-resources'

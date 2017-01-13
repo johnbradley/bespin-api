@@ -29,6 +29,11 @@ class DDSResource(DDSBase):
         self.name = resource_dict.get('name')
         self.kind = resource_dict.get('kind')
         self.project = resource_dict.get('project').get('id')
+        parent = resource_dict.get('parent')
+        if parent.get('kind') == 'dds-folder':
+            self.folder = parent.get('id')
+        else:
+            self.folder = None
 
 
 def get_remote_store(user):

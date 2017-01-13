@@ -98,7 +98,8 @@ class DDSResourcesTestCase(APITestCase):
     @patch('data.api.get_user_project_content')
     def testListsResourcesByProject(self, mock_get_user_project_content):
         project_id = 'abc123'
-        mock_get_user_project_content.return_value = DDSResource.from_list([{'id': '12355', 'name': 'test.txt', 'project': {'id': project_id}}])
+        resource  = {'id': '12355','name': 'test.txt', 'project': {'id': project_id}, 'parent': {'kind': 'dds-project', 'id': project_id}}
+        mock_get_user_project_content.return_value = DDSResource.from_list([resource])
         url = reverse('dds-resources-list')
         response = self.client.get(url, data={'project_id': project_id}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -108,7 +109,8 @@ class DDSResourcesTestCase(APITestCase):
     def testListsResourcesByFolder(self, mock_get_user_folder_content):
         project_id = 'abc123'
         folder_id = 'def456'
-        mock_get_user_folder_content.return_value = DDSResource.from_list([{'id': '12355', 'name': 'test.txt', 'project': {'id': project_id}}])
+        resource = {'id': '12355', 'name': 'test.txt', 'project': {'id': project_id}, 'parent': {'kind': 'dds-folder', 'id': folder_id}}
+        mock_get_user_folder_content.return_value = DDSResource.from_list([resource])
         url = reverse('dds-resources-list')
         response = self.client.get(url, data={'folder_id': folder_id}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
