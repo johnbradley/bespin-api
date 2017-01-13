@@ -5,7 +5,13 @@ from ddsc.core.remotestore import RemoteStore
 from ddsc.core.ddsapi import DataServiceError
 from ddsc.config import Config
 
-class DDSProject(object):
+class DDSBase(object):
+    @classmethod
+    def from_list(cls, project_dicts):
+        return [cls(p) for p in project_dicts]
+
+
+class DDSProject(DDSBase):
     """
     A simple object to represent a DDSProject
     """
@@ -15,9 +21,14 @@ class DDSProject(object):
         self.name = project_dict.get('name')
         self.description = project_dict.get('description')
 
-    @classmethod
-    def from_list(cls, project_dicts):
-        return [cls(p) for p in project_dicts]
+
+class DDSResource(DDSBase):
+
+    def __init__(self, resource_dict):
+        self.id = resource_dict.get('id')
+        self.name = resource_dict.get('name')
+        self.kind = resource_dict.get('kind')
+        self.project = resource_dict.get('project').get('id')
 
 
 def get_remote_store(user):
@@ -73,7 +84,7 @@ def get_user_project(user, dds_project_id):
         raise WrappedDataServiceException(dse)
 
 
-def get_user_project_content(user, dds_project_id, search_str=''):
+def get_user_project_content(user, dds_project_id, search_str=None):
     """
     Get all files and folders contained in a project (includes nested files and folders).
     :param user: User who has DukeDS credentials
@@ -83,6 +94,23 @@ def get_user_project_content(user, dds_project_id, search_str=''):
     """
     try:
         remote_store = get_remote_store(user)
-        return remote_store.data_service.get_project_children(dds_project_id, name_contains=search_str).json()['results']
+        resources = remote_store.data_service.get_project_children(dds_project_id, name_contains=search_str).json()['results']
+        return DDSResource.from_list(resources)
+    except DataServiceError as dse:
+        raise WrappedDataServiceException(dse)
+
+
+def get_user_folder_content(user, dds_folder_id, search_str=None):
+    """
+    Get all files and folders contained in a project (includes nested files and folders).
+    :param user: User who has DukeDS credentials
+    :param dds_folder_id: str: duke data service folder id
+    :param search_str: str: searches name of a file
+    :return: [dict]: list of dicts for a file or folder
+    """
+    try:
+        remote_store = get_remote_store(user)
+        resources = remote_store.data_service.get_folder_children(dds_folder_id, name_contains=search_str).json()['results']
+        return DDSResource.from_list(resources)
     except DataServiceError as dse:
         raise WrappedDataServiceException(dse)
