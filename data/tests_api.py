@@ -4,7 +4,9 @@ from rest_framework import status
 from django.contrib.auth.models import User as django_user
 from mock.mock import MagicMock, patch, Mock
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, \
-    DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputDir
+    DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputDir, \
+    JobQuestion, JobQuestionDataType, JobQuestionnaire, JobAnswer, JobStringAnswer, \
+    JobAnswerSet, JobAnswerKind
 from exceptions import WrappedDataServiceException
 from util import DDSProject, DDSResource
 
@@ -649,5 +651,335 @@ class JobOutputDirTestCase(APITestCase):
             'dir_name': 'results',
             'project_id': '123',
             'dds_user_credentials': self.others_cred.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class JobQuestionTestCase(APITestCase):
+    def setUp(self):
+        """
+        Create some questions since this should be a read only endpoint.
+        """
+        self.user_login = UserLogin(self.client)
+        self.ques1 = JobQuestion.objects.create(key="align_out_prefix", data_type=JobQuestionDataType.STRING,
+                                                name="Output file prefix")
+        JobQuestion.objects.create(key="gff_file", data_type=JobQuestionDataType.FILE)
+        JobQuestion.objects.create(key="reads", data_type=JobQuestionDataType.FILE, occurs=2)
+        JobQuestion.objects.create(key="threads", data_type=JobQuestionDataType.INTEGER)
+
+    def test_user_can_read(self):
+        self.user_login.become_normal_user()
+        url = reverse('jobquestion-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(4, len(response.data))
+
+        response = self.client.get('{}{}/'.format(url, self.ques1.id), format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual('align_out_prefix', response.data['key'])
+        self.assertEqual('Output file prefix', response.data['name'])
+        self.assertEqual('string', response.data['data_type'])
+        self.assertEqual(1, response.data['occurs'])
+
+    def test_user_cant_write(self):
+        self.user_login.become_normal_user()
+        url = reverse('jobquestion-list')
+        response = self.client.post(url, format='json', data={
+            'key': 'index',
+            'data_type': 'string',
+            'name': 'testing'
+        })
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        ques_1_endpoint = '{}{}/'.format(url, self.ques1.id)
+        response = self.client.put(ques_1_endpoint, format='json', data={
+            'key': 'index',
+            'data_type': 'string',
+            'name': 'testing'
+        })
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class JobQuestionnaireTestCase(APITestCase):
+    def setUp(self):
+        """
+        Create two questionnaires since this should be a read only endpoint.
+        """
+        self.user_login = UserLogin(self.client)
+        workflow = Workflow.objects.create(name='RnaSeq')
+        cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
+        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
+                                                               version="1",
+                                                               url=cwl_url)
+        self.ques1 = JobQuestion.objects.create(key="align_out_prefix", data_type=JobQuestionDataType.STRING,
+                                                name="Output file prefix")
+        self.ques2 = JobQuestion.objects.create(key="gff_file", data_type=JobQuestionDataType.FILE)
+        self.ques3 = JobQuestion.objects.create(key="reads", data_type=JobQuestionDataType.FILE, occurs=2)
+        self.ques4 = JobQuestion.objects.create(key="threads", data_type=JobQuestionDataType.INTEGER)
+
+        self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
+                                                              workflow_version=self.workflow_version)
+        self.questionnaire1.questions = [self.ques1, self.ques2, self.ques3, self.ques4]
+        self.questionnaire1.save()
+
+        self.questionnaire2 = JobQuestionnaire.objects.create(description='Workflow2',
+                                                              workflow_version=self.workflow_version)
+        self.questionnaire2.questions = [self.ques2, self.ques3]
+        self.questionnaire2.save()
+
+    def test_user_can_read(self):
+        self.user_login.become_normal_user()
+        url = reverse('jobquestionnaire-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(2, len(response.data))
+
+        url = '{}{}/'.format(reverse('jobquestionnaire-list'), self.questionnaire1.id)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual('Workflow1', response.data['description'])
+        self.assertEqual(self.workflow_version.id, response.data['workflow_version'])
+        self.assertEqual(4, len(response.data['questions']))
+        self.assertEqual(self.ques1.id, response.data['questions'][0])
+
+        url = '{}{}/'.format(reverse('jobquestionnaire-list'), self.questionnaire2.id)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual('Workflow2', response.data['description'])
+        self.assertEqual(self.workflow_version.id, response.data['workflow_version'])
+        self.assertEqual(2, len(response.data['questions']))
+        self.assertEqual(self.ques2.id, response.data['questions'][0])
+
+    def test_user_cant_write(self):
+        self.user_login.become_normal_user()
+        url = reverse('jobquestionnaire-list')
+        response = self.client.post(url, format='json', data={
+            'description': 'Workflow3',
+            'workflow_version': self.workflow_version.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        questionnaire1_endpoint = '{}{}/'.format(url, self.questionnaire1.id)
+        response = self.client.put(questionnaire1_endpoint, format='json', data={
+            'description': 'Workflow3',
+            'workflow_version': self.workflow_version.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class JobAnswerTestCase(APITestCase):
+    def setUp(self):
+        self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret',
+                                                   api_root='https://someserver.com/api')
+        self.user_login = UserLogin(self.client)
+        self.ques1 = JobQuestion.objects.create(key="align_out_prefix", data_type=JobQuestionDataType.STRING,
+                                                name="Output file prefix")
+        workflow = Workflow.objects.create(name='RnaSeq')
+        cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
+        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
+                                                               version="1",
+                                                               url=cwl_url)
+        self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
+                                                              workflow_version=self.workflow_version)
+
+    def test_can_create_string_value(self):
+        self.user_login.become_normal_user()
+
+        # user creates a JobAnswer and JobAnswerString
+        url = reverse('jobanswer-list')
+        response = self.client.post(url, format='json', data={
+            'question': self.ques1.id,
+            'kind': JobAnswerKind.STRING,
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        answer_id = response.data['id']
+        self.assertEqual(1, answer_id)
+
+        url = reverse('jobstringanswer-list')
+        response = self.client.post(url, format='json', data={
+            'answer': answer_id,
+            'value': 'results_ant_1_',
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # database is correct
+        job_answer = JobAnswer.objects.first()
+        self.assertEqual('string', job_answer.kind)
+        job_string_answer = JobStringAnswer.objects.filter(answer=job_answer).first()
+        self.assertEqual('results_ant_1_', job_string_answer.value)
+
+        # user can change value
+        url = '{}{}/'.format(reverse('jobstringanswer-list'), job_answer.id)
+        response = self.client.put(url, format='json', data={
+            'answer': answer_id,
+            'value': 'results_ant_2_',
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # database is correct
+        job_string_answer = JobStringAnswer.objects.filter(answer=job_answer).first()
+        self.assertEqual('results_ant_2_', job_string_answer.value)
+
+    def test_can_create_dds_value(self):
+        user = self.user_login.become_normal_user()
+        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1')
+
+        # user creates a JobAnswer and JobDDSFileAnswer
+        url = reverse('jobanswer-list')
+        response = self.client.post(url, format='json', data={
+            'question': self.ques1.id,
+            'kind': JobAnswerKind.DDS_FILE,
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        answer_id = response.data['id']
+        self.assertEqual(1, answer_id)
+
+        url = reverse('jobddsfileanswer-list')
+        response = self.client.post(url, format='json', data={
+            'answer': answer_id,
+            'project_id': '123',
+            'file_id': '4321',
+            'dds_user_credentials': self.cred.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_mismatch_string_with_dds_fails(self):
+        user = self.user_login.become_normal_user()
+        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1')
+
+        # user creates a JobAnswer and JobDDSFileAnswer
+        url = reverse('jobanswer-list')
+        response = self.client.post(url, format='json', data={
+            'question': self.ques1.id,
+            'kind': JobAnswerKind.STRING,
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        answer_id = response.data['id']
+        self.assertEqual(1, answer_id)
+
+        url = reverse('jobddsfileanswer-list')
+        response = self.client.post(url, format='json', data={
+            'answer': answer_id,
+            'project_id': '123',
+            'file_id': '4321',
+            'dds_user_credentials': self.cred.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_mismatch_dds_with_string_fails(self):
+        self.user_login.become_normal_user()
+
+        # user creates a JobAnswer and JobAnswerString
+        url = reverse('jobanswer-list')
+        response = self.client.post(url, format='json', data={
+            'question': self.ques1.id,
+            'kind': JobAnswerKind.DDS_FILE,
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        answer_id = response.data['id']
+        self.assertEqual(1, answer_id)
+
+        url = reverse('jobstringanswer-list')
+        response = self.client.post(url, format='json', data={
+            'answer': answer_id,
+            'value': 'results_ant_1_',
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_cant_assign_questionnaire(self):
+        # Users can't create system answers
+        self.user_login.become_normal_user()
+        url = reverse('jobanswer-list')
+        response = self.client.post(url, format='json', data={
+            'question': self.ques1.id,
+            'kind': JobAnswerKind.DDS_FILE,
+            'questionnaire': self.questionnaire1.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_cant_change_system_answers(self):
+        user = self.user_login.become_normal_user()
+        question = JobQuestion.objects.create(key="align_out_prefix", data_type=JobQuestionDataType.STRING)
+        sys_job_answer = JobAnswer.objects.create(question=question, questionnaire=self.questionnaire1, user=user)
+        url = '{}{}/'.format(reverse('jobanswer-list'), sys_job_answer.id)
+        response = self.client.put(url, format='json', data={
+            'question': self.ques1.id,
+            'kind': JobAnswerKind.DDS_FILE,
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class JobAnswerSetTests(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+        workflow = Workflow.objects.create(name='RnaSeq')
+        cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
+        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
+                                                               version="1",
+                                                               url=cwl_url)
+        self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
+                                                              workflow_version=self.workflow_version)
+        self.questionnaire2 = JobQuestionnaire.objects.create(description='Workflow1',
+                                                              workflow_version=self.workflow_version)
+        self.other_user = self.user_login.become_other_normal_user()
+        self.user = self.user_login.become_normal_user()
+        question = JobQuestion.objects.create(key="align_out_prefix", data_type=JobQuestionDataType.STRING)
+        self.questionnaire1.questions = [question]
+        self.questionnaire1.save()
+        other_question = JobQuestion.objects.create(key="something", data_type=JobQuestionDataType.STRING)
+        self.other_answer = JobAnswer.objects.create(question=question, questionnaire=self.questionnaire2, user=self.user)
+        self.system_answer = JobAnswer.objects.create(question=question, questionnaire=self.questionnaire1, user=self.user)
+        self.user_answer1 = JobAnswer.objects.create(question=question, user=self.user)
+        self.user_answer2 = JobAnswer.objects.create(question=question, user=self.user)
+        self.other_user_answer = JobAnswer.objects.create(question=question, user=self.other_user)
+
+    def test_user_crud(self):
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': self.questionnaire1.id,
+            'answers': [],
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(1, len(JobAnswerSet.objects.all()))
+        job_answer_set = JobAnswerSet.objects.first()
+        answers = job_answer_set.answers.all()
+        self.assertEqual(0, len(answers))
+
+        url = '{}{}/'.format(reverse('jobanswerset-list'), response.data['id'])
+        response = self.client.put(url, format='json', data={
+            'questionnaire': self.questionnaire1.id,
+            'answers': [self.user_answer1.id, self.user_answer2.id],
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        job_answer_set = JobAnswerSet.objects.first()
+        answers = job_answer_set.answers.all()
+        self.assertEqual(2, len(answers))
+        self.assertEqual(self.user_answer1.id, answers[0].id)
+
+        response = self.client.delete(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(0, len(JobAnswerSet.objects.all()))
+
+    def test_cant_use_system_answers(self):
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': self.questionnaire1.id,
+            'answers': [self.system_answer.id],
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_cant_use_another_users_answers(self):
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': self.questionnaire1.id,
+            'answers': [self.other_user_answer.id],
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_can_use_answer_for_other_questionnaire(self):
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': self.questionnaire1.id,
+            'answers': [self.other_answer.id],
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
