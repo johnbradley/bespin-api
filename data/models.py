@@ -279,7 +279,7 @@ class JobStringAnswer(models.Model):
     value = models.CharField(max_length=255, blank=False, null=False)
 
     def __unicode__(self):
-        return '{} question:{} - value:{}'.format(self.id, self.answer.question.name, self.value)
+        return '{} question:{} - value:{}'.format(self.pk, self.answer.question.name, self.value)
 
 
 class JobDDSFileAnswer(models.Model):
@@ -295,7 +295,7 @@ class JobDDSFileAnswer(models.Model):
                                              help_text='Credentials with access to this file')
 
     def __unicode__(self):
-        return '{} question:{} - file_id:{}'.format(self.id, self.answer.question.name, self.file_id)
+        return '{} question:{} - file_id:{}'.format(self.pk, self.answer.question.name, self.file_id)
 
 
 class JobAnswerSet(models.Model):
