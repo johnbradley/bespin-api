@@ -275,7 +275,7 @@ class JobStringAnswer(models.Model):
     """
     String value associated with a JobAnswer.
     """
-    answer = models.OneToOneField(JobAnswer, on_delete=models.CASCADE, primary_key=True, related_name='string_value')
+    answer = models.OneToOneField(JobAnswer, on_delete=models.CASCADE, related_name='string_value')
     value = models.CharField(max_length=255, blank=False, null=False)
 
     def __unicode__(self):
@@ -286,7 +286,7 @@ class JobDDSFileAnswer(models.Model):
     """
     DukeDS file keys associated with a JobAnswer.
     """
-    answer = models.OneToOneField(JobAnswer, on_delete=models.CASCADE, primary_key=True, related_name='dds_file')
+    answer = models.OneToOneField(JobAnswer, on_delete=models.CASCADE, related_name='dds_file')
     project_id = models.CharField(max_length=255, blank=False, null=True,
                                   help_text='uuid from DukeDS for the project containing our file')
     file_id = models.CharField(max_length=255, blank=False, null=True,

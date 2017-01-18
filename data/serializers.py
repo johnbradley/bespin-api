@@ -239,7 +239,7 @@ class JobStringAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobStringAnswer
         resource_name = 'job-string-answers'
-        fields = ('value', 'answer')
+        fields = '__all__'
 
 
 class JobDDSFileAnswerSerializer(serializers.ModelSerializer):
