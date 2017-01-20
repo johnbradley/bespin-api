@@ -248,8 +248,8 @@ class JobAnswerKind(object):
     STRING = 'string'
     DDS_FILE = 'dds_file'
     ITEMS = (
-        (STRING, 'DukeDS File'),
-        (DDS_FILE, 'Text'),
+        (STRING, 'Text'),
+        (DDS_FILE, 'DukeDS File'),
     )
 
 

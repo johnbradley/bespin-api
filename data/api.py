@@ -9,6 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
 from lando import LandoJob
 from django.db.models import Q
+from jobfactory import create_job_factory
 
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
@@ -214,6 +215,16 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return JobAnswerSet.objects.filter(user=self.request.user)
+
+    @detail_route(methods=['post'])
+    def create_job(self, request, pk=None):
+        job_answer_set = JobAnswerSet.objects.filter(user=self.request.user, pk=pk).first()
+        job_factory = create_job_factory(self.request.user, job_answer_set)
+        cwl_input = job_factory.build_cwl_input()
+        return Response({
+            'cwl_input': cwl_input,
+
+        })
 
 
 class JobAnswerViewSet(viewsets.ModelViewSet):
