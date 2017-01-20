@@ -63,6 +63,11 @@ class JobFactory(object):
                     "class": "File",
                     "path": value
                 }
+            if data_type == JobQuestionDataType.DIRECTORY:
+                return {
+                    "class": "Directory",
+                    "path": value
+                }
         if answer_kind == JobAnswerKind.DDS_FILE:
             filename = self.get_unique_dds_filename(answer)
             if data_type == JobQuestionDataType.FILE:

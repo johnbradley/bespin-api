@@ -200,10 +200,12 @@ class JobQuestionDataType(object):
     STRING = 'string'
     INTEGER = 'int'
     FILE = 'File'
+    DIRECTORY = 'Directory'
     ITEMS = (
         (STRING, 'String'),
         (INTEGER, 'Integer'),
         (FILE, 'File'),
+        (DIRECTORY, 'Directory'),
     )
 
 
