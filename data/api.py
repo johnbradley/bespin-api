@@ -220,7 +220,7 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
     def create_job(self, request, pk=None):
         job_answer_set = JobAnswerSet.objects.filter(user=self.request.user, pk=pk).first()
         job_factory = create_job_factory(self.request.user, job_answer_set)
-        cwl_input = job_factory.build_cwl_input()
+        cwl_input = job_factory.create_job()
         return Response({
             'cwl_input': cwl_input,
 

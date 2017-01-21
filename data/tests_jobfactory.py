@@ -111,29 +111,34 @@ class QuestionAnswerMapTests(TestCase):
                        'details': 'Setup error: Answer without question: align_out_prefix.'}, errors)
 
 
-class QuestionnaireTests(TestCase):
+class JobFactoryTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('test_user')
         self.endpoint = DDSEndpoint.objects.create(name='app1', agent_key='abc123')
         self.cred = DDSUserCredential.objects.create(user=self.user, token='abc123', endpoint=self.endpoint)
+        workflow = Workflow.objects.create(name='RnaSeq')
+        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
+                                                               object_name='#main',
+                                                               version='1',
+                                                               url=FLY_RNASEQ_URL)
 
-    def test_simple_cwl_dict(self):
+    def test_simple_build_cwl_input(self):
 
         question1 = JobQuestion.objects.create(key="threads",
                                                name="Threads to use",
                                                data_type=JobQuestionDataType.INTEGER)
         answer1 = JobAnswer.objects.create(question=question1, user=self.user, kind=JobAnswerKind.STRING)
         JobStringAnswer.objects.create(answer=answer1, value='4')
-        job_factory = JobFactory(self.user)
+        job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory.build_cwl_input()
+        cwl_input = job_factory._build_cwl_input()
         expected = {
             "threads": 4
         }
         self.assertEqual(expected, cwl_input)
 
-    def test_string_array_cwl_dict(self):
+    def test_string_array_build_cwl_input(self):
         question1 = JobQuestion.objects.create(key="cores",
                                                name="DNA cores to use",
                                                data_type=JobQuestionDataType.STRING,
@@ -148,11 +153,11 @@ class QuestionnaireTests(TestCase):
                                            kind=JobAnswerKind.STRING,
                                            index=1)
         JobStringAnswer.objects.create(answer=answer2, value='CCGT')
-        job_factory = JobFactory(self.user)
+        job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer2)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory.build_cwl_input()
+        cwl_input = job_factory._build_cwl_input()
         expected = {
             "cores": [
                 "ACGT",
@@ -161,7 +166,7 @@ class QuestionnaireTests(TestCase):
         }
         self.assertEqual(expected, cwl_input)
 
-    def test_string_file_cwl_dict(self):
+    def test_string_file_build_cwl_input(self):
         question1 = JobQuestion.objects.create(key="datafile",
                                                name="Some data file",
                                                data_type=JobQuestionDataType.FILE)
@@ -170,10 +175,10 @@ class QuestionnaireTests(TestCase):
                                            kind=JobAnswerKind.STRING,
                                            index=0)
         JobStringAnswer.objects.create(answer=answer1, value='/data/stuff.csv')
-        job_factory = JobFactory(self.user)
+        job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory.build_cwl_input()
+        cwl_input = job_factory._build_cwl_input()
         expected = {
             "datafile": {
                     "class": "File",
@@ -183,7 +188,7 @@ class QuestionnaireTests(TestCase):
         self.assertEqual(expected, cwl_input)
 
     @patch("data.jobfactory.get_file_name")
-    def test_file_cwl_dict(self, mock_get_file_name):
+    def test_file_build_cwl_input(self, mock_get_file_name):
         mock_get_file_name.return_value = 'stuff.csv'
         question1 = JobQuestion.objects.create(key="datafile",
                                                name="Some data file",
@@ -193,10 +198,10 @@ class QuestionnaireTests(TestCase):
                                            kind=JobAnswerKind.DDS_FILE,
                                            index=0)
         JobDDSFileAnswer.objects.create(answer=answer1, project_id='1', file_id='1', dds_user_credentials=self.cred)
-        job_factory = JobFactory(self.user)
+        job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory.build_cwl_input()
+        cwl_input = job_factory._build_cwl_input()
         expected_filename = '{}_{}'.format(answer1.id, 'stuff.csv')
         expected = {
             "datafile": {
@@ -205,3 +210,24 @@ class QuestionnaireTests(TestCase):
             }
         }
         self.assertEqual(expected, cwl_input)
+
+    @patch("data.jobfactory.get_file_name")
+    def test_create_simple_job(self, mock_get_file_name):
+        mock_get_file_name.return_value = 'stuff.csv'
+        question1 = JobQuestion.objects.create(key="datafile",
+                                               name="Some data file",
+                                               data_type=JobQuestionDataType.FILE)
+        answer1 = JobAnswer.objects.create(question=question1,
+                                           user=self.user,
+                                           kind=JobAnswerKind.DDS_FILE,
+                                           index=0)
+        JobDDSFileAnswer.objects.create(answer=answer1, project_id='1', file_id='1', dds_user_credentials=self.cred)
+        job_factory = JobFactory(self.user, workflow_version=self.workflow_version)
+        job_factory.add_question(question1)
+        job_factory.add_answer(answer1)
+        job = job_factory.create_job()
+        expected = {
+            'datafile': {'path': '1_stuff.csv', 'class': 'File'}
+        }
+        self.assertEqual(expected, job.workflow_input_json)
+

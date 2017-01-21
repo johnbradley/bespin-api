@@ -1,11 +1,16 @@
-from data.models import JobAnswer, JobAnswerKind, JobDDSFileAnswer, JobStringAnswer, JobQuestionDataType
+from data.models import JobAnswer, JobAnswerKind, JobDDSFileAnswer, JobStringAnswer, JobQuestionDataType, Job
 from rest_framework.exceptions import ValidationError
 from util import get_file_name
 from exceptions import QuestionnaireExceptions
 
+# Special fields
+# job.name
+# job.vm_project_name
+# job.output_directory directory name and project id
+
 
 def create_job_factory(user, job_answer_set):
-    factory = JobFactory(user)
+    factory = JobFactory(user, job_answer_set.questionnaire.workflow_version)
     for question in job_answer_set.questionnaire.questions.all():
         factory.add_question(question)
     for user_answer in job_answer_set.answers.all():
@@ -16,7 +21,8 @@ def create_job_factory(user, job_answer_set):
 
 
 class JobFactory(object):
-    def __init__(self, user):
+    def __init__(self, user, workflow_version):
+        self.workflow_version = workflow_version
         self.user = user
         self.questions = []
         self.answers = []
@@ -27,7 +33,15 @@ class JobFactory(object):
     def add_answer(self, answer):
         self.answers.append(answer)
 
-    def build_cwl_input(self):
+    def create_job(self):
+        return Job.objects.create(workflow_version=self.workflow_version,
+                                  user=self.user,
+                                  name="Test name2",
+                                  vm_project_name="jpb67",
+                                  vm_flavor="m1.small",
+                                  workflow_input_json=self._build_cwl_input())
+
+    def _build_cwl_input(self):
         question_key_map = QuestionKeyMap()
         question_key_map.add_questions(self.questions)
         question_key_map.add_answers(self.answers)
