@@ -21,7 +21,8 @@ router.register(r'job-answer-sets', api.JobAnswerSetViewSet, 'jobanswerset')
 router.register(r'job-answers', api.JobAnswerViewSet, 'jobanswer')
 router.register(r'job-string-answers', api.JobStringAnswerViewSet, 'jobstringanswer')
 router.register(r'job-dds-file-answers', api.JobDDSFileAnswerViewSet, 'jobddsfileanswer')
-
+router.register(r'job-dds-output-directory-answers', api.JobDDSOutputDirectoryAnswerViewSet,
+                'jobddsoutputdirectoryanswer')
 
 # Routes that require admin user
 router.register(r'admin/jobs', api.AdminJobsViewSet, 'admin_job')

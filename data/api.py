@@ -3,7 +3,8 @@ from util import get_user_projects, get_user_project, get_user_project_content, 
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
-    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir
+    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir, \
+    JobDDSOutputDirectoryAnswer
 from data.serializers import *
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
@@ -220,12 +221,9 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
     def create_job(self, request, pk=None):
         job_answer_set = JobAnswerSet.objects.filter(user=self.request.user, pk=pk).first()
         job_factory = create_job_factory(self.request.user, job_answer_set)
-        cwl_input = job_factory.create_job()
-        return Response({
-            'cwl_input': cwl_input,
-
-        })
-
+        job = job_factory.create_job()
+        serializer = JobSerializer(job)
+        return Response(serializer.data)
 
 class JobAnswerViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -247,3 +245,10 @@ class JobDDSFileAnswerViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobDDSFileAnswerSerializer
     queryset = JobDDSFileAnswer.objects.all()
+
+
+class JobDDSOutputDirectoryAnswerViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = JobDDSOutputDirectoryAnswerSerializer
+    queryset = JobDDSOutputDirectoryAnswer.objects.all()
+

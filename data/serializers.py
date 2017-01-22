@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
     DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError, JobAnswerSet, \
-    JobAnswer, JobQuestion, JobQuestionnaire, JobStringAnswer, JobDDSFileAnswer, JobAnswerKind
+    JobAnswer, JobQuestion, JobQuestionnaire, JobStringAnswer, JobDDSFileAnswer, JobAnswerKind, \
+    JobDDSOutputDirectoryAnswer
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -252,5 +253,18 @@ class JobDDSFileAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobDDSFileAnswer
         resource_name = 'job-dds-file-answers'
+        fields = '__all__'
+
+
+class JobDDSOutputDirectoryAnswerSerializer(serializers.ModelSerializer):
+    answer = serializers.PrimaryKeyRelatedField(queryset=JobAnswer.objects.all())
+
+    def validate(self, data):
+        raise_on_answer_kind_mismatch(data['answer'], JobAnswerKind.DDS_OUTPUT_DIRECTORY)
+        return data
+
+    class Meta:
+        model = JobDDSOutputDirectoryAnswer
+        resource_name = 'job-dds-output-directory-answers'
         fields = '__all__'
 
