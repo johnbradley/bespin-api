@@ -45,13 +45,8 @@ class JobFactory(object):
         vm_project_name = None
         vm_flavor = None
         output_directory = None
-        question_key_map = QuestionKeyMap()
-        question_key_map.add_questions(self.questions)
-        question_key_map.add_answers(self.answers)
-        errors = question_key_map.get_errors()
-        if errors:
-            raise QuestionnaireExceptions(errors)
-        cwl_input = {}
+        question_key_map = self._build_question_key_map()
+        cwl_input = self._build_cwl_input(question_key_map)
         for key, question_info in question_key_map.map.items():
             if key.startswith(JOB_FIELD_PREFIX):
                 value = self.format_answers(question_info)
@@ -80,13 +75,16 @@ class JobFactory(object):
                                     dds_user_credentials=output_directory.dds_user_credentials)
         return job
 
-    def _build_cwl_input(self):
+    def _build_question_key_map(self):
         question_key_map = QuestionKeyMap()
         question_key_map.add_questions(self.questions)
         question_key_map.add_answers(self.answers)
         errors = question_key_map.get_errors()
         if errors:
             raise QuestionnaireExceptions(errors)
+        return question_key_map
+
+    def _build_cwl_input(self, question_key_map):
         result = {}
         for key, question_info in question_key_map.map.items():
             if not key.startswith(JOB_FIELD_PREFIX):

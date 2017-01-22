@@ -4,11 +4,12 @@ from models import Workflow, WorkflowVersion
 from models import Job, JobInputFile, DDSJobInputFile, URLJobInputFile, JobOutputDir, JobError
 from models import LandoConnection
 from models import JobQuestionnaire, JobQuestion, JobAnswerSet, JobAnswer, JobStringAnswer, JobDDSFileAnswer, \
-    JobAnswerKind
+    JobAnswerKind, JobDDSOutputDirectoryAnswer
 from models import JobQuestionDataType
-from django.db import IntegrityError
 from django.contrib.auth.models import User
-from jobfactory import JobFactory, QuestionKeyMap
+from jobfactory import JobFactory, QuestionKeyMap, \
+    JOB_FIELD_NAME, JOB_FIELD_PROJECT_NAME, JOB_FIELD_VM_FLAVOR, JOB_FIELD_OUTPUT_DIRECTORY
+
 from rest_framework.exceptions import ValidationError
 from mock.mock import MagicMock, patch, Mock
 
@@ -38,6 +39,7 @@ def setup_rnaseq_job_answer_set():
     job_answer_set.answers = [job_answer]
     job_answer_set.save()
     return job_answer_set
+
 
 
 class QuestionAnswerMapTests(TestCase):
@@ -122,6 +124,28 @@ class JobFactoryTests(TestCase):
                                                                version='1',
                                                                url=FLY_RNASEQ_URL)
 
+    def add_job_fields(self, job_factory, name, project_name, vm_flavor, project_id, directory_name,
+                       dds_user_credentials):
+        self.add_string_field(job_factory, JOB_FIELD_NAME, name)
+        self.add_string_field(job_factory, JOB_FIELD_PROJECT_NAME, project_name)
+        self.add_string_field(job_factory, JOB_FIELD_VM_FLAVOR, vm_flavor)
+        question = JobQuestion.objects.create(key=JOB_FIELD_OUTPUT_DIRECTORY,
+                                               name="Directory where results will be saved",
+                                               data_type=JobQuestionDataType.DIRECTORY)
+        answer = JobAnswer.objects.create(question=question, user=self.user, kind=JobAnswerKind.DDS_OUTPUT_DIRECTORY)
+        JobDDSOutputDirectoryAnswer.objects.create(answer=answer, project_id=project_id,
+                                                   directory_name=directory_name,
+                                                   dds_user_credentials=dds_user_credentials)
+        job_factory.add_question(question)
+        job_factory.add_answer(answer)
+
+    def add_string_field(self, job_factory, key, value):
+        question = JobQuestion.objects.create(key=key, name="Some name", data_type=JobQuestionDataType.STRING)
+        answer = JobAnswer.objects.create(question=question, user=self.user, kind=JobAnswerKind.STRING, index=0)
+        JobStringAnswer.objects.create(answer=answer, value=value)
+        job_factory.add_question(question)
+        job_factory.add_answer(answer)
+
     def test_simple_build_cwl_input(self):
 
         question1 = JobQuestion.objects.create(key="threads",
@@ -132,7 +156,7 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory._build_cwl_input()
+        cwl_input = job_factory._build_cwl_input(job_factory._build_question_key_map())
         expected = {
             "threads": 4
         }
@@ -157,7 +181,7 @@ class JobFactoryTests(TestCase):
         job_factory.add_question(question1)
         job_factory.add_answer(answer2)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory._build_cwl_input()
+        cwl_input = job_factory._build_cwl_input(job_factory._build_question_key_map())
         expected = {
             "cores": [
                 "ACGT",
@@ -178,7 +202,7 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory._build_cwl_input()
+        cwl_input = job_factory._build_cwl_input(job_factory._build_question_key_map())
         expected = {
             "datafile": {
                     "class": "File",
@@ -201,7 +225,7 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory._build_cwl_input()
+        cwl_input = job_factory._build_cwl_input(job_factory._build_question_key_map())
         expected_filename = '{}_{}'.format(answer1.id, 'stuff.csv')
         expected = {
             "datafile": {
@@ -225,6 +249,9 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, workflow_version=self.workflow_version)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
+        self.add_job_fields(job_factory, name="Test project", project_name="myproj",
+                            vm_flavor="m1.small", project_id="1", directory_name="results",
+                            dds_user_credentials=self.cred)
         job = job_factory.create_job()
         expected = {
             'datafile': {'path': '1_stuff.csv', 'class': 'File'}
