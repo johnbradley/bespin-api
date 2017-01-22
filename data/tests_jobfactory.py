@@ -147,7 +147,6 @@ class JobFactoryTests(TestCase):
         job_factory.add_answer(answer)
 
     def test_simple_build_cwl_input(self):
-
         question1 = JobQuestion.objects.create(key="threads",
                                                name="Threads to use",
                                                data_type=JobQuestionDataType.INTEGER)
@@ -250,11 +249,24 @@ class JobFactoryTests(TestCase):
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
         self.add_job_fields(job_factory, name="Test project", project_name="myproj",
-                            vm_flavor="m1.small", project_id="1", directory_name="results",
+                            vm_flavor="m1.extrasmall", project_id="1", directory_name="results",
                             dds_user_credentials=self.cred)
         job = job_factory.create_job()
         expected = {
             'datafile': {'path': '1_stuff.csv', 'class': 'File'}
         }
         self.assertEqual(expected, job.workflow_input_json)
+        self.assertEqual("results", job.output_dir.dir_name)
+        self.assertEqual("m1.extrasmall", job.vm_flavor)
+        job_input_files = JobInputFile.objects.filter(job=job)
+        self.assertEqual(1, len(job_input_files))
+        self.assertEqual(JobInputFile.DUKE_DS_FILE, job_input_files[0].file_type)
+        self.assertEqual(1, len(job_input_files[0].dds_files.all()))
+        dds_input_file = job_input_files[0].dds_files.all()[0]
+        self.assertEqual("1", dds_input_file.file_id)
+        self.assertEqual("1_stuff.csv", dds_input_file.destination_path)
+        self.assertEqual(0, dds_input_file.index)
+
+
+
 

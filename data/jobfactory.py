@@ -1,20 +1,16 @@
 from data.models import JobAnswer, JobAnswerKind, JobDDSFileAnswer, JobStringAnswer, JobQuestionDataType, \
-    Job, JobOutputDir
+    Job, JobOutputDir, JobInputFile, DDSJobInputFile
 from rest_framework.exceptions import ValidationError
 from util import get_file_name
 from exceptions import QuestionnaireExceptions
 
-# Special fields
-# job.name
-# job.vm_project_name
-# job.output_directory directory name and project id
-# job.vm_flavor
-
+# Special fields that update parts of the Job tables(not used by CWL)
 JOB_FIELD_PREFIX = "job."
 JOB_FIELD_NAME = "{}name".format(JOB_FIELD_PREFIX)
 JOB_FIELD_PROJECT_NAME = "{}vm_project_name".format(JOB_FIELD_PREFIX)
 JOB_FIELD_VM_FLAVOR = "{}vm_flavor".format(JOB_FIELD_PREFIX)
 JOB_FIELD_OUTPUT_DIRECTORY = "{}output_directory".format(JOB_FIELD_PREFIX)
+
 
 def create_job_factory(user, job_answer_set):
     factory = JobFactory(user, job_answer_set.questionnaire.workflow_version)
@@ -41,12 +37,36 @@ class JobFactory(object):
         self.answers.append(answer)
 
     def create_job(self):
+        question_key_map = self._build_question_key_map()
+        cwl_input = self._build_cwl_input(question_key_map)
+        job_name, vm_project_name, vm_flavor, output_directory = self._get_job_fields(question_key_map)
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 user=self.user,
+                                 name=job_name,
+                                 vm_project_name=vm_project_name,
+                                 vm_flavor=vm_flavor,
+                                 workflow_input_json=cwl_input)
+        JobOutputDir.objects.create(job=job,
+                                    dir_name=output_directory.directory_name,
+                                    project_id=output_directory.project_id,
+                                    dds_user_credentials=output_directory.dds_user_credentials)
+        self._insert_job_input_files(job, question_key_map)
+        return job
+
+    def _build_question_key_map(self):
+        question_key_map = QuestionKeyMap()
+        question_key_map.add_questions(self.questions)
+        question_key_map.add_answers(self.answers)
+        errors = question_key_map.get_errors()
+        if errors:
+            raise QuestionnaireExceptions(errors)
+        return question_key_map
+
+    def _get_job_fields(self, question_key_map):
         job_name = None
         vm_project_name = None
         vm_flavor = None
         output_directory = None
-        question_key_map = self._build_question_key_map()
-        cwl_input = self._build_cwl_input(question_key_map)
         for key, question_info in question_key_map.map.items():
             if key.startswith(JOB_FIELD_PREFIX):
                 value = self.format_answers(question_info)
@@ -60,29 +80,7 @@ class JobFactory(object):
                     output_directory = value
                 else:
                     raise ValidationError("Invalid job field question name {}".format(key))
-            else:
-                cwl_input[key] = self.format_answers(question_info)
-
-        job = Job.objects.create(workflow_version=self.workflow_version,
-                                  user=self.user,
-                                  name=job_name,
-                                  vm_project_name=vm_project_name,
-                                  vm_flavor=vm_flavor,
-                                  workflow_input_json=cwl_input)
-        JobOutputDir.objects.create(job=job,
-                                    dir_name=output_directory.directory_name,
-                                    project_id=output_directory.project_id,
-                                    dds_user_credentials=output_directory.dds_user_credentials)
-        return job
-
-    def _build_question_key_map(self):
-        question_key_map = QuestionKeyMap()
-        question_key_map.add_questions(self.questions)
-        question_key_map.add_answers(self.answers)
-        errors = question_key_map.get_errors()
-        if errors:
-            raise QuestionnaireExceptions(errors)
-        return question_key_map
+        return job_name, vm_project_name, vm_flavor, output_directory
 
     def _build_cwl_input(self, question_key_map):
         result = {}
@@ -90,6 +88,27 @@ class JobFactory(object):
             if not key.startswith(JOB_FIELD_PREFIX):
                 result[key] = self.format_answers(question_info)
         return result
+
+    def _insert_job_input_files(self, job, question_key_map):
+        for key, question_info in question_key_map.map.items():
+            job_answers = question_info.get_answers_by_kind(JobAnswerKind.DDS_FILE)
+            if job_answers:
+                type = JobInputFile.DUKE_DS_FILE
+                if question_info.question.occurs > 2:
+                    type = JobInputFile.DUKE_DS_FILE_ARRAY
+                job_input_file = JobInputFile.objects.create(job=job,
+                                                             file_type=type,
+                                                             workflow_name=key)
+                for job_answer in job_answers:
+                    job_dds_file_answer = job_answer.dds_file
+                    DDSJobInputFile.objects.create(
+                        job_input_file=job_input_file,
+                        project_id=job_dds_file_answer.project_id,
+                        file_id=job_dds_file_answer.file_id,
+                        dds_user_credentials=job_dds_file_answer.dds_user_credentials,
+                        destination_path=self.get_unique_dds_filename(job_answer),
+                        index=job_answer.index
+                    )
 
     def format_answers(self, question_info):
         question = question_info.question
@@ -194,3 +213,10 @@ class QuestionInfo(object):
         if len(self.answers) == 0:
             errors.append("Required field.".format(self.question.key))
         return errors
+
+    def get_answers_by_kind(self, answer_kind):
+        result = []
+        for answer in self.answers:
+            if answer.kind == answer_kind:
+                result.append(answer)
+        return result
