@@ -1,45 +1,15 @@
 from django.test import TestCase
-from models import DDSEndpoint, DDSUserCredential
-from models import Workflow, WorkflowVersion
-from models import Job, JobInputFile, DDSJobInputFile, URLJobInputFile, JobOutputDir, JobError
-from models import LandoConnection
-from models import JobQuestionnaire, JobQuestion, JobAnswerSet, JobAnswer, JobStringAnswer, JobDDSFileAnswer, \
-    JobAnswerKind, JobDDSOutputDirectoryAnswer
-from models import JobQuestionDataType
 from django.contrib.auth.models import User
-from jobfactory import JobFactory, QuestionKeyMap, \
-    JOB_FIELD_NAME, JOB_FIELD_PROJECT_NAME, JOB_FIELD_VM_FLAVOR, JOB_FIELD_OUTPUT_DIRECTORY
-
 from rest_framework.exceptions import ValidationError
 from mock.mock import MagicMock, patch, Mock
+from models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion, \
+    JobQuestion, JobAnswer, JobStringAnswer, JobDDSFileAnswer, \
+    JobAnswerKind, JobDDSOutputDirectoryAnswer, JobInputFile, JobQuestionDataType
+from jobfactory import JobFactory, QuestionKeyMap, \
+    JOB_QUESTION_NAME, JOB_QUESTION_PROJECT_NAME, JOB_QUESTION_VM_FLAVOR, JOB_QUESTION_OUTPUT_DIRECTORY
+
 
 FLY_RNASEQ_URL = "https://raw.githubusercontent.com/Duke-GCB/bespin-cwl/master/packed-workflows/rnaseq-pt1-packed.cwl"
-
-
-def setup_rnaseq_job_answer_set():
-    user = User.objects.create_user('test_user')
-    workflow = Workflow.objects.create(name='RNASeq')
-    workflow_version = WorkflowVersion.objects.create(workflow=workflow,
-                                                      description="RNASeq using Star",
-                                                      version=1,
-                                                      url=FLY_RNASEQ_URL)
-    align_out_prefix = JobQuestion.objects.create(key="align_out_prefix",
-                                                  name="Output filename prefix",
-                                                  data_type=JobQuestionDataType.STRING)
-    questionnaire = JobQuestionnaire.objects.create(description="dm3 fly RNASeq",
-                                                    workflow_version=workflow_version)
-    questionnaire.questions = [align_out_prefix]
-    questionnaire.save()
-    job_answer = JobAnswer.objects.create(user=user,
-                                          question=align_out_prefix,
-
-                                          kind=JobAnswerKind.STRING)
-    JobStringAnswer.objects.create(answer=job_answer, value='bespin-rna-seq-0001_')
-    job_answer_set = JobAnswerSet.objects.create(user=user, questionnaire=questionnaire)
-    job_answer_set.answers = [job_answer]
-    job_answer_set.save()
-    return job_answer_set
-
 
 
 class QuestionAnswerMapTests(TestCase):
@@ -126,10 +96,10 @@ class JobFactoryTests(TestCase):
 
     def add_job_fields(self, job_factory, name, project_name, vm_flavor, project_id, directory_name,
                        dds_user_credentials):
-        self.add_string_field(job_factory, JOB_FIELD_NAME, name)
-        self.add_string_field(job_factory, JOB_FIELD_PROJECT_NAME, project_name)
-        self.add_string_field(job_factory, JOB_FIELD_VM_FLAVOR, vm_flavor)
-        question = JobQuestion.objects.create(key=JOB_FIELD_OUTPUT_DIRECTORY,
+        self.add_string_field(job_factory, JOB_QUESTION_NAME, name)
+        self.add_string_field(job_factory, JOB_QUESTION_PROJECT_NAME, project_name)
+        self.add_string_field(job_factory, JOB_QUESTION_VM_FLAVOR, vm_flavor)
+        question = JobQuestion.objects.create(key=JOB_QUESTION_OUTPUT_DIRECTORY,
                                                name="Directory where results will be saved",
                                                data_type=JobQuestionDataType.DIRECTORY)
         answer = JobAnswer.objects.create(question=question, user=self.user, kind=JobAnswerKind.DDS_OUTPUT_DIRECTORY)
@@ -267,6 +237,20 @@ class JobFactoryTests(TestCase):
         self.assertEqual("1_stuff.csv", dds_input_file.destination_path)
         self.assertEqual(0, dds_input_file.index)
 
-
-
-
+    @patch("data.jobfactory.get_file_name")
+    def test_create_job_missing_job_questions(self, mock_get_file_name):
+        mock_get_file_name.return_value = 'stuff.csv'
+        question1 = JobQuestion.objects.create(key="datafile",
+                                               name="Some data file",
+                                               data_type=JobQuestionDataType.FILE)
+        answer1 = JobAnswer.objects.create(question=question1,
+                                           user=self.user,
+                                           kind=JobAnswerKind.DDS_FILE,
+                                           index=0)
+        JobDDSFileAnswer.objects.create(answer=answer1, project_id='1', file_id='1', dds_user_credentials=self.cred)
+        job_factory = JobFactory(self.user, workflow_version=self.workflow_version)
+        job_factory.add_question(question1)
+        job_factory.add_answer(answer1)
+        with self.assertRaises(ValidationError) as exception_info:
+            job_factory.create_job()
+        self.assertIn("Setup error: Missing questions", exception_info.exception.detail[0])

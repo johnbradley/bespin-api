@@ -219,11 +219,15 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['post'])
     def create_job(self, request, pk=None):
-        job_answer_set = JobAnswerSet.objects.filter(user=self.request.user, pk=pk).first()
-        job_factory = create_job_factory(self.request.user, job_answer_set)
+        """
+        Create a new job based on our JobAnswerSet and return it's json.
+        """
+        job_answer_set = JobAnswerSet.objects.filter(user=request.user, pk=pk).first()
+        job_factory = create_job_factory(request.user, job_answer_set)
         job = job_factory.create_job()
         serializer = JobSerializer(job)
         return Response(serializer.data)
+
 
 class JobAnswerViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)

@@ -21,7 +21,10 @@ class BespinAPIException(APIException):
         self.detail = detail
 
 
-class QuestionnaireExceptions(APIException):
+class JobFactoryException(APIException):
+    """
+    Contains errors that occurred when trying to create a Job from a JobAnswerSet
+    """
     def __init__(self, errors):
         self.status_code = 400
         self.detail = {

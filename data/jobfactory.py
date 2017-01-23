@@ -2,14 +2,20 @@ from data.models import JobAnswer, JobAnswerKind, JobDDSFileAnswer, JobStringAns
     Job, JobOutputDir, JobInputFile, DDSJobInputFile
 from rest_framework.exceptions import ValidationError
 from util import get_file_name
-from exceptions import QuestionnaireExceptions
+from exceptions import JobFactoryException
 
 # Special fields that update parts of the Job tables(not used by CWL)
-JOB_FIELD_PREFIX = "job."
-JOB_FIELD_NAME = "{}name".format(JOB_FIELD_PREFIX)
-JOB_FIELD_PROJECT_NAME = "{}vm_project_name".format(JOB_FIELD_PREFIX)
-JOB_FIELD_VM_FLAVOR = "{}vm_flavor".format(JOB_FIELD_PREFIX)
-JOB_FIELD_OUTPUT_DIRECTORY = "{}output_directory".format(JOB_FIELD_PREFIX)
+JOB_QUESTION_PREFIX = "job."
+JOB_QUESTION_NAME = "{}name".format(JOB_QUESTION_PREFIX)
+JOB_QUESTION_PROJECT_NAME = "{}vm_project_name".format(JOB_QUESTION_PREFIX)
+JOB_QUESTION_VM_FLAVOR = "{}vm_flavor".format(JOB_QUESTION_PREFIX)
+JOB_QUESTION_OUTPUT_DIRECTORY = "{}output_directory".format(JOB_QUESTION_PREFIX)
+JOB_QUESTIONS = [
+    JOB_QUESTION_NAME,
+    JOB_QUESTION_PROJECT_NAME,
+    JOB_QUESTION_VM_FLAVOR,
+    JOB_QUESTION_OUTPUT_DIRECTORY,
+]
 
 
 def create_job_factory(user, job_answer_set):
@@ -37,6 +43,7 @@ class JobFactory(object):
         self.answers.append(answer)
 
     def create_job(self):
+        self._check_for_missing_job_questions()
         question_key_map = self._build_question_key_map()
         cwl_input = self._build_cwl_input(question_key_map)
         job_name, vm_project_name, vm_flavor, output_directory = self._get_job_fields(question_key_map)
@@ -53,13 +60,26 @@ class JobFactory(object):
         self._insert_job_input_files(job, question_key_map)
         return job
 
+    def _check_for_missing_job_questions(self):
+        """
+        Make sure we have questions for all the required job fields.
+        If not raise an exception so an admin can fix the setup.
+        """
+        question_names = set(JOB_QUESTIONS)
+        for question in self.questions:
+            key = question.key
+            if key in question_names:
+                question_names.remove(key)
+        if question_names:
+            raise ValidationError("Setup error: Missing questions {}".format(','.join(question_names)))
+
     def _build_question_key_map(self):
         question_key_map = QuestionKeyMap()
         question_key_map.add_questions(self.questions)
         question_key_map.add_answers(self.answers)
         errors = question_key_map.get_errors()
         if errors:
-            raise QuestionnaireExceptions(errors)
+            raise JobFactoryException(errors)
         return question_key_map
 
     def _get_job_fields(self, question_key_map):
@@ -68,15 +88,15 @@ class JobFactory(object):
         vm_flavor = None
         output_directory = None
         for key, question_info in question_key_map.map.items():
-            if key.startswith(JOB_FIELD_PREFIX):
+            if key.startswith(JOB_QUESTION_PREFIX):
                 value = self.format_answers(question_info)
-                if key == JOB_FIELD_NAME:
+                if key == JOB_QUESTION_NAME:
                     job_name = value
-                elif key == JOB_FIELD_PROJECT_NAME:
+                elif key == JOB_QUESTION_PROJECT_NAME:
                     vm_project_name = value
-                elif key == JOB_FIELD_VM_FLAVOR:
+                elif key == JOB_QUESTION_VM_FLAVOR:
                     vm_flavor = value
-                elif key == JOB_FIELD_OUTPUT_DIRECTORY:
+                elif key == JOB_QUESTION_OUTPUT_DIRECTORY:
                     output_directory = value
                 else:
                     raise ValidationError("Invalid job field question name {}".format(key))
@@ -85,7 +105,7 @@ class JobFactory(object):
     def _build_cwl_input(self, question_key_map):
         result = {}
         for key, question_info in question_key_map.map.items():
-            if not key.startswith(JOB_FIELD_PREFIX):
+            if not key.startswith(JOB_QUESTION_PREFIX):
                 result[key] = self.format_answers(question_info)
         return result
 
