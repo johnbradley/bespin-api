@@ -5,11 +5,11 @@ from util import get_file_name
 from exceptions import JobFactoryException
 
 # Special fields that update parts of the Job tables(not used by CWL)
-JOB_QUESTION_PREFIX = "job."
-JOB_QUESTION_NAME = "{}name".format(JOB_QUESTION_PREFIX)
-JOB_QUESTION_PROJECT_NAME = "{}vm_project_name".format(JOB_QUESTION_PREFIX)
-JOB_QUESTION_VM_FLAVOR = "{}vm_flavor".format(JOB_QUESTION_PREFIX)
-JOB_QUESTION_OUTPUT_DIRECTORY = "{}output_directory".format(JOB_QUESTION_PREFIX)
+JOB_ORDER_PREFIX = "job_order."
+JOB_QUESTION_NAME = "name"
+JOB_QUESTION_PROJECT_NAME = "vm_project_name"
+JOB_QUESTION_VM_FLAVOR = "vm_flavor"
+JOB_QUESTION_OUTPUT_DIRECTORY = "output_directory"
 JOB_QUESTIONS = [
     JOB_QUESTION_NAME,
     JOB_QUESTION_PROJECT_NAME,
@@ -45,14 +45,14 @@ class JobFactory(object):
     def create_job(self):
         self._check_for_missing_job_questions()
         question_key_map = self._build_question_key_map()
-        cwl_input = self._build_cwl_input(question_key_map)
+        job_order = self._build_job_order(question_key_map)
         job_name, vm_project_name, vm_flavor, output_directory = self._get_job_fields(question_key_map)
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  user=self.user,
                                  name=job_name,
                                  vm_project_name=vm_project_name,
                                  vm_flavor=vm_flavor,
-                                 workflow_input_json=cwl_input)
+                                 job_order=job_order)
         JobOutputDir.objects.create(job=job,
                                     dir_name=output_directory.directory_name,
                                     project_id=output_directory.project_id,
@@ -88,7 +88,7 @@ class JobFactory(object):
         vm_flavor = None
         output_directory = None
         for key, question_info in question_key_map.map.items():
-            if key.startswith(JOB_QUESTION_PREFIX):
+            if not key.startswith(JOB_ORDER_PREFIX):
                 value = self.format_answers(question_info)
                 if key == JOB_QUESTION_NAME:
                     job_name = value
@@ -102,12 +102,13 @@ class JobFactory(object):
                     raise ValidationError("Invalid job field question name {}".format(key))
         return job_name, vm_project_name, vm_flavor, output_directory
 
-    def _build_cwl_input(self, question_key_map):
-        result = {}
+    def _build_job_order(self, question_key_map):
+        job_order = {}
         for key, question_info in question_key_map.map.items():
-            if not key.startswith(JOB_QUESTION_PREFIX):
-                result[key] = self.format_answers(question_info)
-        return result
+            if key.startswith(JOB_ORDER_PREFIX):
+                job_order_key = key.replace(JOB_ORDER_PREFIX, "", 1)
+                job_order[job_order_key] = self.format_answers(question_info)
+        return job_order
 
     def _insert_job_input_files(self, job, question_key_map):
         for key, question_info in question_key_map.map.items():

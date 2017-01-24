@@ -99,8 +99,8 @@ class Job(models.Model):
                                         help_text="Name of the vm this job is/was running on.")
     vm_project_name = models.CharField(max_length=255, blank=False, null=False,
                                        help_text="Name of the cloud project where vm will be created.")
-    workflow_input_json = models.TextField(null=True,
-                                           help_text="CWL input json for use with the workflow.")
+    job_order = models.TextField(null=True,
+                                 help_text="CWL input json for use with the workflow.")
 
     def __unicode__(self):
         workflow_name = ''
@@ -310,7 +310,7 @@ class JobDDSOutputDirectoryAnswer(models.Model):
     project_id = models.CharField(max_length=255, blank=False, null=True,
                                   help_text='uuid from DukeDS for the project containing our directory')
     directory_name = models.CharField(max_length=255, blank=False, null=True,
-                            help_text='name of the directory to create')
+                                      help_text='name of the directory to create')
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE,
                                              help_text='Credentials with access to this directory')
 

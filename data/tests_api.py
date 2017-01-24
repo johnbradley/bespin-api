@@ -241,7 +241,7 @@ class JobsTestCase(APITestCase):
                                         'name': 'my job',
                                         'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
-                                        'workflow_input_json': '{}',
+                                        'job_order': '{}',
                                     })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.get(url, format='json')
@@ -256,7 +256,7 @@ class JobsTestCase(APITestCase):
                                 'name': 'my job2',
                                 'workflow_version_id': self.workflow_version.id,
                                 'vm_project_name': 'jpb88',
-                                'workflow_input_json': '{}',
+                                'job_order': '{}',
                             })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.get(url, format='json')
@@ -272,7 +272,7 @@ class JobsTestCase(APITestCase):
                                         'name': 'my job',
                                         'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
-                                        'workflow_input_json': '{}',
+                                        'job_order': '{}',
                                     })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # normal user can't see admin endpoint
@@ -287,7 +287,7 @@ class JobsTestCase(APITestCase):
                                 'name': 'my job2',
                                 'workflow_version_id': self.workflow_version.id,
                                 'vm_project_name': 'jpb88',
-                                'workflow_input_json': '{}',
+                                'job_order': '{}',
                             })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -311,7 +311,7 @@ class JobsTestCase(APITestCase):
                                         'name': 'my job',
                                         'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
-                                        'workflow_input_json': '{}',
+                                        'job_order': '{}',
                                         'state': Job.JOB_STATE_FINISHED,
                                         'step': Job.JOB_STEP_RUNNING,
                                     })
@@ -327,7 +327,7 @@ class JobsTestCase(APITestCase):
         admin_user = self.user_login.become_admin_user()
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
-                                 workflow_input_json={},
+                                 job_order={},
                                  user=admin_user)
         url = reverse('admin_job-list') + '{}/'.format(job.id)
         response = self.client.put(url, format='json',
@@ -345,7 +345,7 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
-                                 workflow_input_json={},
+                                 job_order={},
                                  user=normal_user)
 
         url = reverse('job-list') + str(job.id) + '/start/'
@@ -365,7 +365,7 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
-                                 workflow_input_json={},
+                                 job_order={},
                                  user=normal_user)
         url = reverse('job-list') + str(job.id) + '/cancel/'
         # Post to /cancel/ for job should work
@@ -377,7 +377,7 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
-                                 workflow_input_json={},
+                                 job_order={},
                                  user=normal_user)
         url = reverse('job-list') + str(job.id) + '/restart/'
 
@@ -407,7 +407,7 @@ class JobsTestCase(APITestCase):
                                         'name': 'my job',
                                         'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
-                                        'workflow_input_json': '{}',
+                                        'job_order': '{}',
                                     })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job = Job.objects.first()
@@ -427,13 +427,13 @@ class JobInputFilesTestCase(APITestCase):
         other_user = self.user_login.become_normal_user()
         other_job = Job.objects.create(workflow_version=self.workflow_version,
                                        vm_project_name='test',
-                                       workflow_input_json='{}',
+                                       job_order='{}',
                                        user=other_user)
         JobInputFile.objects.create(job=other_job, file_type='dds_file', workflow_name='models')
         this_user = self.user_login.become_other_normal_user()
         this_job = Job.objects.create(workflow_version=self.workflow_version,
                                       vm_project_name='test',
-                                      workflow_input_json='{}',
+                                      job_order='{}',
                                       user=this_user)
         JobInputFile.objects.create(job=this_job, file_type='dds_file', workflow_name='data1')
 
@@ -464,7 +464,7 @@ class JobErrorTestCase(APITestCase):
         other_user = self.user_login.become_normal_user()
         other_job = Job.objects.create(workflow_version=self.workflow_version,
                                        vm_project_name='test',
-                                       workflow_input_json='{}',
+                                       job_order='{}',
                                        user=other_user)
         JobError.objects.create(job=other_job, content='Out of memory.', job_step=Job.JOB_STEP_RUNNING)
         # Normal user can't write
@@ -475,7 +475,7 @@ class JobErrorTestCase(APITestCase):
         my_user = self.user_login.become_other_normal_user()
         my_job = Job.objects.create(workflow_version=self.workflow_version,
                                        vm_project_name='test',
-                                       workflow_input_json='{}',
+                                       job_order='{}',
                                        user=my_user)
         JobError.objects.create(job=my_job, content='Out of memory.', job_step=Job.JOB_STEP_RUNNING)
 
@@ -502,7 +502,7 @@ class JobErrorTestCase(APITestCase):
         my_user = self.user_login.become_admin_user()
         my_job = Job.objects.create(workflow_version=self.workflow_version,
                                        vm_project_name='test',
-                                       workflow_input_json='{}',
+                                       job_order='{}',
                                        user=my_user)
         url = reverse('admin_joberror-list')
         response = self.client.post(url, format='json', data={
@@ -526,7 +526,7 @@ class DDSJobInputFileTestCase(APITestCase):
         self.my_user = self.user_login.become_normal_user()
         self.my_job = Job.objects.create(workflow_version=self.workflow_version,
                                        vm_project_name='test',
-                                       workflow_input_json='{}',
+                                       job_order='{}',
                                        user=self.my_user)
         self.job_input_file = JobInputFile.objects.create(job=self.my_job, file_type='dds_file', workflow_name='data1')
         endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret', api_root='https://someserver.com/api')
@@ -575,9 +575,9 @@ class URLJobInputFileTestCase(APITestCase):
                                                                url=cwl_url)
         self.my_user = self.user_login.become_normal_user()
         self.my_job = Job.objects.create(workflow_version=self.workflow_version,
-                                       vm_project_name='test',
-                                       workflow_input_json='{}',
-                                       user=self.my_user)
+                                         vm_project_name='test',
+                                         job_order='{}',
+                                         user=self.my_user)
         self.job_input_file = JobInputFile.objects.create(job=self.my_job, file_type='dds_file', workflow_name='data1')
 
     def testPostAndRead(self):
@@ -609,7 +609,7 @@ class JobOutputDirTestCase(APITestCase):
         self.my_user = self.user_login.become_normal_user()
         self.my_job = Job.objects.create(workflow_version=self.workflow_version,
                                          vm_project_name='test',
-                                         workflow_input_json='{}',
+                                         job_order='{}',
                                          user=self.my_user)
 
         self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret', api_root='https://someserver.com/api')

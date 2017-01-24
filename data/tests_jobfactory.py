@@ -19,10 +19,10 @@ class QuestionAnswerMapTests(TestCase):
         self.cred = DDSUserCredential.objects.create(user=self.user, token='abc123', endpoint=self.endpoint)
 
     def test_prevent_duplicate_question_keys(self):
-        question1 = JobQuestion.objects.create(key="align_out_prefix",
+        question1 = JobQuestion.objects.create(key="job_order.align_out_prefix",
                                                       name="Output filename prefix",
                                                       data_type=JobQuestionDataType.STRING)
-        question2 = JobQuestion.objects.create(key="align_out_prefix",
+        question2 = JobQuestion.objects.create(key="job_order.align_out_prefix",
                                                       name="Other Output filename prefix",
                                                       data_type=JobQuestionDataType.STRING)
 
@@ -30,14 +30,14 @@ class QuestionAnswerMapTests(TestCase):
         question_answer_map.add_questions([question1, question2])
         errors = question_answer_map.get_errors()
         self.assertEqual(2, len(errors))
-        self.assertIn({'source': 'align_out_prefix',
-                       'details': 'Setup error: Multiple questions with same key: align_out_prefix.'}, errors)
+        self.assertIn({'source': 'job_order.align_out_prefix',
+                       'details': 'Setup error: Multiple questions with same key: job_order.align_out_prefix.'}, errors)
 
     def test_two_different_question_keys(self):
-        question1 = JobQuestion.objects.create(key="align_out_prefix",
+        question1 = JobQuestion.objects.create(key="job_order.align_out_prefix",
                                                name="Output filename prefix",
                                                data_type=JobQuestionDataType.STRING)
-        question2 = JobQuestion.objects.create(key="align_out_prefix2",
+        question2 = JobQuestion.objects.create(key="job_order.align_out_prefix2",
                                                name="Other Output filename prefix",
                                                data_type=JobQuestionDataType.STRING)
         question_answer_map = QuestionKeyMap()
@@ -45,18 +45,18 @@ class QuestionAnswerMapTests(TestCase):
         # We have two unanswered questions so we should have two errors
         errors = question_answer_map.get_errors()
         self.assertEqual(2, len(errors))
-        self.assertIn({'source': 'align_out_prefix',
+        self.assertIn({'source': 'job_order.align_out_prefix',
                        'details': 'Required field.'}, errors)
-        self.assertIn({'source': 'align_out_prefix2',
+        self.assertIn({'source': 'job_order.align_out_prefix2',
                        'details': 'Required field.'}, errors)
 
     def test_two_different_question_keys_with_user_answers(self):
-        question1 = JobQuestion.objects.create(key="align_out_prefix",
+        question1 = JobQuestion.objects.create(key="job_order.align_out_prefix",
                                                name="Output filename prefix",
                                                data_type=JobQuestionDataType.STRING)
         answer1 = JobAnswer.objects.create(question=question1, user=self.user, kind=JobAnswerKind.STRING)
         JobStringAnswer.objects.create(answer=answer1, value='data_')
-        question2 = JobQuestion.objects.create(key="output_index_filename",
+        question2 = JobQuestion.objects.create(key="job_order.output_index_filename",
                                                name="Output index file",
                                                data_type=JobQuestionDataType.STRING)
         answer2 = JobAnswer.objects.create(question=question2, user=self.user, kind=JobAnswerKind.DDS_FILE)
@@ -70,7 +70,7 @@ class QuestionAnswerMapTests(TestCase):
         self.assertEqual(0, len(errors))
 
     def test_answer_without_question(self):
-        question1 = JobQuestion.objects.create(key="align_out_prefix",
+        question1 = JobQuestion.objects.create(key="job_order.align_out_prefix",
                                                name="Output filename prefix",
                                                data_type=JobQuestionDataType.STRING)
         answer1 = JobAnswer.objects.create(question=question1, user=self.user, kind=JobAnswerKind.STRING)
@@ -79,8 +79,8 @@ class QuestionAnswerMapTests(TestCase):
         question_answer_map.add_answers([answer1])
         errors = question_answer_map.get_errors()
         self.assertEqual(1, len(errors))
-        self.assertIn({'source': 'align_out_prefix',
-                       'details': 'Setup error: Answer without question: align_out_prefix.'}, errors)
+        self.assertIn({'source': 'job_order.align_out_prefix',
+                       'details': 'Setup error: Answer without question: job_order.align_out_prefix.'}, errors)
 
 
 class JobFactoryTests(TestCase):
@@ -117,7 +117,7 @@ class JobFactoryTests(TestCase):
         job_factory.add_answer(answer)
 
     def test_simple_build_cwl_input(self):
-        question1 = JobQuestion.objects.create(key="threads",
+        question1 = JobQuestion.objects.create(key="job_order.threads",
                                                name="Threads to use",
                                                data_type=JobQuestionDataType.INTEGER)
         answer1 = JobAnswer.objects.create(question=question1, user=self.user, kind=JobAnswerKind.STRING)
@@ -125,14 +125,14 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory._build_cwl_input(job_factory._build_question_key_map())
+        cwl_input = job_factory._build_job_order(job_factory._build_question_key_map())
         expected = {
             "threads": 4
         }
         self.assertEqual(expected, cwl_input)
 
     def test_string_array_build_cwl_input(self):
-        question1 = JobQuestion.objects.create(key="cores",
+        question1 = JobQuestion.objects.create(key="job_order.cores",
                                                name="DNA cores to use",
                                                data_type=JobQuestionDataType.STRING,
                                                occurs=2)
@@ -150,7 +150,7 @@ class JobFactoryTests(TestCase):
         job_factory.add_question(question1)
         job_factory.add_answer(answer2)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory._build_cwl_input(job_factory._build_question_key_map())
+        cwl_input = job_factory._build_job_order(job_factory._build_question_key_map())
         expected = {
             "cores": [
                 "ACGT",
@@ -160,7 +160,7 @@ class JobFactoryTests(TestCase):
         self.assertEqual(expected, cwl_input)
 
     def test_string_file_build_cwl_input(self):
-        question1 = JobQuestion.objects.create(key="datafile",
+        question1 = JobQuestion.objects.create(key="job_order.datafile",
                                                name="Some data file",
                                                data_type=JobQuestionDataType.FILE)
         answer1 = JobAnswer.objects.create(question=question1,
@@ -171,7 +171,7 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory._build_cwl_input(job_factory._build_question_key_map())
+        cwl_input = job_factory._build_job_order(job_factory._build_question_key_map())
         expected = {
             "datafile": {
                     "class": "File",
@@ -183,7 +183,7 @@ class JobFactoryTests(TestCase):
     @patch("data.jobfactory.get_file_name")
     def test_file_build_cwl_input(self, mock_get_file_name):
         mock_get_file_name.return_value = 'stuff.csv'
-        question1 = JobQuestion.objects.create(key="datafile",
+        question1 = JobQuestion.objects.create(key="job_order.datafile",
                                                name="Some data file",
                                                data_type=JobQuestionDataType.FILE)
         answer1 = JobAnswer.objects.create(question=question1,
@@ -194,7 +194,7 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory._build_cwl_input(job_factory._build_question_key_map())
+        job_order = job_factory._build_job_order(job_factory._build_question_key_map())
         expected_filename = '{}_{}'.format(answer1.id, 'stuff.csv')
         expected = {
             "datafile": {
@@ -202,12 +202,12 @@ class JobFactoryTests(TestCase):
                 "path": expected_filename
             }
         }
-        self.assertEqual(expected, cwl_input)
+        self.assertEqual(expected, job_order)
 
     @patch("data.jobfactory.get_file_name")
     def test_create_simple_job(self, mock_get_file_name):
         mock_get_file_name.return_value = 'stuff.csv'
-        question1 = JobQuestion.objects.create(key="datafile",
+        question1 = JobQuestion.objects.create(key="job_order.datafile",
                                                name="Some data file",
                                                data_type=JobQuestionDataType.FILE)
         answer1 = JobAnswer.objects.create(question=question1,
@@ -225,7 +225,7 @@ class JobFactoryTests(TestCase):
         expected = {
             'datafile': {'path': '1_stuff.csv', 'class': 'File'}
         }
-        self.assertEqual(expected, job.workflow_input_json)
+        self.assertEqual(expected, job.job_order)
         self.assertEqual("results", job.output_dir.dir_name)
         self.assertEqual("m1.extrasmall", job.vm_flavor)
         job_input_files = JobInputFile.objects.filter(job=job)

@@ -43,7 +43,7 @@ class JobSerializer(serializers.ModelSerializer):
         model = Job
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
-                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
+                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir')
 
 
 class AdminJobSerializer(serializers.ModelSerializer):
@@ -55,7 +55,7 @@ class AdminJobSerializer(serializers.ModelSerializer):
         model = Job
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'step', 'last_updated',
-                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'workflow_input_json', 'output_dir')
+                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir')
 
 
 class DDSEndpointSerializer(serializers.ModelSerializer):
