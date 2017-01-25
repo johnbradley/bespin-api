@@ -844,6 +844,31 @@ class JobAnswerTestCase(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_create_dds_value_with_others_credentials(self):
+        other_user = self.user_login.become_other_normal_user()
+        cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret1')
+        user = self.user_login.become_normal_user()
+
+        # user creates a JobAnswer and JobDDSFileAnswer
+        url = reverse('jobanswer-list')
+        response = self.client.post(url, format='json', data={
+            'question': self.ques1.id,
+            'kind': JobAnswerKind.DDS_FILE,
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        answer_id = response.data['id']
+        self.assertEqual(1, answer_id)
+
+        url = reverse('jobddsfileanswer-list')
+        response = self.client.post(url, format='json', data={
+            'answer': answer_id,
+            'project_id': '123',
+            'file_id': '4321',
+            'dds_user_credentials': cred.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('You cannot use another user\'s credentials.', response.data['non_field_errors'])
+
     def test_mismatch_string_with_dds_fails(self):
         user = self.user_login.become_normal_user()
         self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1')
