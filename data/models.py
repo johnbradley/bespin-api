@@ -130,14 +130,14 @@ class JobInputFile(models.Model):
     DUKE_DS_FILE_ARRAY = 'dds_file_array'
     URL_FILE = 'url_file'
     URL_FILE_ARRAY = 'url_file_array'
-    INPUT_FILE_TYPE = (
+    INPUT_FILE_TYPES = (
         (DUKE_DS_FILE, 'DukeDS File'),
         (DUKE_DS_FILE_ARRAY, 'DukeDS File Array'),
         (URL_FILE, 'URL File'),
         (URL_FILE_ARRAY, 'URL File Array'),
     )
     job = models.ForeignKey(Job, on_delete=models.CASCADE, null=False, related_name='input_files')
-    file_type = models.CharField(max_length=30, choices=INPUT_FILE_TYPE)
+    file_type = models.CharField(max_length=30, choices=INPUT_FILE_TYPES)
     workflow_name = models.CharField(max_length=255, null=True)
 
     def __unicode__(self):
@@ -191,3 +191,123 @@ class LandoConnection(models.Model):
     username = models.CharField(max_length=255, blank=False, null=False)
     password = models.CharField(max_length=255, blank=False, null=False)
     queue_name = models.CharField(max_length=255, blank=False, null=False)
+
+
+class JobQuestionDataType(object):
+    """
+    Specifies how a JobAnswer associated with a JobQuestion will be added to the CWL input json.
+    """
+    STRING = 'string'
+    INTEGER = 'int'
+    FILE = 'File'
+    ITEMS = (
+        (STRING, 'String'),
+        (INTEGER, 'Integer'),
+        (FILE, 'File'),
+    )
+
+
+class JobQuestion(models.Model):
+    """
+    Question that must be answered to run a job.
+    Can be answered by the system (via JobQuestionnaire) or user (JobAnswerSet).
+    """
+    key = models.CharField(max_length=255, blank=False, null=False,
+                           help_text="Name to be used in CWL workflow.")
+    name = models.CharField(max_length=255, blank=False, null=False,
+                            help_text="User facing question text.")
+    data_type = models.CharField(max_length=30, choices=JobQuestionDataType.ITEMS, blank=False, null=False,
+                                 help_text="Determines how answer is formatted in CWL input json.")
+    occurs = models.IntegerField(blank=False, null=False, default=1,
+                                 help_text="If > 1 this is an array in the CWL input json")
+
+    def __unicode__(self):
+        return '{} key:{} data_type: {}'.format(self.id, self.key, self.data_type)
+
+
+class JobQuestionnaire(models.Model):
+    """
+    List of JobQuestions that are for a particular workflow version.
+    Contains questions that will be used to create CWL input json and job fields.
+    """
+    description = models.CharField(max_length=255, blank=False, null=False,
+                                   help_text="User facing description")
+    workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.CASCADE, blank=False, null=False,
+                                         help_text="Workflow that this questionaire is for")
+    questions = models.ManyToManyField(JobQuestion,
+                                       help_text="Questions that are required to create a job")
+
+    def __unicode__(self):
+        return '{} desc:{}'.format(self.id, self.description)
+
+
+class JobAnswerKind(object):
+    """
+    Determines which type of JobAnswer goes with a JobQuestion
+    """
+    STRING = 'string'
+    DDS_FILE = 'dds_file'
+    ITEMS = (
+        (STRING, 'Text'),
+        (DDS_FILE, 'DukeDS File'),
+    )
+
+
+class JobAnswer(models.Model):
+    """
+    Answer to a JobQuestion.
+    """
+    question = models.ForeignKey(JobQuestion, on_delete=models.CASCADE, null=False, related_name='answers')
+    questionnaire = models.ForeignKey(JobQuestionnaire, on_delete=models.CASCADE, null=True, blank=True,
+                                      help_text='When null this is a user editable answer otherwise it is a system answer')
+    index = models.IntegerField(null=True, default=0,
+                                help_text='Used to order array answers')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=False,
+                             help_text='User who created this job answer.')
+    kind = models.CharField(max_length=30, choices=JobAnswerKind.ITEMS,
+                            help_text="Determines child table associated with this answer.")
+
+    def __unicode__(self):
+        return '{} question:{} - index:{}'.format(self.id, self.question.name, self.index)
+
+
+class JobStringAnswer(models.Model):
+    """
+    String value associated with a JobAnswer.
+    """
+    answer = models.OneToOneField(JobAnswer, on_delete=models.CASCADE, related_name='string_value')
+    value = models.CharField(max_length=255, blank=False, null=False)
+
+    def __unicode__(self):
+        return '{} question:{} - value:{}'.format(self.pk, self.answer.question.name, self.value)
+
+
+class JobDDSFileAnswer(models.Model):
+    """
+    DukeDS file keys associated with a JobAnswer.
+    """
+    answer = models.OneToOneField(JobAnswer, on_delete=models.CASCADE, related_name='dds_file')
+    project_id = models.CharField(max_length=255, blank=False, null=True,
+                                  help_text='uuid from DukeDS for the project containing our file')
+    file_id = models.CharField(max_length=255, blank=False, null=True,
+                               help_text='uuid from DukeDS for the file chosen as this answer')
+    dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE,
+                                             help_text='Credentials with access to this file')
+
+    def __unicode__(self):
+        return '{} question:{} - file_id:{}'.format(self.pk, self.answer.question.name, self.file_id)
+
+
+class JobAnswerSet(models.Model):
+    """
+    List of user supplied JobAnswers to JobQuestions.
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=False,
+                             help_text='User who owns this answer set')
+    answers = models.ManyToManyField(JobAnswer,
+                                     help_text='User editable answers tied to this answer set')
+    questionnaire = models.ForeignKey(JobQuestionnaire, on_delete=models.CASCADE, null=False,
+                                      help_text='determines which questions are appropriate for this answer set')
+
+    def __unicode__(self):
+        return '{} questionnaire:{}'.format(self.id, self.questionnaire.description)

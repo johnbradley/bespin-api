@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
-    DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError
+    DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError, JobAnswerSet, \
+    JobAnswer, JobQuestion, JobQuestionnaire, JobStringAnswer, JobDDSFileAnswer, JobAnswerKind
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -156,3 +157,100 @@ class DDSResourceSerializer(serializers.Serializer):
 
     class Meta:
         resource_name = 'dds-resources'
+
+
+class JobAnswerSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
+
+    def validate(self, data):
+        if data.get('questionnaire'):
+            raise serializers.ValidationError("The questionnaire field must be null.")
+        if self.instance and self.instance.questionnaire:
+            raise serializers.ValidationError("You cannot change system answers(where questionnaire has a value).")
+        return data
+
+    class Meta:
+        model = JobAnswer
+        resource_name = 'job-answers'
+        fields = '__all__'
+
+
+class JobAnswerRelatedField(serializers.RelatedField):
+    def get_queryset(self):
+        return JobAnswer.objects.filter(user=self.request.user)
+
+    def to_representation(self, instance):
+        return instance.id
+
+    def to_internal_value(self, data):
+        return JobAnswer.objects.filter(id=data).first()
+
+
+class JobAnswerSetSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
+    answers = JobAnswerRelatedField(many=True)
+
+    def validate(self, data):
+        for answer in data['answers']:
+            if answer.questionnaire:
+                raise serializers.ValidationError("System defined answers not allowed in a job-answer-set.")
+            if answer.user != data['user']:
+                raise serializers.ValidationError("You can only add your own answers to a job-answer-set.")
+        return data
+
+    class Meta:
+        model = JobAnswerSet
+        resource_name = 'job-answer-sets'
+        fields = '__all__'
+
+
+class JobQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobQuestion
+        resource_name = 'job-questions'
+        fields = '__all__'
+
+
+class JobQuestionnaireSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobQuestionnaire
+        resource_name = 'job-questionnaires'
+        fields = '__all__'
+
+
+def raise_on_answer_kind_mismatch(answer, kind):
+    """
+    Raise ValidationError if answer.kind is not kind
+    :param answer: JobAnswer: answer we want to compare against
+    :param kind: str: JobAnswerKind value
+    """
+    if answer.kind != kind:
+        raise serializers.ValidationError("Answer type is {} should be {}.".format(
+            answer.kind, kind))
+
+
+class JobStringAnswerSerializer(serializers.ModelSerializer):
+    answer = serializers.PrimaryKeyRelatedField(queryset=JobAnswer.objects.all())
+
+    def validate(self, data):
+        raise_on_answer_kind_mismatch(data['answer'], JobAnswerKind.STRING)
+        return data
+
+    class Meta:
+        model = JobStringAnswer
+        resource_name = 'job-string-answers'
+        fields = '__all__'
+
+
+class JobDDSFileAnswerSerializer(serializers.ModelSerializer):
+    answer = serializers.PrimaryKeyRelatedField(queryset=JobAnswer.objects.all())
+
+    def validate(self, data):
+        raise_on_answer_kind_mismatch(data['answer'], JobAnswerKind.DDS_FILE)
+        return data
+
+    class Meta:
+        model = JobDDSFileAnswer
+        resource_name = 'job-dds-file-answers'
+        fields = '__all__'
+

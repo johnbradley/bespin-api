@@ -8,6 +8,7 @@ from data.serializers import *
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
 from lando import LandoJob
+from django.db.models import Q
 
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
@@ -191,3 +192,52 @@ class JobOutputDirViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = JobOutputDir.objects.all()
     serializer_class = JobOutputDirSerializer
+
+
+class JobQuestionnaireViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = JobQuestionnaire.objects.all()
+    serializer_class = JobQuestionnaireSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('workflow_version',)
+
+
+class JobQuestionViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = JobQuestion.objects.all()
+    serializer_class = JobQuestionSerializer
+
+
+class JobAnswerSetViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = JobAnswerSetSerializer
+
+    def get_queryset(self):
+        return JobAnswerSet.objects.filter(user=self.request.user)
+
+
+class JobAnswerViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = JobAnswerSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('questionnaire',)
+
+    def get_queryset(self):
+        return JobAnswer.objects.filter(Q(user=self.request.user) | Q(questionnaire__isnull=False))
+
+
+class FilterableByAnswerMixin(object):
+    filter_fields = ('answer',)
+    filter_backends = (DjangoFilterBackend,)
+
+
+class JobStringAnswerViewSet(FilterableByAnswerMixin, viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = JobStringAnswerSerializer
+    queryset = JobStringAnswer.objects.all()
+
+
+class JobDDSFileAnswerViewSet(FilterableByAnswerMixin, viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = JobDDSFileAnswerSerializer
+    queryset = JobDDSFileAnswer.objects.all()
