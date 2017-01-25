@@ -266,6 +266,7 @@ class JobDDSFileAnswerSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         raise_on_answer_kind_mismatch(data['answer'], JobAnswerKind.DDS_FILE)
+        raise_on_other_users_dds_user_credentials(self.context['request'], data)
         return data
 
     class Meta:
