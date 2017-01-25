@@ -7,6 +7,7 @@ from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, 
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputDir, \
     JobQuestion, JobQuestionDataType, JobQuestionnaire, JobAnswer, JobStringAnswer, \
     JobAnswerSet, JobAnswerKind
+from data.jobfactory import JOB_QUESTION_OUTPUT_DIRECTORY
 from exceptions import WrappedDataServiceException
 from util import DDSProject, DDSResource
 
@@ -983,3 +984,55 @@ class JobAnswerSetTests(APITestCase):
             'answers': [self.other_answer.id],
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class JobDDSOutputDirectoryAnswerTests(APITestCase):
+    def setUp(self):
+        self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret',
+                                                   api_root='https://someserver.com/api')
+        self.user_login = UserLogin(self.client)
+        self.ques1 = JobQuestion.objects.create(key="align_out_prefix", data_type=JobQuestionDataType.STRING,
+                                                name="Output file prefix")
+        workflow = Workflow.objects.create(name='RnaSeq')
+        cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
+        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
+                                                               version="1",
+                                                               url=cwl_url)
+        self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
+                                                              workflow_version=self.workflow_version)
+
+    def test_using_own_credentials(self):
+        user = self.user_login.become_normal_user()
+        user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret2')
+        question = JobQuestion.objects.create(key=JOB_QUESTION_OUTPUT_DIRECTORY,
+                                              data_type=JobQuestionDataType.DIRECTORY)
+        answer = JobAnswer.objects.create(question=question, questionnaire=self.questionnaire1, user=user,
+                                          kind=JobAnswerKind.DDS_OUTPUT_DIRECTORY)
+        url = reverse('jobddsoutputdirectoryanswer-list')
+        response = self.client.post(url, format='json', data={
+            'dds_user_credentials': user_cred.id,
+            'answer': answer.id,
+            'project_id': '123',
+            'directory_name': 'results',
+
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_using_others_credentials(self):
+        other_user = self.user_login.become_other_normal_user()
+        other_user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret2')
+        user = self.user_login.become_normal_user()
+        question = JobQuestion.objects.create(key=JOB_QUESTION_OUTPUT_DIRECTORY,
+                                              data_type=JobQuestionDataType.DIRECTORY)
+        answer = JobAnswer.objects.create(question=question, questionnaire=self.questionnaire1, user=user,
+                                          kind=JobAnswerKind.DDS_OUTPUT_DIRECTORY)
+        url = reverse('jobddsoutputdirectoryanswer-list')
+        response = self.client.post(url, format='json', data={
+            'dds_user_credentials': other_user_cred.id,
+            'answer': answer.id,
+            'project_id': '123',
+            'directory_name': 'results',
+
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('You cannot use another user\'s credentials.', response.data['non_field_errors'])
