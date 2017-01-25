@@ -239,13 +239,18 @@ class JobAnswerViewSet(viewsets.ModelViewSet):
         return JobAnswer.objects.filter(Q(user=self.request.user) | Q(questionnaire__isnull=False))
 
 
-class JobStringAnswerViewSet(viewsets.ModelViewSet):
+class FilterableByAnswerMixin(object):
+    filter_fields = ('answer',)
+    filter_backends = (DjangoFilterBackend,)
+
+
+class JobStringAnswerViewSet(FilterableByAnswerMixin, viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobStringAnswerSerializer
     queryset = JobStringAnswer.objects.all()
 
 
-class JobDDSFileAnswerViewSet(viewsets.ModelViewSet):
+class JobDDSFileAnswerViewSet(FilterableByAnswerMixin, viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobDDSFileAnswerSerializer
     queryset = JobDDSFileAnswer.objects.all()
