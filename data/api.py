@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException
@@ -226,7 +226,7 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
         job_factory = create_job_factory(request.user, job_answer_set)
         job = job_factory.create_job()
         serializer = JobSerializer(job)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class JobAnswerViewSet(viewsets.ModelViewSet):

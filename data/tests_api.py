@@ -6,8 +6,9 @@ from mock.mock import MagicMock, patch, Mock
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputDir, \
     JobQuestion, JobQuestionDataType, JobQuestionnaire, JobAnswer, JobStringAnswer, \
-    JobAnswerSet, JobAnswerKind
-from data.jobfactory import JOB_QUESTION_OUTPUT_DIRECTORY
+    JobAnswerSet, JobAnswerKind, JobDDSOutputDirectoryAnswer
+from data.jobfactory import JOB_QUESTION_OUTPUT_DIRECTORY, JOB_QUESTION_NAME, JOB_QUESTION_VM_FLAVOR, \
+    JOB_QUESTION_PROJECT_NAME
 from exceptions import WrappedDataServiceException
 from util import DDSProject, DDSResource
 
@@ -958,6 +959,8 @@ class JobAnswerSetTests(APITestCase):
         self.user_answer1 = JobAnswer.objects.create(question=question, user=self.user)
         self.user_answer2 = JobAnswer.objects.create(question=question, user=self.user)
         self.other_user_answer = JobAnswer.objects.create(question=question, user=self.other_user)
+        self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret',
+                                                   api_root='https://someserver.com/api')
 
     def test_user_crud(self):
         url = reverse('jobanswerset-list')
@@ -1009,6 +1012,59 @@ class JobAnswerSetTests(APITestCase):
             'answers': [self.other_answer.id],
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_job_missing_many_items(self):
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': self.questionnaire1.id,
+            'answers': [],
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_answer_set_id = response.data['id']
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create_job/"
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+    def test_create_job_with_items(self):
+        user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=self.user, token='secret2')
+        questionnaire = JobQuestionnaire.objects.create(description='Workflow1',
+                                                        workflow_version=self.workflow_version)
+        ques = JobQuestion.objects.create(key=JOB_QUESTION_NAME, data_type=JobQuestionDataType.STRING, name="stuff")
+        ques2 = JobQuestion.objects.create(key=JOB_QUESTION_VM_FLAVOR, data_type=JobQuestionDataType.STRING, name="stuff")
+        ques3 = JobQuestion.objects.create(key=JOB_QUESTION_OUTPUT_DIRECTORY, data_type=JobQuestionDataType.DIRECTORY, name="stuff")
+        ques4 = JobQuestion.objects.create(key=JOB_QUESTION_PROJECT_NAME, data_type=JobQuestionDataType.STRING, name="stuff")
+        questionnaire.questions = [ques, ques2, ques3, ques4]
+        questionnaire.save()
+
+        answer = JobAnswer.objects.create(question=ques, questionnaire=questionnaire, user=self.user,
+                                          kind=JobAnswerKind.STRING)
+        JobStringAnswer.objects.create(answer=answer, value="Bradley Lab Analysis")
+        answer = JobAnswer.objects.create(question=ques2, questionnaire=questionnaire, user=self.user,
+                                          kind=JobAnswerKind.STRING)
+        JobStringAnswer.objects.create(answer=answer, value="m1.tiny")
+        answer = JobAnswer.objects.create(question=ques4, questionnaire=questionnaire, user=self.user,
+                                          kind=JobAnswerKind.STRING)
+        JobStringAnswer.objects.create(answer=answer, value="jpb123")
+
+        answer = JobAnswer.objects.create(question=ques3, questionnaire=questionnaire, user=self.user,
+                                          kind=JobAnswerKind.DDS_OUTPUT_DIRECTORY)
+        JobDDSOutputDirectoryAnswer.objects.create(answer=answer, project_id="123", directory_name="results",
+                                                   dds_user_credentials=user_cred)
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': questionnaire.id,
+            'answers': [],
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_answer_set_id = response.data['id']
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create_job/"
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual('Bradley Lab Analysis', response.data['name'])
+        self.assertEqual('m1.tiny', response.data['vm_flavor'])
+        self.assertEqual('jpb123', response.data['vm_project_name'])
+        self.assertEqual('{}', response.data['job_order'])
+
 
 
 class JobDDSOutputDirectoryAnswerTests(APITestCase):
