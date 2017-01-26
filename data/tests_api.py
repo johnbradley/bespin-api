@@ -1025,7 +1025,7 @@ class JobAnswerSetTests(APITestCase):
         response = self.client.post(url, format='json', data={})
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
 
-    def test_create_job_with_items(self):
+    def setup_minmal_questionnaire(self):
         user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=self.user, token='secret2')
         questionnaire = JobQuestionnaire.objects.create(description='Workflow1',
                                                         workflow_version=self.workflow_version)
@@ -1050,6 +1050,10 @@ class JobAnswerSetTests(APITestCase):
                                           kind=JobAnswerKind.DDS_OUTPUT_DIRECTORY)
         JobDDSOutputDirectoryAnswer.objects.create(answer=answer, project_id="123", directory_name="results",
                                                    dds_user_credentials=user_cred)
+        return questionnaire
+
+    def test_create_job_with_items(self):
+        questionnaire = self.setup_minmal_questionnaire()
         url = reverse('jobanswerset-list')
         response = self.client.post(url, format='json', data={
             'questionnaire': questionnaire.id,
@@ -1064,7 +1068,24 @@ class JobAnswerSetTests(APITestCase):
         self.assertEqual('m1.tiny', response.data['vm_flavor'])
         self.assertEqual('jpb123', response.data['vm_project_name'])
         self.assertEqual('{}', response.data['job_order'])
+        self.assertEqual(1, len(Job.objects.all()))
 
+    @patch('data.jobfactory.JobOutputDir')
+    def test_create_job_with_exception_rolls_back(self, MockJobOutputDir):
+        MockJobOutputDir.objects.create.side_effect = ValueError("oops")
+        self.assertEqual(0, len(Job.objects.all()))
+        questionnaire = self.setup_minmal_questionnaire()
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': questionnaire.id,
+            'answers': [],
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_answer_set_id = response.data['id']
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create_job/"
+        with self.assertRaises(ValueError):
+            response = self.client.post(url, format='json', data={})
+        self.assertEqual(0, len(Job.objects.all()))
 
 
 class JobDDSOutputDirectoryAnswerTests(APITestCase):
