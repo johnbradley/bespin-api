@@ -5,14 +5,14 @@ from mock.mock import MagicMock, patch, Mock
 from models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion, \
     JobQuestion, JobAnswer, JobStringAnswer, JobDDSFileAnswer, \
     JobAnswerKind, JobDDSOutputDirectoryAnswer, JobInputFile, JobQuestionDataType
-from jobfactory import JobFactory, QuestionKeyMap, \
+from jobfactory import JobFactory, QuestionInfoList, JobFields, \
     JOB_QUESTION_NAME, JOB_QUESTION_PROJECT_NAME, JOB_QUESTION_VM_FLAVOR, JOB_QUESTION_OUTPUT_DIRECTORY
 
 
 FLY_RNASEQ_URL = "https://raw.githubusercontent.com/Duke-GCB/bespin-cwl/master/packed-workflows/rnaseq-pt1-packed.cwl"
 
 
-class QuestionAnswerMapTests(TestCase):
+class QuestionInfoListTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('test_user')
         self.endpoint = DDSEndpoint.objects.create(name='app1', agent_key='abc123')
@@ -26,9 +26,9 @@ class QuestionAnswerMapTests(TestCase):
                                                       name="Other Output filename prefix",
                                                       data_type=JobQuestionDataType.STRING)
 
-        question_answer_map = QuestionKeyMap()
-        question_answer_map.add_questions([question1, question2])
-        errors = question_answer_map.get_errors()
+        question_info_list = QuestionInfoList(self.user)
+        question_info_list.add_questions([question1, question2])
+        errors = question_info_list.get_errors()
         self.assertEqual(2, len(errors))
         self.assertIn({'source': 'job_order.align_out_prefix',
                        'details': 'Setup error: Multiple questions with same key: job_order.align_out_prefix.'}, errors)
@@ -40,10 +40,10 @@ class QuestionAnswerMapTests(TestCase):
         question2 = JobQuestion.objects.create(key="job_order.align_out_prefix2",
                                                name="Other Output filename prefix",
                                                data_type=JobQuestionDataType.STRING)
-        question_answer_map = QuestionKeyMap()
-        question_answer_map.add_questions([question1, question2])
+        question_info_list = QuestionInfoList(self.user)
+        question_info_list.add_questions([question1, question2])
         # We have two unanswered questions so we should have two errors
-        errors = question_answer_map.get_errors()
+        errors = question_info_list.get_errors()
         self.assertEqual(2, len(errors))
         self.assertIn({'source': 'job_order.align_out_prefix',
                        'details': 'Required field.'}, errors)
@@ -62,11 +62,11 @@ class QuestionAnswerMapTests(TestCase):
         answer2 = JobAnswer.objects.create(question=question2, user=self.user, kind=JobAnswerKind.DDS_FILE)
         JobDDSFileAnswer.objects.create(answer=answer2, project_id='1', file_id='1', dds_user_credentials=self.cred)
 
-        question_answer_map = QuestionKeyMap()
-        question_answer_map.add_questions([question1, question2])
-        question_answer_map.add_answers([answer1, answer2])
+        question_info_list = QuestionInfoList(self.user)
+        question_info_list.add_questions([question1, question2])
+        question_info_list.add_answers([answer1, answer2])
         # We have two unanswered questions so we should have two errors
-        errors = question_answer_map.get_errors()
+        errors = question_info_list.get_errors()
         self.assertEqual(0, len(errors))
 
     def test_answer_without_question(self):
@@ -75,9 +75,9 @@ class QuestionAnswerMapTests(TestCase):
                                                data_type=JobQuestionDataType.STRING)
         answer1 = JobAnswer.objects.create(question=question1, user=self.user, kind=JobAnswerKind.STRING)
         JobStringAnswer.objects.create(answer=answer1, value='data_')
-        question_answer_map = QuestionKeyMap()
-        question_answer_map.add_answers([answer1])
-        errors = question_answer_map.get_errors()
+        question_info_list = QuestionInfoList(self.user)
+        question_info_list.add_answers([answer1])
+        errors = question_info_list.get_errors()
         self.assertEqual(1, len(errors))
         self.assertIn({'source': 'job_order.align_out_prefix',
                        'details': 'Setup error: Answer without question: job_order.align_out_prefix.'}, errors)
@@ -125,11 +125,12 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory._build_job_order(job_factory._build_question_key_map())
+        question_info_list = job_factory._build_question_info_list()
+        job_order = JobFields(question_info_list).job_order
         expected = {
             "threads": 4
         }
-        self.assertEqual(expected, cwl_input)
+        self.assertEqual(expected, job_order)
 
     def test_string_array_build_cwl_input(self):
         question1 = JobQuestion.objects.create(key="job_order.cores",
@@ -150,14 +151,15 @@ class JobFactoryTests(TestCase):
         job_factory.add_question(question1)
         job_factory.add_answer(answer2)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory._build_job_order(job_factory._build_question_key_map())
+        question_info_list = job_factory._build_question_info_list()
+        job_order = JobFields(question_info_list).job_order
         expected = {
             "cores": [
                 "ACGT",
                 "CCGT"
             ]
         }
-        self.assertEqual(expected, cwl_input)
+        self.assertEqual(expected, job_order)
 
     def test_string_file_build_cwl_input(self):
         question1 = JobQuestion.objects.create(key="job_order.datafile",
@@ -171,14 +173,15 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        cwl_input = job_factory._build_job_order(job_factory._build_question_key_map())
+        question_info_list = job_factory._build_question_info_list()
+        job_order = JobFields(question_info_list).job_order
         expected = {
             "datafile": {
                     "class": "File",
                     "path": "/data/stuff.csv"
             }
         }
-        self.assertEqual(expected, cwl_input)
+        self.assertEqual(expected, job_order)
 
     @patch("data.jobfactory.get_file_name")
     def test_file_build_cwl_input(self, mock_get_file_name):
@@ -194,7 +197,8 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, workflow_version=None)
         job_factory.add_question(question1)
         job_factory.add_answer(answer1)
-        job_order = job_factory._build_job_order(job_factory._build_question_key_map())
+        question_info_list = job_factory._build_question_info_list()
+        job_fields = JobFields(question_info_list)
         expected_filename = '{}_{}'.format(answer1.id, 'stuff.csv')
         expected = {
             "datafile": {
@@ -202,7 +206,7 @@ class JobFactoryTests(TestCase):
                 "path": expected_filename
             }
         }
-        self.assertEqual(expected, job_order)
+        self.assertEqual(expected, job_fields.job_order)
 
     @patch("data.jobfactory.get_file_name")
     def test_create_simple_job(self, mock_get_file_name):
