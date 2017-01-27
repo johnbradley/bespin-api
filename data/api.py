@@ -220,7 +220,7 @@ class JobAnswerViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobAnswerSerializer
     filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('questionnaire',)
+    filter_fields = ('questionnaire', 'question',)
 
     def get_queryset(self):
         return JobAnswer.objects.filter(Q(user=self.request.user) | Q(questionnaire__isnull=False))
@@ -229,6 +229,14 @@ class JobAnswerViewSet(viewsets.ModelViewSet):
 class FilterableByAnswerMixin(object):
     filter_fields = ('answer',)
     filter_backends = (DjangoFilterBackend,)
+
+    def get_queryset(self):
+        if 'answers[]' in self.request.query_params:
+            answer_ids = self.request.query_params.getlist('answers[]')
+            queryset = self.queryset.filter(answer__id__in=answer_ids)
+            return queryset
+        else:
+            return self.queryset
 
 
 class JobStringAnswerViewSet(FilterableByAnswerMixin, viewsets.ModelViewSet):
