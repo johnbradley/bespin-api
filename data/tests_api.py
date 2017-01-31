@@ -776,6 +776,8 @@ class JobAnswerTestCase(APITestCase):
         self.user_login = UserLogin(self.client)
         self.ques1 = JobQuestion.objects.create(key="align_out_prefix", data_type=JobQuestionDataType.STRING,
                                                 name="Output file prefix")
+        self.ques2 = JobQuestion.objects.create(key="threads", data_type=JobQuestionDataType.INTEGER,
+                                                name="Number of threads")
         workflow = Workflow.objects.create(name='RnaSeq')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
@@ -934,6 +936,30 @@ class JobAnswerTestCase(APITestCase):
             'kind': JobAnswerKind.DDS_FILE,
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_can_query_by_multiple_answer_ids(self):
+        user = self.user_login.become_normal_user()
+        answer1 = JobAnswer.objects.create(question=self.ques1, kind=JobAnswerKind.STRING, user=user)
+        answer2 = JobAnswer.objects.create(question=self.ques2, kind=JobAnswerKind.STRING, user=user)
+        answer3 = JobAnswer.objects.create(question=self.ques2, kind=JobAnswerKind.STRING, user=user)
+        self.assertEqual(len(JobAnswer.objects.all()), 3)
+
+        # Now create job string answers for these
+        JobStringAnswer.objects.create(answer=answer1, value='Answer 1')
+        JobStringAnswer.objects.create(answer=answer2, value='Answer 2')
+        JobStringAnswer.objects.create(answer=answer3, value='Answer 3')
+        self.assertEqual(len(JobStringAnswer.objects.all()), 3)
+
+        answer_ids = [answer.id for answer in [answer1, answer3]]
+
+        url = reverse('jobstringanswer-list')
+        response = self.client.get(url , format='json', data={
+            'answers[]': answer_ids
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2, 'Expected 2 job-string-answers for 2 job-answer ids')
+        response_answer_ids = [string_answer['answer'] for string_answer in response.data]
+        self.assertEqual(response_answer_ids, answer_ids, 'answer ids do not match')
 
 
 class JobAnswerSetTests(APITestCase):
