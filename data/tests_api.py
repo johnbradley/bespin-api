@@ -6,7 +6,9 @@ from mock.mock import MagicMock, patch, Mock
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputDir, \
     JobQuestion, JobQuestionDataType, JobQuestionnaire, JobAnswer, JobStringAnswer, \
-    JobAnswerSet, JobAnswerKind
+    JobAnswerSet, JobAnswerKind, JobDDSOutputDirectoryAnswer
+from data.jobfactory import JOB_QUESTION_OUTPUT_DIRECTORY, JOB_QUESTION_NAME, JOB_QUESTION_VM_FLAVOR, \
+    JOB_QUESTION_PROJECT_NAME
 from exceptions import WrappedDataServiceException
 from util import DDSProject, DDSResource
 
@@ -241,7 +243,7 @@ class JobsTestCase(APITestCase):
                                         'name': 'my job',
                                         'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
-                                        'workflow_input_json': '{}',
+                                        'job_order': '{}',
                                     })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.get(url, format='json')
@@ -256,7 +258,7 @@ class JobsTestCase(APITestCase):
                                 'name': 'my job2',
                                 'workflow_version_id': self.workflow_version.id,
                                 'vm_project_name': 'jpb88',
-                                'workflow_input_json': '{}',
+                                'job_order': '{}',
                             })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response = self.client.get(url, format='json')
@@ -272,7 +274,7 @@ class JobsTestCase(APITestCase):
                                         'name': 'my job',
                                         'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
-                                        'workflow_input_json': '{}',
+                                        'job_order': '{}',
                                     })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         # normal user can't see admin endpoint
@@ -287,7 +289,7 @@ class JobsTestCase(APITestCase):
                                 'name': 'my job2',
                                 'workflow_version_id': self.workflow_version.id,
                                 'vm_project_name': 'jpb88',
-                                'workflow_input_json': '{}',
+                                'job_order': '{}',
                             })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -311,7 +313,7 @@ class JobsTestCase(APITestCase):
                                         'name': 'my job',
                                         'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
-                                        'workflow_input_json': '{}',
+                                        'job_order': '{}',
                                         'state': Job.JOB_STATE_FINISHED,
                                         'step': Job.JOB_STEP_RUNNING,
                                     })
@@ -327,7 +329,7 @@ class JobsTestCase(APITestCase):
         admin_user = self.user_login.become_admin_user()
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
-                                 workflow_input_json={},
+                                 job_order={},
                                  user=admin_user)
         url = reverse('admin_job-list') + '{}/'.format(job.id)
         response = self.client.put(url, format='json',
@@ -345,7 +347,7 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
-                                 workflow_input_json={},
+                                 job_order={},
                                  user=normal_user)
 
         url = reverse('job-list') + str(job.id) + '/start/'
@@ -365,7 +367,7 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
-                                 workflow_input_json={},
+                                 job_order={},
                                  user=normal_user)
         url = reverse('job-list') + str(job.id) + '/cancel/'
         # Post to /cancel/ for job should work
@@ -377,7 +379,7 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
-                                 workflow_input_json={},
+                                 job_order={},
                                  user=normal_user)
         url = reverse('job-list') + str(job.id) + '/restart/'
 
@@ -407,7 +409,7 @@ class JobsTestCase(APITestCase):
                                         'name': 'my job',
                                         'workflow_version_id': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
-                                        'workflow_input_json': '{}',
+                                        'job_order': '{}',
                                     })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job = Job.objects.first()
@@ -427,13 +429,13 @@ class JobInputFilesTestCase(APITestCase):
         other_user = self.user_login.become_normal_user()
         other_job = Job.objects.create(workflow_version=self.workflow_version,
                                        vm_project_name='test',
-                                       workflow_input_json='{}',
+                                       job_order='{}',
                                        user=other_user)
         JobInputFile.objects.create(job=other_job, file_type='dds_file', workflow_name='models')
         this_user = self.user_login.become_other_normal_user()
         this_job = Job.objects.create(workflow_version=self.workflow_version,
                                       vm_project_name='test',
-                                      workflow_input_json='{}',
+                                      job_order='{}',
                                       user=this_user)
         JobInputFile.objects.create(job=this_job, file_type='dds_file', workflow_name='data1')
 
@@ -464,7 +466,7 @@ class JobErrorTestCase(APITestCase):
         other_user = self.user_login.become_normal_user()
         other_job = Job.objects.create(workflow_version=self.workflow_version,
                                        vm_project_name='test',
-                                       workflow_input_json='{}',
+                                       job_order='{}',
                                        user=other_user)
         JobError.objects.create(job=other_job, content='Out of memory.', job_step=Job.JOB_STEP_RUNNING)
         # Normal user can't write
@@ -475,7 +477,7 @@ class JobErrorTestCase(APITestCase):
         my_user = self.user_login.become_other_normal_user()
         my_job = Job.objects.create(workflow_version=self.workflow_version,
                                        vm_project_name='test',
-                                       workflow_input_json='{}',
+                                       job_order='{}',
                                        user=my_user)
         JobError.objects.create(job=my_job, content='Out of memory.', job_step=Job.JOB_STEP_RUNNING)
 
@@ -502,7 +504,7 @@ class JobErrorTestCase(APITestCase):
         my_user = self.user_login.become_admin_user()
         my_job = Job.objects.create(workflow_version=self.workflow_version,
                                        vm_project_name='test',
-                                       workflow_input_json='{}',
+                                       job_order='{}',
                                        user=my_user)
         url = reverse('admin_joberror-list')
         response = self.client.post(url, format='json', data={
@@ -526,7 +528,7 @@ class DDSJobInputFileTestCase(APITestCase):
         self.my_user = self.user_login.become_normal_user()
         self.my_job = Job.objects.create(workflow_version=self.workflow_version,
                                        vm_project_name='test',
-                                       workflow_input_json='{}',
+                                       job_order='{}',
                                        user=self.my_user)
         self.job_input_file = JobInputFile.objects.create(job=self.my_job, file_type='dds_file', workflow_name='data1')
         endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret', api_root='https://someserver.com/api')
@@ -575,9 +577,9 @@ class URLJobInputFileTestCase(APITestCase):
                                                                url=cwl_url)
         self.my_user = self.user_login.become_normal_user()
         self.my_job = Job.objects.create(workflow_version=self.workflow_version,
-                                       vm_project_name='test',
-                                       workflow_input_json='{}',
-                                       user=self.my_user)
+                                         vm_project_name='test',
+                                         job_order='{}',
+                                         user=self.my_user)
         self.job_input_file = JobInputFile.objects.create(job=self.my_job, file_type='dds_file', workflow_name='data1')
 
     def testPostAndRead(self):
@@ -609,7 +611,7 @@ class JobOutputDirTestCase(APITestCase):
         self.my_user = self.user_login.become_normal_user()
         self.my_job = Job.objects.create(workflow_version=self.workflow_version,
                                          vm_project_name='test',
-                                         workflow_input_json='{}',
+                                         job_order='{}',
                                          user=self.my_user)
 
         self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret', api_root='https://someserver.com/api')
@@ -843,6 +845,31 @@ class JobAnswerTestCase(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_create_dds_value_with_others_credentials(self):
+        other_user = self.user_login.become_other_normal_user()
+        cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret1')
+        user = self.user_login.become_normal_user()
+
+        # user creates a JobAnswer and JobDDSFileAnswer
+        url = reverse('jobanswer-list')
+        response = self.client.post(url, format='json', data={
+            'question': self.ques1.id,
+            'kind': JobAnswerKind.DDS_FILE,
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        answer_id = response.data['id']
+        self.assertEqual(1, answer_id)
+
+        url = reverse('jobddsfileanswer-list')
+        response = self.client.post(url, format='json', data={
+            'answer': answer_id,
+            'project_id': '123',
+            'file_id': '4321',
+            'dds_user_credentials': cred.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('You cannot use another user\'s credentials.', response.data['non_field_errors'])
+
     def test_mismatch_string_with_dds_fails(self):
         user = self.user_login.become_normal_user()
         self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1')
@@ -932,6 +959,8 @@ class JobAnswerSetTests(APITestCase):
         self.user_answer1 = JobAnswer.objects.create(question=question, user=self.user)
         self.user_answer2 = JobAnswer.objects.create(question=question, user=self.user)
         self.other_user_answer = JobAnswer.objects.create(question=question, user=self.other_user)
+        self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret',
+                                                   api_root='https://someserver.com/api')
 
     def test_user_crud(self):
         url = reverse('jobanswerset-list')
@@ -983,3 +1012,129 @@ class JobAnswerSetTests(APITestCase):
             'answers': [self.other_answer.id],
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_job_missing_many_items(self):
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': self.questionnaire1.id,
+            'answers': [],
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_answer_set_id = response.data['id']
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create_job/"
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+    def setup_minmal_questionnaire(self):
+        user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=self.user, token='secret2')
+        questionnaire = JobQuestionnaire.objects.create(description='Workflow1',
+                                                        workflow_version=self.workflow_version)
+        ques = JobQuestion.objects.create(key=JOB_QUESTION_NAME, data_type=JobQuestionDataType.STRING, name="stuff")
+        ques2 = JobQuestion.objects.create(key=JOB_QUESTION_VM_FLAVOR, data_type=JobQuestionDataType.STRING, name="stuff")
+        ques3 = JobQuestion.objects.create(key=JOB_QUESTION_OUTPUT_DIRECTORY, data_type=JobQuestionDataType.DIRECTORY, name="stuff")
+        ques4 = JobQuestion.objects.create(key=JOB_QUESTION_PROJECT_NAME, data_type=JobQuestionDataType.STRING, name="stuff")
+        questionnaire.questions = [ques, ques2, ques3, ques4]
+        questionnaire.save()
+
+        answer = JobAnswer.objects.create(question=ques, questionnaire=questionnaire, user=self.user,
+                                          kind=JobAnswerKind.STRING)
+        JobStringAnswer.objects.create(answer=answer, value="Bradley Lab Analysis")
+        answer = JobAnswer.objects.create(question=ques2, questionnaire=questionnaire, user=self.user,
+                                          kind=JobAnswerKind.STRING)
+        JobStringAnswer.objects.create(answer=answer, value="m1.tiny")
+        answer = JobAnswer.objects.create(question=ques4, questionnaire=questionnaire, user=self.user,
+                                          kind=JobAnswerKind.STRING)
+        JobStringAnswer.objects.create(answer=answer, value="jpb123")
+
+        answer = JobAnswer.objects.create(question=ques3, questionnaire=questionnaire, user=self.user,
+                                          kind=JobAnswerKind.DDS_OUTPUT_DIRECTORY)
+        JobDDSOutputDirectoryAnswer.objects.create(answer=answer, project_id="123", directory_name="results",
+                                                   dds_user_credentials=user_cred)
+        return questionnaire
+
+    def test_create_job_with_items(self):
+        questionnaire = self.setup_minmal_questionnaire()
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': questionnaire.id,
+            'answers': [],
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_answer_set_id = response.data['id']
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create_job/"
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual('Bradley Lab Analysis', response.data['name'])
+        self.assertEqual('m1.tiny', response.data['vm_flavor'])
+        self.assertEqual('jpb123', response.data['vm_project_name'])
+        self.assertEqual('{}', response.data['job_order'])
+        self.assertEqual(1, len(Job.objects.all()))
+
+    @patch('data.jobfactory.JobOutputDir')
+    def test_create_job_with_exception_rolls_back(self, MockJobOutputDir):
+        MockJobOutputDir.objects.create.side_effect = ValueError("oops")
+        self.assertEqual(0, len(Job.objects.all()))
+        questionnaire = self.setup_minmal_questionnaire()
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': questionnaire.id,
+            'answers': [],
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_answer_set_id = response.data['id']
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create_job/"
+        with self.assertRaises(ValueError):
+            response = self.client.post(url, format='json', data={})
+        self.assertEqual(0, len(Job.objects.all()))
+
+
+class JobDDSOutputDirectoryAnswerTests(APITestCase):
+    def setUp(self):
+        self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret',
+                                                   api_root='https://someserver.com/api')
+        self.user_login = UserLogin(self.client)
+        self.ques1 = JobQuestion.objects.create(key="align_out_prefix", data_type=JobQuestionDataType.STRING,
+                                                name="Output file prefix")
+        workflow = Workflow.objects.create(name='RnaSeq')
+        cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
+        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
+                                                               version="1",
+                                                               url=cwl_url)
+        self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
+                                                              workflow_version=self.workflow_version)
+
+    def test_using_own_credentials(self):
+        user = self.user_login.become_normal_user()
+        user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret2')
+        question = JobQuestion.objects.create(key=JOB_QUESTION_OUTPUT_DIRECTORY,
+                                              data_type=JobQuestionDataType.DIRECTORY)
+        answer = JobAnswer.objects.create(question=question, questionnaire=self.questionnaire1, user=user,
+                                          kind=JobAnswerKind.DDS_OUTPUT_DIRECTORY)
+        url = reverse('jobddsoutputdirectoryanswer-list')
+        response = self.client.post(url, format='json', data={
+            'dds_user_credentials': user_cred.id,
+            'answer': answer.id,
+            'project_id': '123',
+            'directory_name': 'results',
+
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_using_others_credentials(self):
+        other_user = self.user_login.become_other_normal_user()
+        other_user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret2')
+        user = self.user_login.become_normal_user()
+        question = JobQuestion.objects.create(key=JOB_QUESTION_OUTPUT_DIRECTORY,
+                                              data_type=JobQuestionDataType.DIRECTORY)
+        answer = JobAnswer.objects.create(question=question, questionnaire=self.questionnaire1, user=user,
+                                          kind=JobAnswerKind.DDS_OUTPUT_DIRECTORY)
+        url = reverse('jobddsoutputdirectoryanswer-list')
+        response = self.client.post(url, format='json', data={
+            'dds_user_credentials': other_user_cred.id,
+            'answer': answer.id,
+            'project_id': '123',
+            'directory_name': 'results',
+
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('You cannot use another user\'s credentials.', response.data['non_field_errors'])

@@ -1,14 +1,16 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
-    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir
+    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir, \
+    JobDDSOutputDirectoryAnswer
 from data.serializers import *
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
 from lando import LandoJob
 from django.db.models import Q
+from jobfactory import create_job_factory
 
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
@@ -215,6 +217,17 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return JobAnswerSet.objects.filter(user=self.request.user)
 
+    @detail_route(methods=['post'], serializer_class=JobSerializer)
+    def create_job(self, request, pk=None):
+        """
+        Create a new job based on our JobAnswerSet and return it's json.
+        """
+        job_answer_set = JobAnswerSet.objects.filter(user=request.user, pk=pk).first()
+        job_factory = create_job_factory(request.user, job_answer_set)
+        job = job_factory.create_job()
+        serializer = JobSerializer(job)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class JobAnswerViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -249,3 +262,10 @@ class JobDDSFileAnswerViewSet(FilterableByAnswerMixin, viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobDDSFileAnswerSerializer
     queryset = JobDDSFileAnswer.objects.all()
+
+
+class JobDDSOutputDirectoryAnswerViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = JobDDSOutputDirectoryAnswerSerializer
+    queryset = JobDDSOutputDirectoryAnswer.objects.all()
+
