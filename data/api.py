@@ -217,7 +217,7 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return JobAnswerSet.objects.filter(user=self.request.user)
 
-    @detail_route(methods=['post', 'get'], serializer_class=JobSerializer)
+    @detail_route(methods=['post'], serializer_class=JobSerializer)
     def create_job(self, request, pk=None):
         """
         Create a new job based on our JobAnswerSet and return it's json.
