@@ -99,8 +99,8 @@ class Job(models.Model):
                                         help_text="Name of the vm this job is/was running on.")
     vm_project_name = models.CharField(max_length=255, blank=False, null=False,
                                        help_text="Name of the cloud project where vm will be created.")
-    workflow_input_json = models.TextField(null=True,
-                                           help_text="CWL input json for use with the workflow.")
+    job_order = models.TextField(null=True,
+                                 help_text="CWL input json for use with the workflow.")
 
     def __unicode__(self):
         workflow_name = ''
@@ -200,10 +200,12 @@ class JobQuestionDataType(object):
     STRING = 'string'
     INTEGER = 'int'
     FILE = 'File'
+    DIRECTORY = 'Directory'
     ITEMS = (
         (STRING, 'String'),
         (INTEGER, 'Integer'),
         (FILE, 'File'),
+        (DIRECTORY, 'Directory'),
     )
 
 
@@ -247,9 +249,11 @@ class JobAnswerKind(object):
     """
     STRING = 'string'
     DDS_FILE = 'dds_file'
+    DDS_OUTPUT_DIRECTORY = 'dds_output_directory'
     ITEMS = (
         (STRING, 'Text'),
         (DDS_FILE, 'DukeDS File'),
+        (DDS_OUTPUT_DIRECTORY, 'DukeDS Output Directory'),
     )
 
 
@@ -296,6 +300,22 @@ class JobDDSFileAnswer(models.Model):
 
     def __unicode__(self):
         return '{} question:{} - file_id:{}'.format(self.pk, self.answer.question.name, self.file_id)
+
+
+class JobDDSOutputDirectoryAnswer(models.Model):
+    """
+    DukeDS directory keys associated with a JobAnswer.
+    """
+    answer = models.OneToOneField(JobAnswer, on_delete=models.CASCADE, related_name='dds_output_directory')
+    project_id = models.CharField(max_length=255, blank=False, null=True,
+                                  help_text='uuid from DukeDS for the project containing our directory')
+    directory_name = models.CharField(max_length=255, blank=False, null=True,
+                                      help_text='name of the directory to create')
+    dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE,
+                                             help_text='Credentials with access to this directory')
+
+    def __unicode__(self):
+        return '{} question:{} - directory_name:{}'.format(self.pk, self.answer.question.name, self.directory_name)
 
 
 class JobAnswerSet(models.Model):

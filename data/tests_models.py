@@ -103,7 +103,7 @@ class JobTests(TestCase):
     def test_create(self):
         Job.objects.create(workflow_version=self.workflow_version, user=self.user,
                            vm_project_name='jpb67',
-                           workflow_input_json=self.sample_json)
+                           job_order=self.sample_json)
         job = Job.objects.first()
         self.assertEqual(self.workflow_version, job.workflow_version)
         self.assertEqual(self.user, job.user)
@@ -121,7 +121,7 @@ class JobTests(TestCase):
 
     def test_state_changes(self):
         # Create job which should start in new state
-        Job.objects.create(workflow_version=self.workflow_version, user=self.user, workflow_input_json=self.sample_json)
+        Job.objects.create(workflow_version=self.workflow_version, user=self.user, job_order=self.sample_json)
         job = Job.objects.first()
         self.assertEqual(Job.JOB_STATE_NEW, job.state)
 
@@ -154,7 +154,7 @@ class JobTests(TestCase):
                                                                url=CWL_URL)
         obj.sample_json = "{'type': 1}"
         obj.job = Job.objects.create(workflow_version=obj.workflow_version, user=obj.user,
-                                      workflow_input_json=obj.sample_json)
+                                     job_order=obj.sample_json)
 
 
 class JobInputFileTests(TestCase):

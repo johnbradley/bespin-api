@@ -19,3 +19,14 @@ class BespinAPIException(APIException):
     def __init__(self, status_code, detail):
         self.status_code = status_code
         self.detail = detail
+
+
+class JobFactoryException(APIException):
+    """
+    Contains errors that occurred when trying to create a Job from a JobAnswerSet
+    """
+    def __init__(self, errors):
+        self.status_code = 400
+        self.detail = {
+            "errors": errors
+        }
