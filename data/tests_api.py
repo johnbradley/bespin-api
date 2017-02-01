@@ -1047,7 +1047,7 @@ class JobAnswerSetTests(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job_answer_set_id = response.data['id']
-        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create_job/"
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create-job/"
         response = self.client.post(url, format='json', data={})
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
 
@@ -1087,7 +1087,7 @@ class JobAnswerSetTests(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job_answer_set_id = response.data['id']
-        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create_job/"
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create-job/"
         response = self.client.post(url, format='json', data={})
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual('Bradley Lab Analysis', response.data['name'])
@@ -1108,7 +1108,7 @@ class JobAnswerSetTests(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job_answer_set_id = response.data['id']
-        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create_job/"
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create-job/"
         with self.assertRaises(ValueError):
             response = self.client.post(url, format='json', data={})
         self.assertEqual(0, len(Job.objects.all()))

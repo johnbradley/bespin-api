@@ -219,7 +219,7 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
         return JobAnswerSet.objects.filter(user=self.request.user)
 
     @transaction.atomic
-    @detail_route(methods=['post'], serializer_class=JobSerializer)
+    @detail_route(methods=['post'], serializer_class=JobSerializer, url_path='create-job')
     def create_job(self, request, pk=None):
         """
         Create a new job based on our JobAnswerSet and return it's json.
