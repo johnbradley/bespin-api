@@ -7,6 +7,7 @@ from models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion, \
     JobAnswerKind, JobDDSOutputDirectoryAnswer, JobInputFile, JobQuestionDataType
 from jobfactory import JobFactory, QuestionInfoList, JobFields, \
     JOB_QUESTION_NAME, JOB_QUESTION_PROJECT_NAME, JOB_QUESTION_VM_FLAVOR, JOB_QUESTION_OUTPUT_DIRECTORY
+import json
 
 
 FLY_RNASEQ_URL = "https://raw.githubusercontent.com/Duke-GCB/bespin-cwl/master/packed-workflows/rnaseq-pt1-packed.cwl"
@@ -130,7 +131,7 @@ class JobFactoryTests(TestCase):
         expected = {
             "threads": 4
         }
-        self.assertEqual(expected, job_order)
+        self.assertEqual(expected, json.loads(job_order))
 
     def test_string_array_build_cwl_input(self):
         question1 = JobQuestion.objects.create(key="job_order.cores",
@@ -159,7 +160,7 @@ class JobFactoryTests(TestCase):
                 "CCGT"
             ]
         }
-        self.assertEqual(expected, job_order)
+        self.assertEqual(expected, json.loads(job_order))
 
     def test_string_file_build_cwl_input(self):
         question1 = JobQuestion.objects.create(key="job_order.datafile",
@@ -181,7 +182,7 @@ class JobFactoryTests(TestCase):
                     "path": "/data/stuff.csv"
             }
         }
-        self.assertEqual(expected, job_order)
+        self.assertEqual(expected, json.loads(job_order))
 
     @patch("data.jobfactory.get_file_name")
     def test_file_build_cwl_input(self, mock_get_file_name):
@@ -206,7 +207,7 @@ class JobFactoryTests(TestCase):
                 "path": expected_filename
             }
         }
-        self.assertEqual(expected, job_fields.job_order)
+        self.assertEqual(expected, json.loads(job_fields.job_order))
 
     @patch("data.jobfactory.get_file_name")
     def test_create_simple_job(self, mock_get_file_name):
@@ -229,7 +230,7 @@ class JobFactoryTests(TestCase):
         expected = {
             'datafile': {'path': '1_stuff.csv', 'class': 'File'}
         }
-        self.assertEqual(expected, job.job_order)
+        self.assertEqual(expected, json.loads(job.job_order))
         self.assertEqual("results", job.output_dir.dir_name)
         self.assertEqual("m1.extrasmall", job.vm_flavor)
         job_input_files = JobInputFile.objects.filter(job=job)

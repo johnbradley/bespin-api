@@ -2,6 +2,7 @@ from data.models import Job, JobAnswer, JobAnswerKind, JobQuestionDataType, JobO
 from rest_framework.exceptions import ValidationError
 from util import get_file_name
 from exceptions import JobFactoryException
+import json
 
 # Fields that are added to CWL input(Job.job_order) must begin with this prefix
 JOB_ORDER_PREFIX = "job_order."
@@ -328,12 +329,12 @@ class JobFields(object):
         self.vm_project_name = None
         self.vm_flavor = None
         self.output_directory = None
-        self.job_order = {}
+        job_order = {}
         for question_info in question_info_list.values():
             key = question_info.key
             if key.startswith(JOB_ORDER_PREFIX):
                 job_order_key = key.replace(JOB_ORDER_PREFIX, "", 1)
-                self.job_order[job_order_key] = question_info.get_formatted_answers()
+                job_order[job_order_key] = question_info.get_formatted_answers()
             else:
                 value = question_info.get_formatted_answers()
                 if key == JOB_QUESTION_NAME:
@@ -346,5 +347,4 @@ class JobFields(object):
                     self.output_directory = value
                 else:
                     raise ValidationError("Invalid job field question name {}".format(key))
-
-
+        self.job_order = json.dumps(job_order)
