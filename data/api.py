@@ -10,6 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
 from lando import LandoJob
 from django.db.models import Q
+from django.db import transaction
 from jobfactory import create_job_factory
 
 
@@ -217,6 +218,7 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return JobAnswerSet.objects.filter(user=self.request.user)
 
+    @transaction.atomic
     @detail_route(methods=['post'], serializer_class=JobSerializer)
     def create_job(self, request, pk=None):
         """
