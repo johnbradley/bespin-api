@@ -10,6 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
 from lando import LandoJob
 from django.db.models import Q
+from django.db import transaction
 from jobfactory import create_job_factory
 
 
@@ -217,7 +218,8 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return JobAnswerSet.objects.filter(user=self.request.user)
 
-    @detail_route(methods=['post'], serializer_class=JobSerializer)
+    @transaction.atomic
+    @detail_route(methods=['post'], serializer_class=JobSerializer, url_path='create-job')
     def create_job(self, request, pk=None):
         """
         Create a new job based on our JobAnswerSet and return it's json.
@@ -233,7 +235,7 @@ class JobAnswerViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobAnswerSerializer
     filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('questionnaire',)
+    filter_fields = ('questionnaire', 'question',)
 
     def get_queryset(self):
         return JobAnswer.objects.filter(Q(user=self.request.user) | Q(questionnaire__isnull=False))
@@ -242,6 +244,14 @@ class JobAnswerViewSet(viewsets.ModelViewSet):
 class FilterableByAnswerMixin(object):
     filter_fields = ('answer',)
     filter_backends = (DjangoFilterBackend,)
+
+    def get_queryset(self):
+        if 'answers[]' in self.request.query_params:
+            answer_ids = self.request.query_params.getlist('answers[]')
+            queryset = self.queryset.filter(answer__id__in=answer_ids)
+            return queryset
+        else:
+            return self.queryset
 
 
 class JobStringAnswerViewSet(FilterableByAnswerMixin, viewsets.ModelViewSet):
