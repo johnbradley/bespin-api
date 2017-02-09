@@ -161,6 +161,9 @@ class DDSResourceSerializer(serializers.Serializer):
     name = serializers.CharField()
     project = serializers.UUIDField()
     folder = serializers.UUIDField()
+    version = serializers.IntegerField()
+    version_id = serializers.UUIDField()
+    size = serializers.IntegerField()
 
     class Meta:
         resource_name = 'dds-resources'
