@@ -119,3 +119,17 @@ def get_user_folder_content(user, dds_folder_id, search_str=None):
         return DDSResource.from_list(resources)
     except DataServiceError as dse:
         raise WrappedDataServiceException(dse)
+
+
+def get_file_name(user, dds_file_id):
+    """
+    Lookup a filename based on a file id.
+    :param user: User who has DukeDS credentials
+    :param dds_file_id: str: duke data service file id
+    :return: str: name of the file
+    """
+    try:
+        remote_store = get_remote_store(user)
+        return remote_store.data_service.get_file(dds_file_id).json()['name']
+    except DataServiceError as dse:
+        raise WrappedDataServiceException(dse)

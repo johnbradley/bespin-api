@@ -28,7 +28,7 @@ USER_CRED_ID=$(curl -s -H "$AUTH_HEADER" -H "$JSON_CONTENT_HEADER" -H "$ACCEPT_H
 echo "DDS user credential $USER_CRED_ID"
 
 echo "Create job"
-PAYLOAD='{"workflow_version":1,"name":"Predictions for chr1", "workflow_input_json":"{}", "vm_flavor":"m1.xlarge", "vm_project_name":"bespinuser1"}'
+PAYLOAD='{"workflow_version":1,"name":"Predictions for chr1", "job_order":"{}", "vm_flavor":"m1.xlarge", "vm_project_name":"bespinuser1"}'
 JOB_ID=$(curl -s -H "$AUTH_HEADER" -H "$JSON_CONTENT_HEADER" -H "$ACCEPT_HEADER" -X POST -d "$PAYLOAD" $BASE_URL/jobs/ | sed -e 's/..id..//' -e 's/,.*//')
 echo "Create job $JOB_ID"
 
