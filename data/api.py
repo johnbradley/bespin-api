@@ -83,21 +83,24 @@ class JobsViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['post'])
     def start(self, request, pk=None):
-        job = LandoJob(pk)
-        job.start()
-        return Response({'status': 'ok'})
+        LandoJob(pk).start()
+        return self._serialize_job_response(pk)
 
     @detail_route(methods=['post'])
     def cancel(self, request, pk=None):
-        job = LandoJob(pk)
-        job.cancel()
-        return Response({'status': 'ok'})
+        LandoJob(pk).cancel()
+        return self._serialize_job_response(pk)
 
     @detail_route(methods=['post'])
     def restart(self, request, pk=None):
-        job = LandoJob(pk)
-        job.restart_job()
-        return Response({'status': 'ok'})
+        LandoJob(pk).restart()
+        return self._serialize_job_response(pk)
+
+    @staticmethod
+    def _serialize_job_response(pk, job_status=status.HTTP_200_OK):
+        job = Job.objects.get(pk=pk)
+        serializer = JobSerializer(job)
+        return Response(serializer.data, status=job_status)
 
 
 class AdminJobsViewSet(viewsets.ModelViewSet):

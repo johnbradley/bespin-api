@@ -57,16 +57,22 @@ class Job(models.Model):
     Instance of a workflow that is in some state of progress.
     """
     JOB_STATE_NEW = 'N'
+    JOB_STATE_STARTING = 'S'
     JOB_STATE_RUNNING = 'R'
     JOB_STATE_FINISHED = 'F'
     JOB_STATE_ERROR = 'E'
+    JOB_STATE_CANCELING = 'c'
     JOB_STATE_CANCEL = 'C'
+    JOB_STATE_RESTARTING = 'r'
     JOB_STATES = (
         (JOB_STATE_NEW, 'New'),
+        (JOB_STATE_STARTING, 'Starting'),
         (JOB_STATE_RUNNING, 'Running'),
         (JOB_STATE_FINISHED, 'Finished'),
         (JOB_STATE_ERROR, 'Error'),
-        (JOB_STATE_CANCEL, 'Canceled')
+        (JOB_STATE_CANCELING, 'Canceling'),
+        (JOB_STATE_CANCEL, 'Canceled'),
+        (JOB_STATE_RESTARTING, 'Restarting'),
     )
 
     JOB_STEP_CREATE_VM = 'V'
