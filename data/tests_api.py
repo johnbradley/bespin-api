@@ -1,16 +1,17 @@
-from django.core.urlresolvers import reverse
-from rest_framework.test import APITestCase
-from rest_framework import status
 from django.contrib.auth.models import User as django_user
+from django.core.urlresolvers import reverse
 from mock.mock import MagicMock, patch, Mock
+from rest_framework import status
+from rest_framework.test import APITestCase
+
+from data.jobfactory import JOB_QUESTION_OUTPUT_DIRECTORY, JOB_QUESTION_NAME, JOB_QUESTION_VM_FLAVOR, \
+    JOB_QUESTION_PROJECT_NAME
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputDir, \
     JobQuestion, JobQuestionDataType, JobQuestionnaire, JobAnswer, JobStringAnswer, \
     JobAnswerSet, JobAnswerKind, JobDDSOutputDirectoryAnswer
-from data.jobfactory import JOB_QUESTION_OUTPUT_DIRECTORY, JOB_QUESTION_NAME, JOB_QUESTION_VM_FLAVOR, \
-    JOB_QUESTION_PROJECT_NAME
 from exceptions import WrappedDataServiceException
-from util import DDSProject, DDSResource
+from util import DDSResource
 
 
 class UserLogin(object):
@@ -102,7 +103,8 @@ class DDSResourcesTestCase(APITestCase):
     @patch('data.api.get_user_project_content')
     def testListsResourcesByProject(self, mock_get_user_project_content):
         project_id = 'abc123'
-        mock_get_user_project_content.return_value = DDSResource.from_list([{'id': '12355', 'name': 'test.txt', 'project': {'id': project_id}}])
+        resource  = {'id': '12355','name': 'test.txt', 'project': {'id': project_id}, 'parent': {'kind': 'dds-project', 'id': project_id}}
+        mock_get_user_project_content.return_value = DDSResource.from_list([resource])
         url = reverse('dds-resources-list')
         response = self.client.get(url, data={'project_id': project_id}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -112,7 +114,8 @@ class DDSResourcesTestCase(APITestCase):
     def testListsResourcesByFolder(self, mock_get_user_folder_content):
         project_id = 'abc123'
         folder_id = 'def456'
-        mock_get_user_folder_content.return_value = DDSResource.from_list([{'id': '12355', 'name': 'test.txt', 'project': {'id': project_id}}])
+        resource = {'id': '12355', 'name': 'test.txt', 'project': {'id': project_id}, 'parent': {'kind': 'dds-folder', 'id': folder_id}}
+        mock_get_user_folder_content.return_value = DDSResource.from_list([resource])
         url = reverse('dds-resources-list')
         response = self.client.get(url, data={'folder_id': folder_id}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -133,6 +136,62 @@ class DDSResourcesTestCase(APITestCase):
         url = reverse('dds-resources-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('data.api.get_user_project_content')
+    def testIncludesFileDetailsForFiles(self, mock_get_user_project_content):
+        project_id = 'abc123'
+        file_resource = {
+            'id': 'file2',
+            'kind': 'dds-file',
+            'name': 'file-with-details.txt',
+            'project': {
+                'id': project_id
+            },
+            'parent': {
+                'kind': 'dds-project',
+                'id': project_id
+            },
+            'current_version': {
+                'id': 'v2',
+                'version': 2,
+                'upload': {
+                    'id': 'u1',
+                    'size': 1048576,
+                }
+            }
+        }
+        mock_get_user_project_content.return_value = DDSResource.from_list([file_resource])
+        url = reverse('dds-resources-list')
+        response = self.client.get(url, data={'project_id': project_id}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['version'], 2)
+        self.assertEqual(response.data[0]['version_id'], 'v2')
+        self.assertEqual(response.data[0]['size'], 1048576)
+
+    @patch('data.api.get_user_project_content')
+    def testDoesNotIncludeFileDetailsForFolders(self, mock_get_user_project_content):
+        project_id = 'abc123'
+        folder_resource = {
+            'id': 'f2',
+            'kind': 'dds-folder',
+            'name': 'folder2',
+            'project': {
+                'id': project_id
+            },
+            'parent': {
+                'kind': 'dds-project',
+                'id': project_id
+            }
+        }
+        mock_get_user_project_content.return_value = DDSResource.from_list([folder_resource])
+        url = reverse('dds-resources-list')
+        response = self.client.get(url, data={'project_id': project_id}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertIsNone(response.data[0]['version'])
+        self.assertIsNone(response.data[0]['version_id'])
+        self.assertEqual(response.data[0]['size'], 0)
 
 
 class DDSEndpointTestCase(APITestCase):

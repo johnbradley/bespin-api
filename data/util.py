@@ -29,6 +29,25 @@ class DDSResource(DDSBase):
         self.name = resource_dict.get('name')
         self.kind = resource_dict.get('kind')
         self.project = resource_dict.get('project').get('id')
+        parent = resource_dict.get('parent')
+        if parent.get('kind') == 'dds-folder':
+            self.folder = parent.get('id')
+        else:
+            self.folder = None
+        current_version_dict = resource_dict.get('current_version')
+        if current_version_dict:
+            self.version = current_version_dict.get('version')
+            self.version_id = current_version_dict.get('id')
+            upload_dict = current_version_dict.get('upload')
+        else:
+            self.version = None
+            self.version_id = None
+            upload_dict = None
+
+        if upload_dict:
+            self.size = upload_dict.get('size') or 0
+        else:
+            self.size = 0
 
 
 def get_remote_store(user):
