@@ -355,6 +355,7 @@ class JobsTestCase(APITestCase):
         # Post to /start/ for job in NEW state should work
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['state'], Job.JOB_STATE_STARTING)
 
         # Post to /start/ for job in RUNNING state should fail
         job.state = Job.JOB_STATE_RUNNING
@@ -373,6 +374,7 @@ class JobsTestCase(APITestCase):
         # Post to /cancel/ for job should work
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['state'], Job.JOB_STATE_CANCELING)
 
     @patch('data.lando.LandoJob._make_client')
     def test_job_restart(self, mock_make_client):
@@ -393,6 +395,7 @@ class JobsTestCase(APITestCase):
         job.save()
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['state'], Job.JOB_STATE_RESTARTING)
         mock_make_client().restart_job.assert_called_with(str(1))
 
         # Post to /restart/ for job in CANCEL state should work
