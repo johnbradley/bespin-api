@@ -342,20 +342,26 @@ class JobQuestionnaireTests(TestCase):
     def test_two_questionnaires(self):
         questions = JobQuestionTests.create_rna_seq_job_questions()
         self.assertEqual(6, len(questions))
-        questionnaire = JobQuestionnaire.objects.create(description='Ant RnaSeq',
+        questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
+                                                        description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=self.workflow_version)
         questionnaire.questions = questions
         questionnaire.save()
 
-        questionnaire = JobQuestionnaire.objects.create(description='Human RnaSeq',
+        questionnaire = JobQuestionnaire.objects.create(name='Human RnaSeq',
+                                                        description='Uses reference genome zew and gene index def',
                                                         workflow_version=self.workflow_version)
         questionnaire.questions = questions
         questionnaire.save()
 
-        ant_questionnaire = JobQuestionnaire.objects.filter(description='Ant RnaSeq').first()
+        ant_questionnaire = JobQuestionnaire.objects.filter(name='Ant RnaSeq').first()
+        self.assertEqual('Ant RnaSeq', ant_questionnaire.name)
+        self.assertEqual('Uses reference genome xyz and gene index abc', ant_questionnaire.description)
         self.assertEqual(6, len(ant_questionnaire.questions.all()))
 
-        human_questionnaire = JobQuestionnaire.objects.filter(description='Human RnaSeq').first()
+        human_questionnaire = JobQuestionnaire.objects.filter(name='Human RnaSeq').first()
+        self.assertEqual('Human RnaSeq', human_questionnaire.name)
+        self.assertEqual('Uses reference genome zew and gene index def', human_questionnaire.description)
         self.assertEqual(6, len(human_questionnaire.questions.all()))
 
 
