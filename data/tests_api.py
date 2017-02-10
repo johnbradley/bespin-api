@@ -781,12 +781,14 @@ class JobQuestionnaireTestCase(APITestCase):
         self.ques3 = JobQuestion.objects.create(key="reads", data_type=JobQuestionDataType.FILE, occurs=2)
         self.ques4 = JobQuestion.objects.create(key="threads", data_type=JobQuestionDataType.INTEGER)
 
-        self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
+        self.questionnaire1 = JobQuestionnaire.objects.create(name='Workflow1',
+                                                              description='A really large workflow',
                                                               workflow_version=self.workflow_version)
         self.questionnaire1.questions = [self.ques1, self.ques2, self.ques3, self.ques4]
         self.questionnaire1.save()
 
-        self.questionnaire2 = JobQuestionnaire.objects.create(description='Workflow2',
+        self.questionnaire2 = JobQuestionnaire.objects.create(name='Workflow2',
+                                                              description='A rather small workflow',
                                                               workflow_version=self.workflow_version)
         self.questionnaire2.questions = [self.ques2, self.ques3]
         self.questionnaire2.save()
@@ -801,7 +803,8 @@ class JobQuestionnaireTestCase(APITestCase):
         url = '{}{}/'.format(reverse('jobquestionnaire-list'), self.questionnaire1.id)
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual('Workflow1', response.data['description'])
+        self.assertEqual('Workflow1', response.data['name'])
+        self.assertEqual('A really large workflow', response.data['description'])
         self.assertEqual(self.workflow_version.id, response.data['workflow_version'])
         self.assertEqual(4, len(response.data['questions']))
         self.assertEqual(self.ques1.id, response.data['questions'][0])
@@ -809,7 +812,8 @@ class JobQuestionnaireTestCase(APITestCase):
         url = '{}{}/'.format(reverse('jobquestionnaire-list'), self.questionnaire2.id)
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual('Workflow2', response.data['description'])
+        self.assertEqual('Workflow2', response.data['name'])
+        self.assertEqual('A rather small workflow', response.data['description'])
         self.assertEqual(self.workflow_version.id, response.data['workflow_version'])
         self.assertEqual(2, len(response.data['questions']))
         self.assertEqual(self.ques2.id, response.data['questions'][0])

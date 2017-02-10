@@ -238,8 +238,10 @@ class JobQuestionnaire(models.Model):
     List of JobQuestions that are for a particular workflow version.
     Contains questions that will be used to create CWL input json and job fields.
     """
-    description = models.CharField(max_length=255, blank=False, null=False,
-                                   help_text="User facing description")
+    name = models.CharField(max_length=255, blank=False, null=False,
+                            help_text="Short user facing name")
+    description = models.TextField(blank=False, null=False,
+                                   help_text="Detailed user facing description")
     workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.CASCADE, blank=False, null=False,
                                          help_text="Workflow that this questionaire is for")
     questions = models.ManyToManyField(JobQuestion,
