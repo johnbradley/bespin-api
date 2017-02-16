@@ -23,7 +23,7 @@ env_variables_to_pass = [
   'BESPIN_DB_PASSWORD',
   'BESPIN_DB_HOST',
   'BESPIN_CORS_HOST',
-  'BESPIN_STATIC_ROOT,
+  'BESPIN_STATIC_ROOT',
 ]
 
 def application(environ, start_response):
