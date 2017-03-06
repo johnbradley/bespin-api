@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 
+
 class Command(BaseCommand):
     help = 'Adds user with specified token name'
 
@@ -10,11 +11,26 @@ class Command(BaseCommand):
         parser.add_argument('password')
         parser.add_argument('tokenkey')
 
+    def _create_user(self, username, password):
+        user, created = User.objects.get_or_create(username=username, is_staff=True, is_superuser=True)
+        if created:
+            self.stdout.write("User '{}' created ith id {}".format(username, user.id))
+        else:
+            self.stderr.write("User '{}', already exists with id {}".format(username, user.id))
+        user.set_password(password)
+        user.save()
+        return user
+
+    def _create_token(self, user, tokenkey):
+        token, created = Token.objects.get_or_create(key=tokenkey, user=user)
+        if created:
+            self.stdout.write("Token '{}' created.".format(tokenkey))
+        else:
+            self.stderr.write("Token '{}' already exists".format(tokenkey))
+
     def handle(self, **options):
         username = options['username']
         password = options['password']
         tokenkey = options['tokenkey']
-        user = User.objects.create(username=username, is_staff=True, is_superuser=True)
-        user.set_password(password)
-        user.save()
-        t = Token.objects.create(key=tokenkey, user=user)
+        user = self._create_user(username, password)
+        self._create_token(user, tokenkey)
