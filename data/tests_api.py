@@ -360,6 +360,8 @@ class JobsTestCase(APITestCase):
         self.assertEqual(2, len(response.data))
         self.assertIn(other_user.id, [item['user_id'] for item in response.data])
         self.assertIn(normal_user.id, [item['user_id'] for item in response.data])
+        self.assertIn('my job', [item['name'] for item in response.data])
+        self.assertIn('my job2', [item['name'] for item in response.data])
 
     def testStopRegularUserFromSettingStateOrStep(self):
         """
@@ -386,7 +388,8 @@ class JobsTestCase(APITestCase):
         Admin should be able to change job state and job step.
         """
         admin_user = self.user_login.become_admin_user()
-        job = Job.objects.create(workflow_version=self.workflow_version,
+        job = Job.objects.create(name='somejob',
+                                 workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
                                  job_order={},
                                  user=admin_user)

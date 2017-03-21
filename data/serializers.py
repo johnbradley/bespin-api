@@ -54,10 +54,11 @@ class AdminJobSerializer(serializers.ModelSerializer):
     output_dir = JobOutputDirSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
     user_id = serializers.IntegerField(required=False)
+    name = serializers.CharField(required=False)
     class Meta:
         model = Job
         resource_name = 'jobs'
-        fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'step', 'last_updated',
+        fields = ('id', 'workflow_version', 'user_id', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir')
 
 
