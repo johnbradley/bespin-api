@@ -14,10 +14,15 @@ class WorkflowSerializer(serializers.ModelSerializer):
 
 
 class WorkflowVersionSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    def get_name(self, obj):
+        return obj.workflow.name
+
     class Meta:
         model = WorkflowVersion
         resource_name = 'workflow-versions'
-        fields = ('id', 'workflow', 'description', 'object_name', 'created', 'url', 'version')
+        fields = ('id', 'workflow', 'name', 'description', 'object_name', 'created', 'url', 'version')
 
 
 class JobOutputDirSerializer(serializers.ModelSerializer):
@@ -54,10 +59,11 @@ class AdminJobSerializer(serializers.ModelSerializer):
     output_dir = JobOutputDirSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
     user_id = serializers.IntegerField(required=False)
+    name = serializers.CharField(required=False)
     class Meta:
         model = Job
         resource_name = 'jobs'
-        fields = ('id', 'workflow_version', 'user_id', 'created', 'state', 'step', 'last_updated',
+        fields = ('id', 'workflow_version', 'user_id', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir')
 
 
