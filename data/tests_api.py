@@ -300,7 +300,7 @@ class JobsTestCase(APITestCase):
         response = self.client.post(url, format='json',
                                     data={
                                         'name': 'my job',
-                                        'workflow_version_id': self.workflow_version.id,
+                                        'workflow_version': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
                                         'job_order': '{}',
                                     })
@@ -310,12 +310,13 @@ class JobsTestCase(APITestCase):
         self.assertEqual(1, len(response.data))
         self.assertEqual(normal_user.id, response.data[0]['user'])
         self.assertEqual('my job', response.data[0]['name'])
+        self.assertEqual(self.workflow_version.id, response.data[0]['workflow_version'])
 
         other_user = self.user_login.become_other_normal_user()
         response = self.client.post(url, format='json',
                             data={
                                 'name': 'my job2',
-                                'workflow_version_id': self.workflow_version.id,
+                                'workflow_version': self.workflow_version.id,
                                 'vm_project_name': 'jpb88',
                                 'job_order': '{}',
                             })
@@ -324,6 +325,7 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
         self.assertEqual(other_user.id, response.data[0]['user'])
+        self.assertEqual(self.workflow_version.id, response.data[0]['workflow_version'])
 
     def testAdminSeeAllData(self):
         url = reverse('job-list')
@@ -331,7 +333,7 @@ class JobsTestCase(APITestCase):
         response = self.client.post(url, format='json',
                                     data={
                                         'name': 'my job',
-                                        'workflow_version_id': self.workflow_version.id,
+                                        'workflow_version': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
                                         'job_order': '{}',
                                     })
@@ -346,7 +348,7 @@ class JobsTestCase(APITestCase):
         response = self.client.post(url, format='json',
                             data={
                                 'name': 'my job2',
-                                'workflow_version_id': self.workflow_version.id,
+                                'workflow_version': self.workflow_version.id,
                                 'vm_project_name': 'jpb88',
                                 'job_order': '{}',
                             })
@@ -362,6 +364,8 @@ class JobsTestCase(APITestCase):
         self.assertIn(normal_user.id, [item['user_id'] for item in response.data])
         self.assertIn('my job', [item['name'] for item in response.data])
         self.assertIn('my job2', [item['name'] for item in response.data])
+        self.assertEqual(['RnaSeq', 'RnaSeq'], [item['workflow_version']['name'] for item in response.data])
+
 
     def testStopRegularUserFromSettingStateOrStep(self):
         """
@@ -372,7 +376,7 @@ class JobsTestCase(APITestCase):
         response = self.client.post(url, format='json',
                                     data={
                                         'name': 'my job',
-                                        'workflow_version_id': self.workflow_version.id,
+                                        'workflow_version': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
                                         'job_order': '{}',
                                         'state': Job.JOB_STATE_FINISHED,
@@ -472,7 +476,7 @@ class JobsTestCase(APITestCase):
         response = self.client.post(url, format='json',
                                     data={
                                         'name': 'my job',
-                                        'workflow_version_id': self.workflow_version.id,
+                                        'workflow_version': self.workflow_version.id,
                                         'vm_project_name': 'jpb67',
                                         'job_order': '{}',
                                     })

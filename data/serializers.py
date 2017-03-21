@@ -14,10 +14,15 @@ class WorkflowSerializer(serializers.ModelSerializer):
 
 
 class WorkflowVersionSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    def get_name(self, obj):
+        return obj.workflow.name
+
     class Meta:
         model = WorkflowVersion
         resource_name = 'workflow-versions'
-        fields = ('id', 'workflow', 'description', 'object_name', 'created', 'url', 'version')
+        fields = ('id', 'workflow', 'name', 'description', 'object_name', 'created', 'url', 'version')
 
 
 class JobOutputDirSerializer(serializers.ModelSerializer):
