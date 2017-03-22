@@ -200,6 +200,12 @@ class JobOutputDirViewSet(viewsets.ModelViewSet):
     serializer_class = JobOutputDirSerializer
 
 
+class AdminJobOutputDirViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAdminUser,)
+    queryset = JobOutputDir.objects.all()
+    serializer_class = AdminJobOutputDirSerializer
+
+
 class JobQuestionnaireViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = JobQuestionnaire.objects.all()
