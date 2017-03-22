@@ -725,6 +725,38 @@ class JobOutputDirTestCase(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_list_dirs_admin(self):
+        # Admin can list other users job-output-directories
+        JobOutputDir.objects.create(job=self.my_job, dir_name='results', project_id='1',
+                                    dds_user_credentials=self.cred)
+        self.user_login.become_admin_user()
+        url = reverse('admin_joboutputdir-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(1, len(response.data))
+        job_output_dir = response.data[0]
+        self.assertEqual(self.my_job.id, job_output_dir['job'])
+        self.assertEqual('results', job_output_dir['dir_name'])
+        self.assertEqual('1', job_output_dir['project_id'])
+        self.assertEqual(self.cred.id, job_output_dir['dds_user_credentials'])
+
+    def test_create_admin(self):
+        # Admin can create other users job-output-directories
+        self.user_login.become_admin_user()
+        url = reverse('admin_joboutputdir-list')
+        response = self.client.post(url, format='json', data={
+            'job': self.my_job.id,
+            'dir_name': 'results',
+            'project_id': '123',
+            'dds_user_credentials': self.cred.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_output_dir = JobOutputDir.objects.first()
+        self.assertEqual(self.my_job, job_output_dir.job)
+        self.assertEqual('results', job_output_dir.dir_name)
+        self.assertEqual('123', job_output_dir.project_id)
+        self.assertEqual(self.cred, job_output_dir.dds_user_credentials)
+
 
 class JobQuestionTestCase(APITestCase):
     def setUp(self):

@@ -29,6 +29,7 @@ router.register(r'admin/jobs', api.AdminJobsViewSet, 'admin_job')
 router.register(r'admin/job-input-files', api.AdminJobInputFileViewSet, 'admin_jobinputfile')
 router.register(r'admin/dds-user-credentials', api.AdminDDSUserCredentialsViewSet, 'admin_ddsusercredentials')
 router.register(r'admin/job-errors', api.AdminJobErrorViewSet, 'admin_joberror')
+router.register(r'admin/job-output-dirs', api.AdminJobOutputDirViewSet, 'admin_joboutputdir')
 
 urlpatterns = [
     url(r'^', include(router.urls)),

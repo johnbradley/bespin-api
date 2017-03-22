@@ -40,6 +40,13 @@ class JobOutputDirSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class AdminJobOutputDirSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobOutputDir
+        resource_name = 'job-output-dirs'
+        fields = '__all__'
+
+
 class JobSerializer(serializers.ModelSerializer):
     output_dir = JobOutputDirSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
