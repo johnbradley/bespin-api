@@ -366,6 +366,22 @@ class JobsTestCase(APITestCase):
         self.assertIn('my job2', [item['name'] for item in response.data])
         self.assertEqual(['RnaSeq', 'RnaSeq'], [item['workflow_version']['name'] for item in response.data])
 
+    def testNormalUserSeeErrors(self):
+        normal_user = self.user_login.become_normal_user()
+        job = Job.objects.create(name='somejob',
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user)
+        JobError.objects.create(job=job, content='Err1', job_step='R')
+        JobError.objects.create(job=job, content='Err2', job_step='R')
+        url = reverse('job-list') + '{}/'.format(job.id)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        job_errors_content = [job_error['content'] for job_error in response.data['job_errors']]
+        self.assertEqual(2, len(job_errors_content))
+        self.assertIn('Err1', job_errors_content)
+        self.assertIn('Err2', job_errors_content)
 
     def testStopRegularUserFromSettingStateOrStep(self):
         """
