@@ -47,18 +47,27 @@ class AdminJobOutputDirSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class JobErrorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobError
+        resource_name = 'job-errors'
+        fields = '__all__'
+
+
 class JobSerializer(serializers.ModelSerializer):
     output_dir = JobOutputDirSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
     state = serializers.CharField(read_only=True)
     step = serializers.CharField(read_only=True)
     user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
+    job_errors = JobErrorSerializer(required=False, read_only=True, many=True)
 
     class Meta:
         model = Job
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
-                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir')
+                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir',
+                  'job_errors')
 
 
 class AdminJobSerializer(serializers.ModelSerializer):
@@ -131,13 +140,6 @@ class JobInputFileSerializer(serializers.ModelSerializer):
         model = JobInputFile
         resource_name = 'job-input-files'
         fields = ('id', 'job', 'file_type', 'workflow_name', 'dds_files', 'url_files')
-
-
-class JobErrorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = JobError
-        resource_name = 'job-errors'
-        fields = '__all__'
 
 
 class AdminDDSEndpointSerializer(serializers.HyperlinkedModelSerializer):
