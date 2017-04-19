@@ -48,6 +48,10 @@ class WorkflowVersion(models.Model):
     version = models.IntegerField(null=False)
     url = models.URLField(null=False, help_text="URL to packed CWL workflow file.")
 
+    class Meta:
+        ordering = ['version']
+        unique_together = ('workflow', 'version',)
+
     def __unicode__(self):
         return '{} version: {} created: {}'.format(self.workflow.name, self.version, self.created)
 
@@ -107,6 +111,9 @@ class Job(models.Model):
                                        help_text="Name of the cloud project where vm will be created.")
     job_order = models.TextField(null=True,
                                  help_text="CWL input json for use with the workflow.")
+
+    class Meta:
+        ordering = ['created']
 
     def __unicode__(self):
         workflow_name = ''
