@@ -1,4 +1,5 @@
 from django.test import TestCase
+import datetime
 from models import DDSEndpoint, DDSUserCredential
 from models import Workflow, WorkflowVersion
 from models import Job, JobInputFile, DDSJobInputFile, URLJobInputFile, JobOutputDir, JobError
@@ -89,6 +90,22 @@ class WorkflowVersionTests(TestCase):
         wv = WorkflowVersion.objects.first()
         self.assertEqual(desc, wv.description)
 
+    def test_version_num_and_workflow_are_unique(self):
+        WorkflowVersion.objects.create(workflow=self.workflow, description="one", version=1)
+        with self.assertRaises(IntegrityError):
+            WorkflowVersion.objects.create(workflow=self.workflow, description="two", version=1)
+
+    def test_sorted_by_version_num(self):
+        WorkflowVersion.objects.create(workflow=self.workflow, description="two", version=2)
+        a_workflow_version = WorkflowVersion.objects.create(workflow=self.workflow, description="one", version=1)
+        WorkflowVersion.objects.create(workflow=self.workflow, description="three", version=3)
+        versions = [wv.version for wv in WorkflowVersion.objects.all()]
+        self.assertEqual([1, 2, 3], versions)
+        a_workflow_version.version = 4
+        a_workflow_version.save()
+        versions = [wv.version for wv in WorkflowVersion.objects.all()]
+        self.assertEqual([2, 3, 4], versions)
+
 
 class JobTests(TestCase):
     def setUp(self):
@@ -155,6 +172,28 @@ class JobTests(TestCase):
         obj.sample_json = "{'type': 1}"
         obj.job = Job.objects.create(workflow_version=obj.workflow_version, user=obj.user,
                                      job_order=obj.sample_json)
+
+    def test_sorted_by_created(self):
+        j1 = Job.objects.create(workflow_version=self.workflow_version,
+                                user=self.user,
+                                job_order=self.sample_json)
+        j2 = Job.objects.create(workflow_version=self.workflow_version,
+                                user=self.user,
+                                job_order=self.sample_json)
+        j3 = Job.objects.create(workflow_version=self.workflow_version,
+                                user=self.user,
+                                job_order=self.sample_json)
+        j4 = Job.objects.create(workflow_version=self.workflow_version,
+                                user=self.user,
+                                job_order=self.sample_json)
+        job_ids = [job.id for job in Job.objects.all()]
+        self.assertEqual([j1.id, j2.id, j3.id, j4.id], job_ids)
+        j2.delete()
+        j2 = Job.objects.create(workflow_version=self.workflow_version,
+                                user=self.user,
+                                job_order=self.sample_json)
+        job_ids = [job.id for job in Job.objects.all()]
+        self.assertEqual([j1.id, j3.id, j4.id, j2.id], job_ids)
 
 
 class JobInputFileTests(TestCase):
