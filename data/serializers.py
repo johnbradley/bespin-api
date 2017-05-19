@@ -28,7 +28,6 @@ class WorkflowVersionSerializer(serializers.ModelSerializer):
 class JobOutputDirSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
-        raise_on_other_users_dds_user_credentials(request, data)
         # You must own the job you are attaching this output directory onto
         if data['job'].user != request.user:
             raise serializers.ValidationError("This job belongs to another user.")
@@ -98,10 +97,16 @@ class DDSUserCredSerializer(serializers.ModelSerializer):
         fields = ('id', 'user', 'token', 'endpoint')
 
 
+class ReadOnlyDDSUserCredSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DDSUserCredential
+        resource_name = 'dds-user-credentials'
+        fields = ('id', 'user', 'endpoint')
+
+
 class DDSJobInputFileSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
-        raise_on_other_users_dds_user_credentials(request, data)
         # You must own the job-input-file you are attaching this output directory onto
         if data['job_input_file'].job.user != request.user:
             raise serializers.ValidationError("This job_input_file belongs to another user.")
@@ -254,19 +259,6 @@ def raise_on_answer_kind_mismatch(answer, kind):
             answer.kind, kind))
 
 
-def raise_on_other_users_dds_user_credentials(request, data):
-    """
-    Raise ValidationError if the dds_user_credentials field in data is for another user.
-    User is determined based on context
-    :param context: dict: contains request which knows current user
-    :param data: dict: contains request parameters which must include dds_user_credentials field
-    """
-    dds_user_credentials = data.get('dds_user_credentials')
-    if dds_user_credentials:
-        if dds_user_credentials.user != request.user:
-            raise serializers.ValidationError("You cannot use another user's credentials.")
-
-
 class JobStringAnswerSerializer(serializers.ModelSerializer):
     answer = serializers.PrimaryKeyRelatedField(queryset=JobAnswer.objects.all())
 
@@ -285,7 +277,6 @@ class JobDDSFileAnswerSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         raise_on_answer_kind_mismatch(data['answer'], JobAnswerKind.DDS_FILE)
-        raise_on_other_users_dds_user_credentials(self.context['request'], data)
         return data
 
     class Meta:
@@ -299,7 +290,6 @@ class JobDDSOutputDirectoryAnswerSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         raise_on_answer_kind_mismatch(data['answer'], JobAnswerKind.DDS_OUTPUT_DIRECTORY)
-        raise_on_other_users_dds_user_credentials(self.context['request'], data)
         return data
 
     class Meta:
