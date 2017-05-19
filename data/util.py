@@ -5,7 +5,7 @@ from ddsc.core.remotestore import RemoteStore
 from ddsc.core.ddsapi import DataServiceError
 from ddsc.core.ddsapi import ContentType
 from ddsc.config import Config
-from gcb_web_auth.oauth_utils import get_oauth_token, get_dds_token_from_oauth
+from gcb_web_auth.utils import get_oauth_token, get_dds_token_from_oauth
 import requests
 
 class DDSBase(object):
@@ -186,17 +186,16 @@ def get_file_name(user, dds_file_id):
         raise WrappedDataServiceException(dse)
 
 
-def give_download_permissions(user, project_id, target_dds_user_credential):
+def give_download_permissions(user, project_id, target_dds_user_id):
     """
     Using the data service permissions of user give file_downloader permissions to project_id to target_dds_user_credential
     :param user: Django User: User who can grant permissions to project_id
     :param project_id: str: uuid of the project we want to set permissions on
-    :param target_dds_user_credential: DDSUserCredential: user who needs download permissions
+    :param target_dds_user_id: str: user who needs download permissions
     """
     try:
         remote_store = get_remote_store(user)
         data_service = remote_store.data_service
-        target_user_id = target_dds_user_credential
-        data_service.set_user_project_permission(project_id, target_user_id, auth_role='file_downloader')
+        data_service.set_user_project_permission(project_id, target_dds_user_id, auth_role='file_downloader')
     except DataServiceError as dse:
         raise WrappedDataServiceException(dse)
