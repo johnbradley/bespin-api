@@ -61,12 +61,12 @@ def get_remote_store(user):
     # Get a DukeDS credential for the user
     if user.is_anonymous():
         raise PermissionDenied("Requires login")
-    config = _get_dds_config(user)
+    config = get_dds_config(user)
     remote_store = RemoteStore(config)
     return remote_store
 
 
-def _get_dds_config(user):
+def get_dds_config(user):
     """
     Create DukeDSClient Config based on our current user.
     Uses keys from DDSUserCredential if they exist, otherwise tries to use OAuth token for this user.
@@ -182,5 +182,21 @@ def get_file_name(user, dds_file_id):
     try:
         remote_store = get_remote_store(user)
         return remote_store.data_service.get_file(dds_file_id).json()['name']
+    except DataServiceError as dse:
+        raise WrappedDataServiceException(dse)
+
+
+def give_download_permissions(user, project_id, target_dds_user_credential):
+    """
+    Using the data service permissions of user give file_downloader permissions to project_id to target_dds_user_credential
+    :param user: Django User: User who can grant permissions to project_id
+    :param project_id: str: uuid of the project we want to set permissions on
+    :param target_dds_user_credential: DDSUserCredential: user who needs download permissions
+    """
+    try:
+        remote_store = get_remote_store(user)
+        data_service = remote_store.data_service
+        target_user_id = target_dds_user_credential
+        data_service.set_user_project_permission(project_id, target_user_id, auth_role='file_downloader')
     except DataServiceError as dse:
         raise WrappedDataServiceException(dse)

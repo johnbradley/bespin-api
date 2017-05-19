@@ -83,17 +83,17 @@ class JobsViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['post'])
     def start(self, request, pk=None):
-        LandoJob(pk).start()
+        LandoJob(pk, request.user).start()
         return self._serialize_job_response(pk)
 
     @detail_route(methods=['post'])
     def cancel(self, request, pk=None):
-        LandoJob(pk).cancel()
+        LandoJob(pk, request.user).cancel()
         return self._serialize_job_response(pk)
 
     @detail_route(methods=['post'])
     def restart(self, request, pk=None):
-        LandoJob(pk).restart()
+        LandoJob(pk, request.user).restart(request.user)
         return self._serialize_job_response(pk)
 
     @staticmethod

@@ -220,8 +220,10 @@ class DDSUserCredentialTestCase(APITestCase):
     def testUserOnlySeeAllCreds(self):
         other_user = self.user_login.become_other_normal_user()
         user = self.user_login.become_normal_user()
-        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1')
-        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret2')
+        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1',
+                                                    dds_id='1')
+        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret2',
+                                                     dds_id='2')
         self.assertEqual(2, len(DDSUserCredential.objects.all()))
 
         url = reverse('ddsusercredential-list')
@@ -613,8 +615,9 @@ class DDSJobInputFileTestCase(APITestCase):
                                        user=self.my_user)
         self.job_input_file = JobInputFile.objects.create(job=self.my_job, file_type='dds_file', workflow_name='data1')
         endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret', api_root='https://someserver.com/api')
-        self.cred = DDSUserCredential.objects.create(endpoint=endpoint, user=self.my_user, token='secret2')
-        self.other_cred = DDSUserCredential.objects.create(endpoint=endpoint, user=self.other_user, token='secret3')
+        self.cred = DDSUserCredential.objects.create(endpoint=endpoint, user=self.my_user, token='secret2', dds_id='1')
+        self.other_cred = DDSUserCredential.objects.create(endpoint=endpoint, user=self.other_user, token='secret3',
+                                                           dds_id='2')
 
     def testPostAndRead(self):
         url = reverse('ddsjobinputfile-list')
@@ -696,8 +699,10 @@ class JobOutputDirTestCase(APITestCase):
                                          user=self.my_user)
 
         self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret', api_root='https://someserver.com/api')
-        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=self.my_user, token='secret2')
-        self.others_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=self.other_user, token='secret3')
+        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=self.my_user, token='secret2',
+                                                     dds_id='1')
+        self.others_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=self.other_user,
+                                                            token='secret3', dds_id='2')
 
     def test_list_dirs(self):
         JobOutputDir.objects.create(job=self.my_job, dir_name='results', project_id='1',
@@ -943,7 +948,7 @@ class JobAnswerTestCase(APITestCase):
 
     def test_can_create_dds_value(self):
         user = self.user_login.become_normal_user()
-        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1')
+        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
 
         # user creates a JobAnswer and JobDDSFileAnswer
         url = reverse('jobanswer-list')
@@ -966,7 +971,7 @@ class JobAnswerTestCase(APITestCase):
 
     def test_create_dds_value_with_others_credentials(self):
         other_user = self.user_login.become_other_normal_user()
-        cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret1')
+        cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret1', dds_id='1')
         user = self.user_login.become_normal_user()
 
         # user creates a JobAnswer and JobDDSFileAnswer
@@ -990,7 +995,7 @@ class JobAnswerTestCase(APITestCase):
 
     def test_mismatch_string_with_dds_fails(self):
         user = self.user_login.become_normal_user()
-        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1')
+        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
 
         # user creates a JobAnswer and JobDDSFileAnswer
         url = reverse('jobanswer-list')
@@ -1168,7 +1173,8 @@ class JobAnswerSetTests(APITestCase):
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
 
     def setup_minmal_questionnaire(self):
-        user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=self.user, token='secret2')
+        user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=self.user, token='secret2',
+                                                     dds_id='1')
         questionnaire = JobQuestionnaire.objects.create(description='Workflow1',
                                                         workflow_version=self.workflow_version)
         ques = JobQuestion.objects.create(key=JOB_QUESTION_NAME, data_type=JobQuestionDataType.STRING, name="stuff")
@@ -1247,7 +1253,7 @@ class JobDDSOutputDirectoryAnswerTests(APITestCase):
 
     def test_using_own_credentials(self):
         user = self.user_login.become_normal_user()
-        user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret2')
+        user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret2', dds_id='1')
         question = JobQuestion.objects.create(key=JOB_QUESTION_OUTPUT_DIRECTORY,
                                               data_type=JobQuestionDataType.DIRECTORY)
         answer = JobAnswer.objects.create(question=question, questionnaire=self.questionnaire1, user=user,
@@ -1264,7 +1270,8 @@ class JobDDSOutputDirectoryAnswerTests(APITestCase):
 
     def test_using_others_credentials(self):
         other_user = self.user_login.become_other_normal_user()
-        other_user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret2')
+        other_user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret2',
+                                                           dds_id='1')
         user = self.user_login.become_normal_user()
         question = JobQuestion.objects.create(key=JOB_QUESTION_OUTPUT_DIRECTORY,
                                               data_type=JobQuestionDataType.DIRECTORY)
