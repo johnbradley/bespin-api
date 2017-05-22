@@ -93,7 +93,7 @@ class JobsViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['post'])
     def restart(self, request, pk=None):
-        LandoJob(pk, request.user).restart(request.user)
+        LandoJob(pk, request.user).restart()
         return self._serialize_job_response(pk)
 
     @staticmethod

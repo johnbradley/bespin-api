@@ -57,7 +57,7 @@ class LandoJob(object):
         job.save()
         self._make_client().cancel_job(self.job_id)
 
-    def restart(self, user):
+    def restart(self):
         """
         Place message in lando's queue to restart a job that had an error or was canceled.
         Sets job state to RESTARTING.
