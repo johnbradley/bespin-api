@@ -217,7 +217,10 @@ class DDSUserCredentialTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def testUserOnlySeeAllCreds(self):
+    def testUserOnlySeeAllCredsButNoTokens(self):
+        """
+        Normal users should not be able to see tokens but can pick from available credentials.
+        """
         other_user = self.user_login.become_other_normal_user()
         user = self.user_login.become_normal_user()
         self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1',
@@ -230,6 +233,8 @@ class DDSUserCredentialTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(2, len(response.data))
+        self.assertEqual({'id': 1, 'user': 2, 'endpoint': 1}, response.data[0])
+        self.assertEqual({'id': 2, 'user': 1, 'endpoint': 1}, response.data[1])
 
     def testUserCantCreate(self):
         user = self.user_login.become_normal_user()

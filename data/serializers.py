@@ -98,6 +98,10 @@ class DDSUserCredSerializer(serializers.ModelSerializer):
 
 
 class ReadOnlyDDSUserCredSerializer(serializers.ModelSerializer):
+    """
+    Non-Admin users can only see the keys from the available DukeDS credentials(setup by admin).
+    They need access to the keys so they can give download permission to the bespin user.    
+    """
     class Meta:
         model = DDSUserCredential
         resource_name = 'dds-user-credentials'
