@@ -1,9 +1,12 @@
 from models import DDSUserCredential, DDSEndpoint
 from exceptions import WrappedDataServiceException
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from ddsc.core.remotestore import RemoteStore
 from ddsc.core.ddsapi import DataServiceError
+from ddsc.core.ddsapi import ContentType
 from ddsc.config import Config
+from gcb_web_auth.utils import get_oauth_token, get_dds_token_from_oauth
+import requests
 
 class DDSBase(object):
     @classmethod
@@ -58,20 +61,54 @@ def get_remote_store(user):
     # Get a DukeDS credential for the user
     if user.is_anonymous():
         raise PermissionDenied("Requires login")
+    config = get_dds_config(user)
+    remote_store = RemoteStore(config)
+    return remote_store
 
-    user_cred = DDSUserCredential.objects.get(user=user)
+
+def get_dds_config(user):
+    """
+    Create DukeDSClient Config based on our current user.
+    Uses keys from DDSUserCredential if they exist, otherwise tries to use OAuth token for this user.
+    :param user: A Django model user object
+    :return: ddsc.config.Config: settings to use with ddsclient
+    """
+    config = Config()
 
     # Get our agent key
     app_cred = DDSEndpoint.objects.first()
-
-    # Populate a config object
-    config = Config()
-    config.update_properties({'user_key': user_cred.token})
     config.update_properties({'agent_key': app_cred.agent_key})
     config.update_properties({'url': app_cred.api_root})
 
-    remote_store = RemoteStore(config)
-    return remote_store
+    # Setup user key if exists, otherwise setup dds temporary auth token
+    try:
+        user_cred = DDSUserCredential.objects.get(user=user)
+        config.update_properties({'user_key': user_cred.token})
+    except ObjectDoesNotExist:
+        oauth_token = get_oauth_token(user)
+        user_auth_token = _get_dds_auth_token(app_cred, oauth_token)
+        config.update_properties({'auth': user_auth_token})
+    return config
+
+
+def _get_dds_auth_token(app_cred, oauth_token):
+    """
+    Exchange oauth token for dds token.
+    :param app_cred: DDSEndpoint: endpoint we will communicate with
+    :param oauth_token: OAuthToken: contains 'access_token' to be exchanged 
+    :return: str: dds temporary auth token value
+    """
+    headers = {
+        'Content-Type': ContentType.json,
+    }
+    access_token = oauth_token.token_dict.get('access_token')
+    data = {
+        "access_token": access_token,
+    }
+    url = app_cred.api_root + "/user/api_token"
+    response = requests.get(url, headers=headers, params=data)
+    response.raise_for_status()
+    return response.json()['api_token']
 
 
 def get_user_projects(user):
@@ -145,5 +182,20 @@ def get_file_name(user, dds_file_id):
     try:
         remote_store = get_remote_store(user)
         return remote_store.data_service.get_file(dds_file_id).json()['name']
+    except DataServiceError as dse:
+        raise WrappedDataServiceException(dse)
+
+
+def give_download_permissions(user, project_id, target_dds_user_id):
+    """
+    Using the data service permissions of user give file_downloader permissions to project_id to target_dds_user_credential
+    :param user: Django User: User who can grant permissions to project_id
+    :param project_id: str: uuid of the project we want to set permissions on
+    :param target_dds_user_id: str: user who needs download permissions
+    """
+    try:
+        remote_store = get_remote_store(user)
+        data_service = remote_store.data_service
+        data_service.set_user_project_permission(project_id, target_dds_user_id, auth_role='file_downloader')
     except DataServiceError as dse:
         raise WrappedDataServiceException(dse)

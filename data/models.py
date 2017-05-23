@@ -20,6 +20,7 @@ class DDSUserCredential(models.Model):
     endpoint = models.ForeignKey(DDSEndpoint, on_delete=models.CASCADE, null=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=False)
     token = models.CharField(max_length=32, blank=False, unique=True)
+    dds_id = models.CharField(max_length=255, blank=False, unique=True, null=False)
 
     class Meta:
         unique_together = ('endpoint', 'user',)

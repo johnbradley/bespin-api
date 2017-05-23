@@ -49,8 +49,8 @@ class DDSUserCredentialTests(TestCase):
             DDSUserCredential.objects.create(user=other_user, token='abc123', endpoint=self.endpoint)
 
     def test_user_can_have_creds_for_diff_endpoints(self):
-        DDSUserCredential.objects.create(user=self.user, token='abc123', endpoint=self.endpoint)
-        DDSUserCredential.objects.create(user=self.user, token='abc124', endpoint=self.endpoint2)
+        DDSUserCredential.objects.create(user=self.user, token='abc123', endpoint=self.endpoint, dds_id='1')
+        DDSUserCredential.objects.create(user=self.user, token='abc124', endpoint=self.endpoint2, dds_id='2')
 
 
 class WorkflowTests(TestCase):

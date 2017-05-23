@@ -83,17 +83,17 @@ class JobsViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['post'])
     def start(self, request, pk=None):
-        LandoJob(pk).start()
+        LandoJob(pk, request.user).start()
         return self._serialize_job_response(pk)
 
     @detail_route(methods=['post'])
     def cancel(self, request, pk=None):
-        LandoJob(pk).cancel()
+        LandoJob(pk, request.user).cancel()
         return self._serialize_job_response(pk)
 
     @detail_route(methods=['post'])
     def restart(self, request, pk=None):
-        LandoJob(pk).restart()
+        LandoJob(pk, request.user).restart()
         return self._serialize_job_response(pk)
 
     @staticmethod
@@ -149,23 +149,10 @@ class DDSEndpointViewSet(viewsets.ModelViewSet):
     queryset = DDSEndpoint.objects.all()
 
 
-class DDSUserCredViewSet(viewsets.ModelViewSet):
+class DDSUserCredViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = DDSUserCredSerializer
-    filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('user',)
-
-    def get_queryset(self):
-        return DDSUserCredential.objects.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        self.save_with_user(serializer)
-
-    def perform_update(self, serializer):
-        self.save_with_user(serializer)
-
-    def save_with_user(self, serializer):
-        serializer.save(user=self.request.user)
+    serializer_class = ReadOnlyDDSUserCredSerializer
+    queryset = DDSUserCredential.objects.all()
 
 
 class AdminDDSUserCredentialsViewSet(viewsets.ReadOnlyModelViewSet):
