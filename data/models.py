@@ -247,6 +247,8 @@ class JobAnswerSet(models.Model):
                              help_text='User who owns this answer set')
     questionnaire = models.ForeignKey(JobQuestionnaire, on_delete=models.CASCADE, null=False,
                                       help_text='determines which questions are appropriate for this answer set')
+    job_name = models.CharField(null=False, blank=False, max_length=255,
+                                help_text='Name of the job')
     user_job_order = models.TextField(null=True,
                                       help_text="JSON containing the portion of the job order specified by user")
 

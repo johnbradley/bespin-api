@@ -212,10 +212,10 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
     @detail_route(methods=['post'], serializer_class=JobSerializer, url_path='create-job')
     def create_job(self, request, pk=None):
         """
-        Create a new job based on our JobAnswerSet and return it's json.
+        Create a new job based on our JobAnswerSet and return its json.
         """
         job_answer_set = JobAnswerSet.objects.filter(user=request.user, pk=pk).first()
-        job_factory = create_job_factory(request.user, job_answer_set)
+        job_factory = create_job_factory(job_answer_set)
         job = job_factory.create_job()
         serializer = JobSerializer(job)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -16,6 +16,7 @@ router.register(r'dds-user-credentials', api.DDSUserCredViewSet, 'ddsusercredent
 router.register(r'job-errors', api.JobErrorViewSet, 'joberror')
 router.register(r'job-output-dirs', api.JobOutputDirViewSet, 'joboutputdir')
 router.register(r'job-questionnaires', api.JobQuestionnaireViewSet, 'jobquestionnaire')
+router.register(r'job-answer-sets', api.JobAnswerSetViewSet, 'jobanswerset')
 
 # Routes that require admin user
 router.register(r'admin/jobs', api.AdminJobsViewSet, 'admin_job')
