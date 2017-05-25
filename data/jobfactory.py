@@ -1,4 +1,4 @@
-from data.models import Job, JobAnswer, JobAnswerKind, JobQuestionDataType, JobOutputDir, JobInputFile, DDSJobInputFile
+from data.models import Job, JobOutputDir, JobInputFile, DDSJobInputFile
 from rest_framework.exceptions import ValidationError
 from util import get_file_name
 from exceptions import JobFactoryException
@@ -27,12 +27,7 @@ def create_job_factory(user, job_answer_set):
     :return: JobFactory
     """
     factory = JobFactory(user, job_answer_set.questionnaire.workflow_version)
-    for question in job_answer_set.questionnaire.questions.all():
-        factory.add_question(question)
-    for user_answer in job_answer_set.answers.all():
-        factory.add_answer(user_answer)
-    for system_answer in JobAnswer.objects.filter(questionnaire=job_answer_set.questionnaire.id):
-        factory.add_answer(system_answer)
+    raise NotImplementedError
     return factory
 
 

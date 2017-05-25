@@ -207,46 +207,20 @@ class LandoConnection(models.Model):
     queue_name = models.CharField(max_length=255, blank=False, null=False)
 
 
-class JobQuestionDataType(object):
+class VMFlavor(models.Model):
     """
-    Specifies how a JobAnswer associated with a JobQuestion will be added to the CWL input json.
+    Specifies parameters for requesting cloud resources
     """
-    STRING = 'string'
-    INTEGER = 'int'
-    FILE = 'File'
-    DIRECTORY = 'Directory'
-    DOUBLE = 'double'
-    ITEMS = (
-        (STRING, 'String'),
-        (INTEGER, 'Integer'),
-        (FILE, 'File'),
-        (DIRECTORY, 'Directory'),
-        (DOUBLE, 'Double'),
-    )
+    vm_flavor = models.CharField(max_length=255, blank=False, unique=True,
+                                 help_text="The name of the flavor to use when launching instances (specifies CPU/RAM)")
 
-
-class JobQuestion(models.Model):
-    """
-    Question that must be answered to run a job.
-    Can be answered by the system (via JobQuestionnaire) or user (JobAnswerSet).
-    """
-    key = models.CharField(max_length=255, blank=False, null=False,
-                           help_text="Name to be used in CWL workflow.")
-    name = models.CharField(max_length=255, blank=False, null=False,
-                            help_text="User facing question text.")
-    data_type = models.CharField(max_length=30, choices=JobQuestionDataType.ITEMS, blank=False, null=False,
-                                 help_text="Determines how answer is formatted in CWL input json.")
-    occurs = models.IntegerField(blank=False, null=False, default=1,
-                                 help_text="If > 1 this is an array in the CWL input json")
-
-    def __unicode__(self):
-        return '{} key:{} data_type: {}'.format(self.id, self.key, self.data_type)
-
+class VMProject(models.Model):
+    vm_project_name = models.CharField(max_length=255, blank=False, null=False, unique=True,
+                                       help_text="The name of the project in which to launch instances")
 
 class JobQuestionnaire(models.Model):
     """
-    List of JobQuestions that are for a particular workflow version.
-    Contains questions that will be used to create CWL input json and job fields.
+    Specifies a Workflow Version and a set of system-provided answers in JSON format 
     """
     name = models.CharField(max_length=255, blank=False, null=False,
                             help_text="Short user facing name")
@@ -254,86 +228,15 @@ class JobQuestionnaire(models.Model):
                                    help_text="Detailed user facing description")
     workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.CASCADE, blank=False, null=False,
                                          help_text="Workflow that this questionaire is for")
-    questions = models.ManyToManyField(JobQuestion,
-                                       help_text="Questions that are required to create a job")
+    system_job_order = models.TextField(null=True,
+                                        help_text="JSON containing the portion of the job order specified by system.")
+    vm_flavor = models.ForeignKey(VMFlavor, null=False,
+                                  help_text='VM Flavor to use when creating VM instances for this questionnaire')
+    vm_project = models.ForeignKey(VMProject, null=False,
+                                   help_text='Project name to use when creating VM instances for this questionnaire')
 
     def __unicode__(self):
         return '{} desc:{}'.format(self.id, self.description)
-
-
-class JobAnswerKind(object):
-    """
-    Determines which type of JobAnswer goes with a JobQuestion
-    """
-    STRING = 'string'
-    DDS_FILE = 'dds_file'
-    DDS_OUTPUT_DIRECTORY = 'dds_output_directory'
-    ITEMS = (
-        (STRING, 'Text'),
-        (DDS_FILE, 'DukeDS File'),
-        (DDS_OUTPUT_DIRECTORY, 'DukeDS Output Directory'),
-    )
-
-
-class JobAnswer(models.Model):
-    """
-    Answer to a JobQuestion.
-    """
-    question = models.ForeignKey(JobQuestion, on_delete=models.CASCADE, null=False, related_name='answers')
-    questionnaire = models.ForeignKey(JobQuestionnaire, on_delete=models.CASCADE, null=True, blank=True,
-                                      help_text='When null this is a user editable answer otherwise it is a system answer')
-    index = models.IntegerField(null=True, default=0,
-                                help_text='Used to order array answers')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=False,
-                             help_text='User who created this job answer.')
-    kind = models.CharField(max_length=30, choices=JobAnswerKind.ITEMS,
-                            help_text="Determines child table associated with this answer.")
-
-    def __unicode__(self):
-        return '{} question:{} - index:{}'.format(self.id, self.question.name, self.index)
-
-
-class JobStringAnswer(models.Model):
-    """
-    String value associated with a JobAnswer.
-    """
-    answer = models.OneToOneField(JobAnswer, on_delete=models.CASCADE, related_name='string_value')
-    value = models.CharField(max_length=255, blank=False, null=False)
-
-    def __unicode__(self):
-        return '{} question:{} - value:{}'.format(self.pk, self.answer.question.name, self.value)
-
-
-class JobDDSFileAnswer(models.Model):
-    """
-    DukeDS file keys associated with a JobAnswer.
-    """
-    answer = models.OneToOneField(JobAnswer, on_delete=models.CASCADE, related_name='dds_file')
-    project_id = models.CharField(max_length=255, blank=False, null=True,
-                                  help_text='uuid from DukeDS for the project containing our file')
-    file_id = models.CharField(max_length=255, blank=False, null=True,
-                               help_text='uuid from DukeDS for the file chosen as this answer')
-    dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE,
-                                             help_text='Credentials with access to this file')
-
-    def __unicode__(self):
-        return '{} question:{} - file_id:{}'.format(self.pk, self.answer.question.name, self.file_id)
-
-
-class JobDDSOutputDirectoryAnswer(models.Model):
-    """
-    DukeDS directory keys associated with a JobAnswer.
-    """
-    answer = models.OneToOneField(JobAnswer, on_delete=models.CASCADE, related_name='dds_output_directory')
-    project_id = models.CharField(max_length=255, blank=False, null=True,
-                                  help_text='uuid from DukeDS for the project containing our directory')
-    directory_name = models.CharField(max_length=255, blank=False, null=True,
-                                      help_text='name of the directory to create')
-    dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE,
-                                             help_text='Credentials with access to this directory')
-
-    def __unicode__(self):
-        return '{} question:{} - directory_name:{}'.format(self.pk, self.answer.question.name, self.directory_name)
 
 
 class JobAnswerSet(models.Model):
@@ -342,10 +245,10 @@ class JobAnswerSet(models.Model):
     """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=False,
                              help_text='User who owns this answer set')
-    answers = models.ManyToManyField(JobAnswer,
-                                     help_text='User editable answers tied to this answer set')
     questionnaire = models.ForeignKey(JobQuestionnaire, on_delete=models.CASCADE, null=False,
                                       help_text='determines which questions are appropriate for this answer set')
+    user_job_order = models.TextField(null=True,
+                                      help_text="JSON containing the portion of the job order specified by user")
 
     def __unicode__(self):
         return '{} questionnaire:{}'.format(self.id, self.questionnaire.description)
