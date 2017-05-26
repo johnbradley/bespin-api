@@ -101,12 +101,21 @@ class JobQuestionnaireImporter(BaseImporter):
         # vm_project
         self.vm_project, created = VMProject.objects.get_or_create(vm_project_name=self.vm_project_name)
         self.log_creation(created, 'VMProject', self.vm_project_name, self.vm_project.id)
+
+        # Extract fields that are not system-provided
+        user_fields = []
+        document = CWLDocument(self.workflow_version.url)
+        for input_field in document.input_fields:
+            if not input_field.get('name') in self.system_job_order_dict:
+                user_fields.append(input_field)
+
         # Job questionnaire
         self.job_questionnaire, created = JobQuestionnaire.objects.get_or_create(
             name=self.name,
             description=self.description,
             workflow_version=self.workflow_version,
             system_job_order=json.dumps(self.system_job_order_dict),
+            user_fields=json.dumps(user_fields),
             vm_flavor=self.vm_flavor,
             vm_project=self.vm_project,
         )
