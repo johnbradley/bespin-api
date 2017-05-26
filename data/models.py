@@ -217,6 +217,7 @@ class VMFlavor(models.Model):
     def __unicode__(self):
         return 'Flavor: {}'.format(self.vm_flavor)
 
+
 class VMProject(models.Model):
 
     vm_project_name = models.CharField(max_length=255, blank=False, null=False, unique=True,
@@ -224,6 +225,7 @@ class VMProject(models.Model):
 
     def __unicode__(self):
         return 'VM Project: {}'.format(self.vm_project_name)
+
 
 class JobQuestionnaire(models.Model):
     """
