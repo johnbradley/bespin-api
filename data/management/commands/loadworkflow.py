@@ -8,19 +8,34 @@ import sys
 
 
 class CWLDocument(object):
+    """
+    Simple CWL document parser
+    """
 
     def __init__(self, url):
+        """
+        Creates a parser for the given URL
+        :param url: The URL to a CWL document to be parsed
+        """
         self.url = url
         self._parsed = None
 
     @property
     def parsed(self):
+        """
+        Lazy property to parse CWL on-demand
+        :return: The CWL document, parsed into a dict
+        """
         if self._parsed is None:
-            self._parsed = load_tool(self.url, defaultMakeTool)
+            self._parsed = load_tool(self.url + '#main', defaultMakeTool)
         return self._parsed
 
     @property
     def input_fields(self):
+        """
+        The input fields from the CWL document
+        :return: List of input fields from the CWL document
+        """
         return self.parsed.inputs_record_schema.get('fields')
 
     def get(self, key):
@@ -31,9 +46,18 @@ class CWLDocument(object):
         """
         return self.parsed.tool.get(key)
 
+
 class BaseImporter(object):
+    """
+    Base for importer with simple logging facility
+    """
 
     def __init__(self, stdout=sys.stdout, stderr=sys.stderr):
+        """
+        Creates a base importer with logging IO streams
+        :param stdout: For writing info log messages
+        :param stderr: For writing error messages
+        """
         self.stdout = stdout
         self.stderr = stderr
 
@@ -45,6 +69,9 @@ class BaseImporter(object):
 
 
 class WorkflowImporter(BaseImporter):
+    """
+    Creates Workflow and WorkflowVersion model objects from a CWL document and supplied version number
+    """
 
     def __init__(self,
                  cwl_url,
@@ -54,8 +81,6 @@ class WorkflowImporter(BaseImporter):
         """
         Creates a WorkflowImporter to import the specified CWL and its variables into bespin-api models
         :param cwl_url: The URL to a CWL Workflow to import 
-        :param system_job_order_file: a CWL job order file that will supply the system-provided answers 
-        (e.g. reference genomes or other system-defined variables)
         :param version_number: the version number to assign
         :param stdout: For writing info log messages
         :param stderr: For writing error messages
@@ -92,15 +117,13 @@ class WorkflowImporter(BaseImporter):
     def run(self):
         # Parse in the workflow file
         self._create_workflow_models()
-        # Create JobQuestions
-        # Create a questionnaire, linking questions to a workflowversion
-        # Create JobAnswer for system answers. How to denote this in the workflow? sys prefix? other metadata attributes in workflow? Maybe a label or doc convention
+
 
 class Command(BaseCommand):
     help = 'Imports a workflow from CWL'
 
     def add_arguments(self, parser):
-        parser.add_argument('cwl-url', help='URL to CWL workflow file. If packed, terminate with #main')
+        parser.add_argument('cwl-url', help='URL to packed CWL workflow file. Do not include #main')
         parser.add_argument('version-number', help='Version number to assign to imported workflow')
 
     def handle(self, *args, **options):
@@ -110,4 +133,4 @@ class Command(BaseCommand):
                                     stdout=self.stdout,
                                     stderr=self.stderr)
         importer.run()
-        importer.cleanup()
+        # importer.cleanup()
