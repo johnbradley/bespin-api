@@ -214,9 +214,16 @@ class VMFlavor(models.Model):
     vm_flavor = models.CharField(max_length=255, blank=False, unique=True,
                                  help_text="The name of the flavor to use when launching instances (specifies CPU/RAM)")
 
+    def __unicode__(self):
+        return 'Flavor: {}'.format(self.vm_flavor)
+
 class VMProject(models.Model):
+
     vm_project_name = models.CharField(max_length=255, blank=False, null=False, unique=True,
                                        help_text="The name of the project in which to launch instances")
+
+    def __unicode__(self):
+        return 'VM Project: {}'.format(self.vm_project_name)
 
 class JobQuestionnaire(models.Model):
     """
