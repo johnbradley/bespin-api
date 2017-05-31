@@ -217,8 +217,6 @@ class JobAnswerSetSerializer(serializers.ModelSerializer):
 
 
 class JobQuestionnaireSerializer(serializers.ModelSerializer):
-    vm_flavor = VMFlavorSerializer()
-    vm_project = VMProjectSerializer()
 
     class Meta:
         model = JobQuestionnaire
