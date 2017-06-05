@@ -14,7 +14,7 @@ router.register(r'url-job-input-files', api.URLJobInputFileViewSet, 'urljobinput
 router.register(r'dds-endpoints', api.DDSEndpointViewSet, 'ddsendpoint')
 router.register(r'dds-user-credentials', api.DDSUserCredViewSet, 'ddsusercredential')
 router.register(r'job-errors', api.JobErrorViewSet, 'joberror')
-router.register(r'job-output-dirs', api.JobOutputDirViewSet, 'joboutputdir')
+router.register(r'job-output-projects', api.JobOutputProjectViewSet, 'joboutputproject')
 router.register(r'job-questionnaires', api.JobQuestionnaireViewSet, 'jobquestionnaire')
 router.register(r'job-answer-sets', api.JobAnswerSetViewSet, 'jobanswerset')
 
@@ -23,7 +23,7 @@ router.register(r'admin/jobs', api.AdminJobsViewSet, 'admin_job')
 router.register(r'admin/job-input-files', api.AdminJobInputFileViewSet, 'admin_jobinputfile')
 router.register(r'admin/dds-user-credentials', api.AdminDDSUserCredentialsViewSet, 'admin_ddsusercredentials')
 router.register(r'admin/job-errors', api.AdminJobErrorViewSet, 'admin_joberror')
-router.register(r'admin/job-output-dirs', api.AdminJobOutputDirViewSet, 'admin_joboutputdir')
+router.register(r'admin/job-output-projects', api.AdminJobOutputProjectViewSet, 'admin_joboutputproject')
 
 urlpatterns = [
     url(r'^', include(router.urls)),

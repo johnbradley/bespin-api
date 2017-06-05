@@ -1,4 +1,4 @@
-from data.models import Job, JobOutputDir, JobInputFile, DDSJobInputFile
+from data.models import Job, JobInputFile, DDSJobInputFile
 from rest_framework.exceptions import ValidationError
 from util import get_file_name
 from exceptions import JobFactoryException
@@ -65,7 +65,7 @@ class JobFactory(object):
                                  vm_flavor=self.vm_flavor,
                                  job_order=json.dumps(job_order)
         )
-        # TODO: Create JobOutputDir
+        # TODO: Create JobOutputProject
         # TODO: Populate JobInputFiles
         return job
 

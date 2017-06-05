@@ -3,7 +3,7 @@ from util import get_user_projects, get_user_project, get_user_project_content, 
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
-    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir
+    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputProject
 
 from data.serializers import *
 from django_filters.rest_framework import DjangoFilterBackend
@@ -181,16 +181,16 @@ class AdminJobErrorViewSet(viewsets.ModelViewSet):
     filter_fields = ('job',)
 
 
-class JobOutputDirViewSet(viewsets.ModelViewSet):
+class JobOutputProjectViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    queryset = JobOutputDir.objects.all()
-    serializer_class = JobOutputDirSerializer
+    queryset = JobOutputProject.objects.all()
+    serializer_class = JobOutputProjectSerializer
 
 
-class AdminJobOutputDirViewSet(viewsets.ModelViewSet):
+class AdminJobOutputProjectViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
-    queryset = JobOutputDir.objects.all()
-    serializer_class = AdminJobOutputDirSerializer
+    queryset = JobOutputProject.objects.all()
+    serializer_class = AdminJobOutputProjectSerializer
 
 
 class JobQuestionnaireViewSet(viewsets.ReadOnlyModelViewSet):

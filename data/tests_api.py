@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase
 import json
 
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, JobError, \
-    DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputDir, \
+    DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputProject, \
     JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject
 from exceptions import WrappedDataServiceException
 from util import DDSResource
@@ -686,7 +686,7 @@ class URLJobInputFileTestCase(APITestCase):
         self.assertEqual('http://stuff.com/data.txt', response.data[0]['url'])
 
 
-class JobOutputDirTestCase(APITestCase):
+class JobOutputProjectTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
         workflow = Workflow.objects.create(name='RnaSeq')
@@ -708,35 +708,33 @@ class JobOutputDirTestCase(APITestCase):
                                                             token='secret3', dds_id='2')
 
     def test_list_dirs(self):
-        JobOutputDir.objects.create(job=self.my_job, dir_name='results', project_id='1',
-                                    dds_user_credentials=self.cred)
-        url = reverse('joboutputdir-list')
+        JobOutputProject.objects.create(job=self.my_job,
+                                        project_id='1',
+                                        dds_user_credentials=self.cred)
+        url = reverse('joboutputproject-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
         job_output_dir = response.data[0]
         self.assertEqual(self.my_job.id, job_output_dir['job'])
-        self.assertEqual('results', job_output_dir['dir_name'])
         self.assertEqual('1', job_output_dir['project_id'])
         self.assertEqual(self.cred.id, job_output_dir['dds_user_credentials'])
 
     def test_create(self):
-        url = reverse('joboutputdir-list')
+        url = reverse('joboutputproject-list')
         response = self.client.post(url, format='json', data={
             'job': self.my_job.id,
-            'dir_name': 'results',
             'project_id': '123',
             'dds_user_credentials': self.cred.id
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        job_output_dir = JobOutputDir.objects.first()
+        job_output_dir = JobOutputProject.objects.first()
         self.assertEqual(self.my_job, job_output_dir.job)
-        self.assertEqual('results', job_output_dir.dir_name)
         self.assertEqual('123', job_output_dir.project_id)
         self.assertEqual(self.cred, job_output_dir.dds_user_credentials)
 
     def test_can_use_others_creds(self):
-        url = reverse('joboutputdir-list')
+        url = reverse('joboutputproject-list')
         response = self.client.post(url, format='json', data={
             'job': self.my_job.id,
             'dir_name': 'results',
@@ -746,34 +744,32 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_list_dirs_admin(self):
-        # Admin can list other users job-output-directories
-        JobOutputDir.objects.create(job=self.my_job, dir_name='results', project_id='1',
-                                    dds_user_credentials=self.cred)
+        # Admin can list other users job-output-projects
+        JobOutputProject.objects.create(job=self.my_job,
+                                        project_id='1',
+                                        dds_user_credentials=self.cred)
         self.user_login.become_admin_user()
-        url = reverse('admin_joboutputdir-list')
+        url = reverse('admin_joboutputproject-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
         job_output_dir = response.data[0]
         self.assertEqual(self.my_job.id, job_output_dir['job'])
-        self.assertEqual('results', job_output_dir['dir_name'])
         self.assertEqual('1', job_output_dir['project_id'])
         self.assertEqual(self.cred.id, job_output_dir['dds_user_credentials'])
 
     def test_create_admin(self):
-        # Admin can create other users job-output-directories
+        # Admin can create other users job-output-projects
         self.user_login.become_admin_user()
-        url = reverse('admin_joboutputdir-list')
+        url = reverse('admin_joboutputproject-list')
         response = self.client.post(url, format='json', data={
             'job': self.my_job.id,
-            'dir_name': 'results',
             'project_id': '123',
             'dds_user_credentials': self.cred.id
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        job_output_dir = JobOutputDir.objects.first()
+        job_output_dir = JobOutputProject.objects.first()
         self.assertEqual(self.my_job, job_output_dir.job)
-        self.assertEqual('results', job_output_dir.dir_name)
         self.assertEqual('123', job_output_dir.project_id)
         self.assertEqual(self.cred, job_output_dir.dds_user_credentials)
 

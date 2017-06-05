@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
-    DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError, JobAnswerSet, \
+    DDSEndpoint, DDSUserCredential, JobOutputProject, URLJobInputFile, JobError, JobAnswerSet, \
     JobQuestionnaire, VMFlavor, VMProject
 
 
@@ -24,7 +24,7 @@ class WorkflowVersionSerializer(serializers.ModelSerializer):
         fields = ('id', 'workflow', 'name', 'description', 'object_name', 'created', 'url', 'version')
 
 
-class JobOutputDirSerializer(serializers.ModelSerializer):
+class JobOutputProjectSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
         # You must own the job you are attaching this output directory onto
@@ -33,15 +33,15 @@ class JobOutputDirSerializer(serializers.ModelSerializer):
         return data
 
     class Meta:
-        model = JobOutputDir
-        resource_name = 'job-output-dirs'
+        model = JobOutputProject
+        resource_name = 'job-output-projects'
         fields = '__all__'
 
 
-class AdminJobOutputDirSerializer(serializers.ModelSerializer):
+class AdminJobOutputProjectSerializer(serializers.ModelSerializer):
     class Meta:
-        model = JobOutputDir
-        resource_name = 'job-output-dirs'
+        model = JobOutputProject
+        resource_name = 'job-output-projects'
         fields = '__all__'
 
 
@@ -53,7 +53,7 @@ class JobErrorSerializer(serializers.ModelSerializer):
 
 
 class JobSerializer(serializers.ModelSerializer):
-    output_dir = JobOutputDirSerializer(required=False, read_only=True)
+    output_dir = JobOutputProjectSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
     state = serializers.CharField(read_only=True)
     step = serializers.CharField(read_only=True)
@@ -70,7 +70,7 @@ class JobSerializer(serializers.ModelSerializer):
 
 class AdminJobSerializer(serializers.ModelSerializer):
     workflow_version = WorkflowVersionSerializer(required=False)
-    output_dir = JobOutputDirSerializer(required=False, read_only=True)
+    output_dir = JobOutputProjectSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
     user_id = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
@@ -206,6 +206,7 @@ class VMProjectSerializer(serializers.ModelSerializer):
         model = VMProject
         resource_name = 'vm-projects'
         fields = '__all__'
+
 
 class JobAnswerSetSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
