@@ -1,10 +1,11 @@
 from django.test import TestCase
 from models import DDSEndpoint, DDSUserCredential
 from models import Workflow, WorkflowVersion
-from models import Job, JobInputFile, DDSJobInputFile, URLJobInputFile, JobOutputDir, JobError
+from models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, JobOutputDir, JobError
 from models import LandoConnection
 from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject
 from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 import json
 
@@ -193,110 +194,65 @@ class JobTests(TestCase):
         job_ids = [job.id for job in Job.objects.all()]
         self.assertEqual([j1.id, j3.id, j4.id, j2.id], job_ids)
 
+    def test_fails_mismatch_stage_group_user(self):
+        job = Job.objects.create(workflow_version=self.workflow_version, user=self.user,
+                                 vm_project_name='jpb67',
+                                 job_order=self.sample_json)
+        other_user = User.objects.create_user('other_user')
+        stage_group = JobFileStageGroup.objects.create(user=other_user)
+        with self.assertRaises(ValidationError):
+            job.stage_group = stage_group
+            job.save()
 
-class JobInputFileTests(TestCase):
+
+class JobFileStageGroupTests(TestCase):
+
     def setUp(self):
         JobTests.add_job_fields(self)
 
     def test_dds_file(self):
-        job_input_file = JobInputFile.objects.create(job=self.job,
-                                                     file_type=JobInputFile.DUKE_DS_FILE,
-                                                     workflow_name='seq')
-        DDSJobInputFile.objects.create(job_input_file=job_input_file,
+        stage_group = JobFileStageGroup.objects.create(user=self.user)
+        self.job.stage_group = stage_group
+        self.job.save()
+        DDSJobInputFile.objects.create(stage_group=stage_group,
                                        project_id='1234',
                                        file_id='5321',
                                        dds_user_credentials=self.user_credentials,
-                                       destination_path='sample.fasta',
-                                       index=1)
+                                       destination_path='sample.fasta')
         # Test job fields
-        job_input_file = JobInputFile.objects.first()
-        self.assertEqual(self.job, job_input_file.job)
-        self.assertEqual(JobInputFile.DUKE_DS_FILE, job_input_file.file_type)
-        self.assertEqual('seq', job_input_file.workflow_name)
+        stage_group = JobFileStageGroup.objects.first()
+        self.assertEqual(self.job, stage_group.job)
+        self.assertEqual(self.user, stage_group.user)
 
         # Test dds_files
-        dds_files = job_input_file.dds_files.all()
+        dds_files = stage_group.dds_files.all()
         self.assertEqual(1, len(dds_files))
         dds_file = dds_files[0]
-        self.assertEqual(job_input_file, dds_file.job_input_file)
+        self.assertEqual(stage_group, dds_file.stage_group)
         self.assertEqual('1234', dds_file.project_id)
         self.assertEqual(self.user_credentials, dds_file.dds_user_credentials)
         self.assertEqual('sample.fasta', dds_file.destination_path)
-        self.assertEqual(1, dds_file.index)
-
-    def test_dds_file_array(self):
-        job_input_file = JobInputFile.objects.create(job=self.job,
-                                                     file_type=JobInputFile.DUKE_DS_FILE_ARRAY,
-                                                     workflow_name='seq')
-        DDSJobInputFile.objects.create(job_input_file=job_input_file,
-                                       project_id='1234',
-                                       file_id='5321',
-                                       dds_user_credentials=self.user_credentials,
-                                       destination_path='sample1.fasta',
-                                       index=1)
-
-        DDSJobInputFile.objects.create(job_input_file=job_input_file,
-                                       project_id='1234',
-                                       file_id='5322',
-                                       dds_user_credentials=self.user_credentials,
-                                       destination_path='sample2.fasta',
-                                       index=2)
-
-        job_input_file = JobInputFile.objects.first()
-        self.assertEqual(self.job, job_input_file.job)
-        self.assertEqual(JobInputFile.DUKE_DS_FILE_ARRAY, job_input_file.file_type)
-        self.assertEqual('seq', job_input_file.workflow_name)
-        dds_files = job_input_file.dds_files.all()
-        self.assertEqual(2, len(dds_files))
-        self.assertIn('5321', [dds_file.file_id for dds_file in dds_files])
-        self.assertIn('5322', [dds_file.file_id for dds_file in dds_files])
 
     def test_url_file(self):
-        job_input_file = JobInputFile.objects.create(job=self.job,
-                                                     file_type=JobInputFile.URL_FILE,
-                                                     workflow_name='myseq')
-        URLJobInputFile.objects.create(job_input_file=job_input_file,
+        stage_group = JobFileStageGroup.objects.create(user=self.user)
+        self.job.stage_group = stage_group
+        self.job.save()
+        URLJobInputFile.objects.create(stage_group=stage_group,
                                        url='https://data.org/sample.fasta',
-                                       destination_path='sample.fasta',
-                                       index=1)
+                                       destination_path='sample.fasta')
 
         # Test job fields
-        job_input_file = JobInputFile.objects.first()
-        self.assertEqual(self.job, job_input_file.job)
-        self.assertEqual(JobInputFile.URL_FILE, job_input_file.file_type)
-        self.assertEqual('myseq', job_input_file.workflow_name)
+        stage_group = JobFileStageGroup.objects.first()
+        self.assertEqual(self.job, stage_group.job)
+        self.assertEqual(self.user, stage_group.user)
 
         # Test dds_files
-        url_files = job_input_file.url_files.all()
+        url_files = stage_group.url_files.all()
         self.assertEqual(1, len(url_files))
         url_file = url_files[0]
-        self.assertEqual(job_input_file, url_file.job_input_file)
+        self.assertEqual(stage_group, url_file.stage_group)
         self.assertEqual('https://data.org/sample.fasta', url_file.url)
         self.assertEqual('sample.fasta', url_file.destination_path)
-        self.assertEqual(1, url_file.index)
-
-    def test_url_file_array(self):
-        job_input_file = JobInputFile.objects.create(job=self.job,
-                                                     file_type=JobInputFile.DUKE_DS_FILE_ARRAY,
-                                                     workflow_name='seq')
-        URLJobInputFile.objects.create(job_input_file=job_input_file,
-                                       url='https://data.org/sample.fasta',
-                                       destination_path='sample.fasta',
-                                       index=1)
-
-        URLJobInputFile.objects.create(job_input_file=job_input_file,
-                                       url='https://data.org/sample2.fasta',
-                                       destination_path='sample2.fasta',
-                                       index=2)
-
-        job_input_file = JobInputFile.objects.first()
-        self.assertEqual(self.job, job_input_file.job)
-        self.assertEqual(JobInputFile.DUKE_DS_FILE_ARRAY, job_input_file.file_type)
-        self.assertEqual('seq', job_input_file.workflow_name)
-        url_files = job_input_file.url_files.all()
-        self.assertEqual(2, len(url_files))
-        self.assertIn('sample.fasta', [url_file.destination_path for url_file in url_files])
-        self.assertIn('sample2.fasta', [url_file.destination_path for url_file in url_files])
 
 
 class JobOutputDirTests(TestCase):
@@ -338,15 +294,21 @@ class JobErrorTests(TestCase):
         self.assertIsNotNone(job_error.created)
 
 class JobQuestionnaireTests(TestCase):
+
+    @staticmethod
+    def add_workflowversion_fields(obj):
+        obj.user = User.objects.create_user('user')
+        obj.workflow = Workflow.objects.create(name='RnaSeq')
+        obj.workflow_version = WorkflowVersion.objects.create(workflow=obj.workflow,
+                                                              object_name='#main',
+                                                              version='1',
+                                                              url=CWL_URL)
+        obj.flavor1 = VMFlavor.objects.create(name='flavor1')
+        obj.flavor2 = VMFlavor.objects.create(name='flavor2')
+        obj.project = VMProject.objects.create(name='bespin-project')
+
     def setUp(self):
-        self.workflow = Workflow.objects.create(name='RnaSeq')
-        self.workflow_version = WorkflowVersion.objects.create(workflow=self.workflow,
-                                                               object_name='#main',
-                                                               version='1',
-                                                               url=CWL_URL)
-        self.flavor1 = VMFlavor.objects.create(vm_flavor='flavor1')
-        self.flavor2 = VMFlavor.objects.create(vm_flavor='flavor2')
-        self.project = VMProject.objects.create(vm_project_name='bespin-project')
+        self.add_workflowversion_fields(self)
 
     def test_two_questionnaires(self):
         questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
@@ -365,13 +327,47 @@ class JobQuestionnaireTests(TestCase):
         self.assertEqual('Ant RnaSeq', ant_questionnaire.name)
         self.assertEqual('Uses reference genome xyz and gene index abc', ant_questionnaire.description)
         self.assertEqual('foo',json.loads(ant_questionnaire.system_job_order)['system_input'])
-        self.assertEqual('flavor1', ant_questionnaire.vm_flavor.vm_flavor)
-        self.assertEqual('bespin-project', ant_questionnaire.vm_project.vm_project_name)
+        self.assertEqual('flavor1', ant_questionnaire.vm_flavor.name)
+        self.assertEqual('bespin-project', ant_questionnaire.vm_project.name)
 
         human_questionnaire = JobQuestionnaire.objects.filter(name='Human RnaSeq').first()
         self.assertEqual('Human RnaSeq', human_questionnaire.name)
         self.assertEqual('Uses reference genome zew and gene index def', human_questionnaire.description)
         self.assertEqual('bar',json.loads(human_questionnaire.system_job_order)['system_input'])
-        self.assertEqual('flavor2', human_questionnaire.vm_flavor.vm_flavor)
-        self.assertEqual('bespin-project', human_questionnaire.vm_project.vm_project_name)
+        self.assertEqual('flavor2', human_questionnaire.vm_flavor.name)
+        self.assertEqual('bespin-project', human_questionnaire.vm_project.name)
 
+class JobAnswerSetTests(TestCase):
+
+    def setUp(self):
+        JobQuestionnaireTests.add_workflowversion_fields(self)
+        self.questionnaire = JobQuestionnaire.objects.create(name='Exome Seq Q',
+                                                        description='Uses reference genome xyz and gene index abc',
+                                                        workflow_version=self.workflow_version,
+                                                        system_job_order='{"system_input": "foo"}',
+                                                        vm_flavor=self.flavor1,
+                                                        vm_project=self.project)
+    def test_basic_functionality(self):
+        JobAnswerSet.objects.create(user=self.user,
+                                    questionnaire=self.questionnaire,
+                                    job_name='job 1',
+                                    user_job_order='{"user_input":"bar"}'
+        )
+        job_answer_set = JobAnswerSet.objects.first()
+        self.assertEqual(self.user, job_answer_set.user),
+        self.assertEqual(self.questionnaire, job_answer_set.questionnaire)
+        self.assertEqual('job 1', job_answer_set.job_name)
+        self.assertEqual('{"user_input":"bar"}', job_answer_set.user_job_order)
+
+
+    def test_fails_mismatch_stage_group_user(self):
+        job_answer_set = JobAnswerSet.objects.create(user=self.user,
+                                                     questionnaire=self.questionnaire,
+                                                     job_name='job 2',
+                                                     user_job_order='{"user_input":"bar"}'
+        )
+        other_user = User.objects.create_user('other_user')
+        stage_group = JobFileStageGroup.objects.create(user=other_user)
+        with self.assertRaises(ValidationError):
+            job_answer_set.stage_group = stage_group
+            job_answer_set.save()

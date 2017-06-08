@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.conf import settings
-
+from django.core.exceptions import ValidationError
 
 class DDSEndpoint(models.Model):
     """
@@ -55,6 +55,13 @@ class WorkflowVersion(models.Model):
 
     def __unicode__(self):
         return '{} version: {} created: {}'.format(self.workflow.name, self.version, self.created)
+
+
+class JobFileStageGroup(models.Model):
+    """
+    Group of files to stage for a job
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL)
 
 
 class Job(models.Model):
@@ -112,6 +119,13 @@ class Job(models.Model):
                                        help_text="Name of the cloud project where vm will be created.")
     job_order = models.TextField(null=True,
                                  help_text="CWL input json for use with the workflow.")
+    stage_group = models.OneToOneField(JobFileStageGroup, null=True,
+                                       help_text='Group of files to stage when running this job')
+
+    def save(self, *args, **kwargs):
+        if self.stage_group is not None and self.stage_group.user != self.user:
+            raise ValidationError('stage group user does not match job user')
+        super(Job, self).save(*args, **kwargs)
 
     class Meta:
         ordering = ['created']
@@ -121,6 +135,7 @@ class Job(models.Model):
         if self.workflow_version:
             workflow_name = self.workflow_version.workflow
         return '{} ({}) for user {}'.format(workflow_name, self.get_state_display(), self.user)
+
 
 
 class JobOutputDir(models.Model):
@@ -134,57 +149,6 @@ class JobOutputDir(models.Model):
 
     def __unicode__(self):
         return 'Directory name: {} Project: {}'.format(self.dir_name, self.project_id)
-
-
-class JobInputFile(models.Model):
-    """
-    Input file that will be downloaded before running a workflow.
-    """
-    DUKE_DS_FILE = 'dds_file'
-    DUKE_DS_FILE_ARRAY = 'dds_file_array'
-    URL_FILE = 'url_file'
-    URL_FILE_ARRAY = 'url_file_array'
-    INPUT_FILE_TYPES = (
-        (DUKE_DS_FILE, 'DukeDS File'),
-        (DUKE_DS_FILE_ARRAY, 'DukeDS File Array'),
-        (URL_FILE, 'URL File'),
-        (URL_FILE_ARRAY, 'URL File Array'),
-    )
-    job = models.ForeignKey(Job, on_delete=models.CASCADE, null=False, related_name='input_files')
-    file_type = models.CharField(max_length=30, choices=INPUT_FILE_TYPES)
-    workflow_name = models.CharField(max_length=255, null=True)
-
-    def __unicode__(self):
-        return 'Job Input File "{}"  ({})'.format(self.workflow_name, self.file_type)
-
-
-class DDSJobInputFile(models.Model):
-    """
-    Settings for a DUKE_DS_FILE or DUKE_DS_FILE_ARRAY type JobInputFile.
-    """
-    job_input_file = models.ForeignKey(JobInputFile, on_delete=models.CASCADE, null=False, related_name='dds_files')
-    project_id = models.CharField(max_length=255, blank=False, null=True)
-    file_id = models.CharField(max_length=255, blank=False, null=True)
-    dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE)
-    destination_path = models.CharField(max_length=255, blank=False, null=True)
-    index = models.IntegerField(null=True)
-
-    def __unicode__(self):
-        return 'DDS Job Input File "{}" ({}) id:{}'.format(self.destination_path, self.job_input_file.workflow_name,
-                                                     self.file_id)
-
-
-class URLJobInputFile(models.Model):
-    """
-    Settings for a URL_FILE or URL_FILE_ARRAY type JobInputFile.
-    """
-    job_input_file = models.ForeignKey(JobInputFile, on_delete=models.CASCADE, null=False, related_name='url_files')
-    url = models.TextField(null=True)
-    destination_path = models.CharField(max_length=255, blank=False, null=True)
-    index = models.IntegerField(null=True)
-
-    def __unicode__(self):
-        return 'URL Job Input File {} ({})'.format(self.url, self.job_input_file.workflow_name)
 
 
 class JobError(models.Model):
@@ -211,20 +175,20 @@ class VMFlavor(models.Model):
     """
     Specifies parameters for requesting cloud resources
     """
-    vm_flavor = models.CharField(max_length=255, blank=False, unique=True,
-                                 help_text="The name of the flavor to use when launching instances (specifies CPU/RAM)")
+    name = models.CharField(max_length=255, blank=False, unique=True,
+                            help_text="The name of the flavor to use when launching instances (specifies CPU/RAM)")
 
     def __unicode__(self):
-        return 'Flavor: {}'.format(self.vm_flavor)
+        return 'Flavor: {}'.format(self.name)
 
 
 class VMProject(models.Model):
 
-    vm_project_name = models.CharField(max_length=255, blank=False, null=False, unique=True,
-                                       help_text="The name of the project in which to launch instances")
+    name = models.CharField(max_length=255, blank=False, null=False, unique=True,
+                            help_text="The name of the project in which to launch instances")
 
     def __unicode__(self):
-        return 'VM Project: {}'.format(self.vm_project_name)
+        return 'VM Project: {}'.format(self.name)
 
 
 class JobQuestionnaire(models.Model):
@@ -263,6 +227,43 @@ class JobAnswerSet(models.Model):
                                 help_text='Name of the job')
     user_job_order = models.TextField(null=True,
                                       help_text="JSON containing the portion of the job order specified by user")
+    stage_group = models.OneToOneField(JobFileStageGroup, null=-True,
+                                       help_text='Collection of files that must be staged for a job to be run')
 
     def __unicode__(self):
         return '{} questionnaire:{}'.format(self.id, self.questionnaire.description)
+
+    def save(self, *args, **kwargs):
+        if self.stage_group is not None and self.stage_group.user != self.user:
+            raise ValidationError('stage group user does not match answer set user')
+        super(JobAnswerSet, self).save(*args, **kwargs)
+
+
+class DDSJobInputFile(models.Model):
+    """
+    Settings for a file specified in a JobAnswerSet that must be downloaded from DDS before using in a workflow
+    """
+    stage_group = models.ForeignKey(JobFileStageGroup,
+                                    help_text='Stage group to which this file belongs',
+                                    related_name='dds_files')
+    project_id = models.CharField(max_length=255, blank=False, null=True)
+    file_id = models.CharField(max_length=255, blank=False, null=True)
+    dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE)
+    destination_path = models.CharField(max_length=255, blank=False, null=True)
+
+    def __unicode__(self):
+        return 'DDS Job Input File "{}" id:{}'.format(self.destination_path, self.file_id)
+
+
+class URLJobInputFile(models.Model):
+    """
+    Settings for a file specified in a JobAnswerSet that must be downloaded from a URL before using in a workflow
+    """
+    stage_group = models.ForeignKey(JobFileStageGroup,
+                                    help_text='Stage group to which this file belongs',
+                                    related_name='url_files')
+    url = models.URLField(null=True)
+    destination_path = models.CharField(max_length=255, blank=False, null=True)
+
+    def __unicode__(self):
+        return 'URL Job Input File "{}"'.format(self.url)

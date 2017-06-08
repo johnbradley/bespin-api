@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions, status
 from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException
-from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
+from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir
 
 from data.serializers import *
@@ -114,23 +114,23 @@ class DDSJobInputFileViewSet(viewsets.ModelViewSet):
     serializer_class = DDSJobInputFileSerializer
 
     def get_queryset(self):
-        return DDSJobInputFile.objects.filter(job_input_file__job__user=self.request.user)
+        return DDSJobInputFile.objects.filter(stage_group__user=self.request.user)
 
 
-class JobInputFileViewSet(viewsets.ModelViewSet):
+class JobFileStageGroupViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = JobInputFileSerializer
+    serializer_class = JobFileStageGroupSerializer
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('job',)
 
     def get_queryset(self):
-        return JobInputFile.objects.filter(job__user=self.request.user)
+        return JobFileStageGroup.objects.filter(user=self.request.user)
 
 
-class AdminJobInputFileViewSet(viewsets.ReadOnlyModelViewSet):
+class AdminJobFileStageGroupViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
-    serializer_class = JobInputFileSerializer
-    queryset = JobInputFile.objects.all()
+    serializer_class = JobFileStageGroupSerializer
+    queryset = JobFileStageGroup.objects.all()
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('job',)
 
@@ -140,7 +140,7 @@ class URLJobInputFileViewSet(viewsets.ModelViewSet):
     serializer_class = URLJobInputFileSerializer
 
     def get_queryset(self):
-        return URLJobInputFile.objects.filter(job_input_file__job__user=self.request.user)
+        return URLJobInputFile.objects.filter(stage_group__user=self.request.user)
 
 
 class DDSEndpointViewSet(viewsets.ModelViewSet):

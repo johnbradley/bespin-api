@@ -1,4 +1,4 @@
-from data.models import Job, JobOutputDir, JobInputFile, DDSJobInputFile
+from data.models import Job, JobOutputDir, DDSJobInputFile
 from rest_framework.exceptions import ValidationError
 from util import get_file_name
 from exceptions import JobFactoryException
@@ -15,14 +15,15 @@ def create_job_factory(job_answer_set):
     """
     user = job_answer_set.user
     workflow_version = job_answer_set.questionnaire.workflow_version
+    stage_group = job_answer_set.stage_group
     user_job_order_dict = json.loads(job_answer_set.user_job_order)
     system_job_order_dict = json.loads(job_answer_set.questionnaire.system_job_order)
     job_name = job_answer_set.job_name
-    vm_project_name = job_answer_set.questionnaire.vm_project.vm_project_name
-    vm_flavor = job_answer_set.questionnaire.vm_flavor.vm_flavor
+    vm_project_name = job_answer_set.questionnaire.vm_project.name
+    vm_flavor_name = job_answer_set.questionnaire.vm_flavor.name
 
-    factory = JobFactory(user, workflow_version, user_job_order_dict, system_job_order_dict, job_name, vm_project_name,
-                         vm_flavor)
+    factory = JobFactory(user, workflow_version, stage_group, user_job_order_dict, system_job_order_dict, job_name, vm_project_name,
+                         vm_flavor_name)
 
     return factory
 
@@ -31,8 +32,9 @@ class JobFactory(object):
     """
     Creates Job record in the database based on questions their answers.
     """
-    def __init__(self, user, workflow_version, user_job_order, system_job_order, job_name, vm_project_name,
-                 vm_flavor):
+    # TODO: Pull in job dds files and url files
+    def __init__(self, user, workflow_version, stage_group, user_job_order, system_job_order, job_name, vm_project_name,
+                 vm_flavor_name):
         """
         Setup factory
         :param user: User: user we are creating this job for and who's credentials we will use
@@ -40,11 +42,12 @@ class JobFactory(object):
         """
         self.workflow_version = workflow_version
         self.user = user
+        self.stage_group = stage_group
         self.user_job_order = user_job_order
         self.system_job_order = system_job_order
         self.job_name = job_name
         self.vm_project_name = vm_project_name
-        self.vm_flavor = vm_flavor
+        self.vm_flavor_name = vm_flavor_name
 
     def create_job(self):
         """
@@ -60,12 +63,12 @@ class JobFactory(object):
         job_order.update(self.user_job_order)
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  user=self.user,
+                                 stage_group=self.stage_group,
                                  name=self.job_name,
                                  vm_project_name=self.vm_project_name,
-                                 vm_flavor=self.vm_flavor,
+                                 vm_flavor=self.vm_flavor_name,
                                  job_order=json.dumps(job_order)
         )
         # TODO: Create JobOutputDir
-        # TODO: Populate JobInputFiles
         return job
 

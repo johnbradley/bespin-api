@@ -96,10 +96,10 @@ class JobQuestionnaireImporter(BaseImporter):
 
     def _create_models(self):
         # vm flavor
-        self.vm_flavor, created = VMFlavor.objects.get_or_create(vm_flavor=self.vm_flavor_name)
+        self.vm_flavor, created = VMFlavor.objects.get_or_create(name=self.vm_flavor_name)
         self.log_creation(created, 'VMFlavor', self.vm_flavor_name, self.vm_flavor.id)
         # vm_project
-        self.vm_project, created = VMProject.objects.get_or_create(vm_project_name=self.vm_project_name)
+        self.vm_project, created = VMProject.objects.get_or_create(name=self.vm_project_name)
         self.log_creation(created, 'VMProject', self.vm_project_name, self.vm_project.id)
 
         # Extract fields that are not system-provided

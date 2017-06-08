@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
 from mock.mock import MagicMock, patch, Mock
-from models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion
+from models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion, JobFileStageGroup
 from jobfactory import JobFactory, JobFactoryException
 import json
 
@@ -19,6 +19,7 @@ class JobFactoryTests(TestCase):
                                                                object_name='#main',
                                                                version='1',
                                                                url=FLY_RNASEQ_URL)
+        self.stage_group = JobFileStageGroup.objects.create(user=self.user)
 
     # What does job factory do now?
     # Checks that orders are not none
@@ -28,22 +29,21 @@ class JobFactoryTests(TestCase):
     def test_requires_user_order(self):
         user_job_order = None
         system_job_order = {}
-        job_factory = JobFactory(self.user, None, user_job_order, system_job_order, None, None, None)
+        job_factory = JobFactory(self.user, None, None, user_job_order, system_job_order, None, None, None)
         with self.assertRaises(JobFactoryException):
             job_factory.create_job()
-
 
     def test_requires_system_order(self):
         user_job_order = {}
         system_job_order = None
-        job_factory = JobFactory(self.user, None, user_job_order, system_job_order, None, None, None)
+        job_factory = JobFactory(self.user, None, None, user_job_order, system_job_order, None, None, None)
         with self.assertRaises(JobFactoryException):
             job_factory.create_job()
 
     def test_creates_job(self):
         user_job_order = {'input1': 'user'}
         system_job_order = {'input2' : 'system'}
-        job_factory = JobFactory(self.user, self.workflow_version, user_job_order, system_job_order, 'Test Job', 'bespin-project', 'flavor1')
+        job_factory = JobFactory(self.user, self.workflow_version, self.stage_group, user_job_order, system_job_order, 'Test Job', 'bespin-project', 'flavor1')
         job = job_factory.create_job()
         self.assertEqual(job.user, self.user)
         self.assertEqual(job.workflow_version, self.workflow_version)
@@ -56,7 +56,7 @@ class JobFactoryTests(TestCase):
     def test_favors_user_inputs(self):
         user_job_order = {'input1': 'user'}
         system_job_order = {'input1' : 'system'}
-        job_factory = JobFactory(self.user, self.workflow_version, user_job_order, system_job_order, 'Test Job', 'bespin-project', 'flavor1')
+        job_factory = JobFactory(self.user, self.workflow_version, self.stage_group, user_job_order, system_job_order, 'Test Job', 'bespin-project', 'flavor1')
         job = job_factory.create_job()
         expected_job_order = json.dumps({'input1':'user'})
         self.assertEqual(expected_job_order, job.job_order)

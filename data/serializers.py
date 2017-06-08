@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
+from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError, JobAnswerSet, \
     JobQuestionnaire, VMFlavor, VMProject
 
@@ -65,7 +65,7 @@ class JobSerializer(serializers.ModelSerializer):
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir',
-                  'job_errors')
+                  'job_errors', 'stage_group')
 
 
 class AdminJobSerializer(serializers.ModelSerializer):
@@ -78,7 +78,7 @@ class AdminJobSerializer(serializers.ModelSerializer):
         model = Job
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user_id', 'name', 'created', 'state', 'step', 'last_updated',
-                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir')
+                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir', 'stage_group')
 
 
 class DDSEndpointSerializer(serializers.ModelSerializer):
@@ -106,14 +106,17 @@ class ReadOnlyDDSUserCredSerializer(serializers.ModelSerializer):
         resource_name = 'dds-user-credentials'
         fields = ('id', 'user', 'endpoint')
 
+class BaseJobInputFileSerializer(serializers.ModelSerializer):
 
-class DDSJobInputFileSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
-        # You must own the job-input-file you are attaching this output directory onto
-        if data['job_input_file'].job.user != request.user:
-            raise serializers.ValidationError("This job_input_file belongs to another user.")
+        # You must own the job-answer-set you are attaching this file onto
+        if data['stage_group'].user != request.user:
+            raise serializers.ValidationError("This stage group belongs to another user.")
         return data
+
+
+class DDSJobInputFileSerializer(BaseJobInputFileSerializer):
 
     class Meta:
         model = DDSJobInputFile
@@ -121,33 +124,23 @@ class DDSJobInputFileSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class URLJobInputFileSerializer(serializers.ModelSerializer):
+class URLJobInputFileSerializer(BaseJobInputFileSerializer):
+
     class Meta:
         model = URLJobInputFile
         resource_name = 'url-job-input-files'
         fields = '__all__'
 
 
-class JobInputFileSerializer(serializers.ModelSerializer):
-    dds_files = serializers.SerializerMethodField()
-    url_files = serializers.SerializerMethodField()
-
-    # Sort inner dds files by their index so we can keep our arrays in the same order.
-    def get_dds_files(self, obj):
-        qset = DDSJobInputFile.objects.filter(job_input_file__pk=obj.pk).order_by('index')
-        ser = DDSJobInputFileSerializer(qset, many=True, read_only=True)
-        return ser.data
-
-    # Sort inner url files by their index so we can keep our arrays in the same order.
-    def get_url_files(self, obj):
-        qset = URLJobInputFile.objects.filter(job_input_file__pk=obj.pk).order_by('index')
-        ser = URLJobInputFileSerializer(qset, many=True, read_only=True)
-        return ser.data
+class JobFileStageGroupSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
+    dds_files = DDSJobInputFileSerializer(many=True, read_only=True)
+    url_files = URLJobInputFileSerializer(many=True, read_only=True)
 
     class Meta:
-        model = JobInputFile
-        resource_name = 'job-input-files'
-        fields = ('id', 'job', 'file_type', 'workflow_name', 'dds_files', 'url_files')
+        model = JobFileStageGroup
+        resource_name = 'job-file-stage-group'
+        fields = ('id', 'user', 'dds_files', 'url_files')
 
 
 class AdminDDSEndpointSerializer(serializers.HyperlinkedModelSerializer):
