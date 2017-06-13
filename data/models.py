@@ -227,7 +227,7 @@ class JobAnswerSet(models.Model):
                                 help_text='Name of the job')
     user_job_order = models.TextField(null=True,
                                       help_text="JSON containing the portion of the job order specified by user")
-    stage_group = models.OneToOneField(JobFileStageGroup, null=-True,
+    stage_group = models.OneToOneField(JobFileStageGroup, null=True,
                                        help_text='Collection of files that must be staged for a job to be run')
 
     def __unicode__(self):
