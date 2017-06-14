@@ -201,8 +201,8 @@ class JobQuestionnaire(models.Model):
                                    help_text="Detailed user facing description")
     workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.CASCADE, blank=False, null=False,
                                          help_text="Workflow that this questionaire is for")
-    system_job_order = models.TextField(null=True,
-                                        help_text="JSON containing the portion of the job order specified by system.")
+    system_job_order_json = models.TextField(null=True,
+                                             help_text="JSON containing the portion of the job order specified by system.")
     user_fields = models.TextField(null=True,
                                    help_text="JSON containing the array of fields required by the user when providing "
                                              "a job answer set.")

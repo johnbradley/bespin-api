@@ -314,26 +314,26 @@ class JobQuestionnaireTests(TestCase):
         questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
                                                         description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=self.workflow_version,
-                                                        system_job_order='{"system_input": "foo"}',
+                                                        system_job_order_json='{"system_input": "foo"}',
                                                         vm_flavor=self.flavor1,
                                                         vm_project=self.project)
         questionnaire = JobQuestionnaire.objects.create(name='Human RnaSeq',
                                                         description='Uses reference genome zew and gene index def',
                                                         workflow_version=self.workflow_version,
-                                                        system_job_order='{"system_input":"bar"}',
+                                                        system_job_order_json='{"system_input":"bar"}',
                                                         vm_flavor=self.flavor2,
                                                         vm_project=self.project)
         ant_questionnaire = JobQuestionnaire.objects.filter(name='Ant RnaSeq').first()
         self.assertEqual('Ant RnaSeq', ant_questionnaire.name)
         self.assertEqual('Uses reference genome xyz and gene index abc', ant_questionnaire.description)
-        self.assertEqual('foo',json.loads(ant_questionnaire.system_job_order)['system_input'])
+        self.assertEqual('foo',json.loads(ant_questionnaire.system_job_order_json)['system_input'])
         self.assertEqual('flavor1', ant_questionnaire.vm_flavor.name)
         self.assertEqual('bespin-project', ant_questionnaire.vm_project.name)
 
         human_questionnaire = JobQuestionnaire.objects.filter(name='Human RnaSeq').first()
         self.assertEqual('Human RnaSeq', human_questionnaire.name)
         self.assertEqual('Uses reference genome zew and gene index def', human_questionnaire.description)
-        self.assertEqual('bar',json.loads(human_questionnaire.system_job_order)['system_input'])
+        self.assertEqual('bar',json.loads(human_questionnaire.system_job_order_json)['system_input'])
         self.assertEqual('flavor2', human_questionnaire.vm_flavor.name)
         self.assertEqual('bespin-project', human_questionnaire.vm_project.name)
 
@@ -344,7 +344,7 @@ class JobAnswerSetTests(TestCase):
         self.questionnaire = JobQuestionnaire.objects.create(name='Exome Seq Q',
                                                         description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=self.workflow_version,
-                                                        system_job_order='{"system_input": "foo"}',
+                                                        system_job_order_json='{"system_input": "foo"}',
                                                         vm_flavor=self.flavor1,
                                                         vm_project=self.project)
     def test_basic_functionality(self):

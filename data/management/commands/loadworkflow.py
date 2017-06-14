@@ -114,7 +114,7 @@ class JobQuestionnaireImporter(BaseImporter):
             name=self.name,
             description=self.description,
             workflow_version=self.workflow_version,
-            system_job_order=json.dumps(self.system_job_order_dict),
+            system_job_order_json=json.dumps(self.system_job_order_dict),
             user_fields=json.dumps(user_fields),
             vm_flavor=self.vm_flavor,
             vm_project=self.vm_project,

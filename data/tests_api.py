@@ -804,8 +804,8 @@ class JobQuestionnaireTestCase(APITestCase):
         self.user_login = UserLogin(self.client)
         workflow = Workflow.objects.create(name='RnaSeq')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
-        self.system_job_order1 = json.dumps({'system_input': 1})
-        self.system_job_order2 = json.dumps({'system_input': 2})
+        self.system_job_order_json1 = json.dumps({'system_input': 1})
+        self.system_job_order_json2 = json.dumps({'system_input': 2})
         self.flavor = VMFlavor.objects.create(name='flavor1')
         self.project = VMProject.objects.create(name='bespin-project')
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
@@ -814,15 +814,15 @@ class JobQuestionnaireTestCase(APITestCase):
         self.questionnaire1 = JobQuestionnaire.objects.create(name='Workflow1',
                                                               description='A really large workflow',
                                                               workflow_version=self.workflow_version,
-                                                              system_job_order=self.system_job_order1,
+                                                              system_job_order_json=self.system_job_order_json1,
                                                               vm_flavor = self.flavor,
                                                               vm_project = self.project,
 
-        )
+                                                              )
         self.questionnaire2 = JobQuestionnaire.objects.create(name='Workflow2',
                                                               description='A rather small workflow',
                                                               workflow_version=self.workflow_version,
-                                                              system_job_order=self.system_job_order2,
+                                                              system_job_order_json=self.system_job_order_json2,
                                                               vm_flavor = self.flavor,
                                                               vm_project = self.project,
                                                               )
@@ -841,7 +841,7 @@ class JobQuestionnaireTestCase(APITestCase):
         self.assertEqual('Workflow1', response.data['name'])
         self.assertEqual('A really large workflow', response.data['description'])
         self.assertEqual(self.workflow_version.id, response.data['workflow_version'])
-        self.assertEqual(self.system_job_order1, response.data['system_job_order'])
+        self.assertEqual(self.system_job_order_json1, response.data['system_job_order_json'])
         self.assertEqual(self.flavor.id, response.data['vm_flavor'])
         self.assertEqual(self.project.id, response.data['vm_project'])
 
@@ -851,7 +851,7 @@ class JobQuestionnaireTestCase(APITestCase):
         self.assertEqual('Workflow2', response.data['name'])
         self.assertEqual('A rather small workflow', response.data['description'])
         self.assertEqual(self.workflow_version.id, response.data['workflow_version'])
-        self.assertEqual(self.system_job_order2, response.data['system_job_order'])
+        self.assertEqual(self.system_job_order_json2, response.data['system_job_order_json'])
         self.assertEqual(self.flavor.id, response.data['vm_flavor'])
         self.assertEqual(self.project.id, response.data['vm_project'])
 
@@ -880,20 +880,20 @@ class JobAnswerSetTests(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.flavor = VMFlavor.objects.create(name='flavor1')
         self.project = VMProject.objects.create(name='bespin-project')
-        self.system_job_order1 = json.dumps({'system_input': 1})
-        self.system_job_order2 = json.dumps({'system_input': 2})
+        self.system_job_order_json1 = json.dumps({'system_input': 1})
+        self.system_job_order_json2 = json.dumps({'system_input': 2})
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
                                                                url=cwl_url)
         self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
                                                               workflow_version=self.workflow_version,
-                                                              system_job_order=self.system_job_order1,
+                                                              system_job_order_json=self.system_job_order_json1,
                                                               vm_flavor=self.flavor,
                                                               vm_project=self.project,
                                                               )
         self.questionnaire2 = JobQuestionnaire.objects.create(description='Workflow1',
                                                               workflow_version=self.workflow_version,
-                                                              system_job_order=self.system_job_order2,
+                                                              system_job_order_json=self.system_job_order_json2,
                                                               vm_flavor=self.flavor,
                                                               vm_project=self.project,
                                                               )
@@ -939,7 +939,7 @@ class JobAnswerSetTests(APITestCase):
         #                                              dds_id='1')
         questionnaire = JobQuestionnaire.objects.create(description='Workflow1',
                                                         workflow_version=self.workflow_version,
-                                                        system_job_order=self.system_job_order1,
+                                                        system_job_order_json=self.system_job_order_json1,
                                                         vm_flavor=self.flavor,
                                                         vm_project=self.project,
                                                         )
@@ -962,7 +962,7 @@ class JobAnswerSetTests(APITestCase):
         self.assertEqual('Test job with items', response.data['name'])
         self.assertEqual(self.flavor.name, response.data['vm_flavor'])
         self.assertEqual(self.project.name, response.data['vm_project_name'])
-        expected_job_order = json.loads(self.system_job_order1).copy()
+        expected_job_order = json.loads(self.system_job_order_json1).copy()
         expected_job_order.update(json.loads(self.user_job_order_json1))
         self.assertEqual(json.dumps(expected_job_order), response.data['job_order'])
         self.assertEqual(1, len(Job.objects.all()))
