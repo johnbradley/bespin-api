@@ -203,8 +203,8 @@ class JobQuestionnaire(models.Model):
                                          help_text="Workflow that this questionaire is for")
     system_job_order_json = models.TextField(null=True,
                                              help_text="JSON containing the portion of the job order specified by system.")
-    user_fields = models.TextField(null=True,
-                                   help_text="JSON containing the array of fields required by the user when providing "
+    user_fields_json = models.TextField(null=True,
+                                        help_text="JSON containing the array of fields required by the user when providing "
                                              "a job answer set.")
     vm_flavor = models.ForeignKey(VMFlavor, null=False,
                                   help_text='VM Flavor to use when creating VM instances for this questionnaire')
