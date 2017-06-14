@@ -351,20 +351,20 @@ class JobAnswerSetTests(TestCase):
         JobAnswerSet.objects.create(user=self.user,
                                     questionnaire=self.questionnaire,
                                     job_name='job 1',
-                                    user_job_order='{"user_input":"bar"}'
+                                    user_job_order_json='{"user_input":"bar"}'
         )
         job_answer_set = JobAnswerSet.objects.first()
         self.assertEqual(self.user, job_answer_set.user),
         self.assertEqual(self.questionnaire, job_answer_set.questionnaire)
         self.assertEqual('job 1', job_answer_set.job_name)
-        self.assertEqual('{"user_input":"bar"}', job_answer_set.user_job_order)
+        self.assertEqual('{"user_input":"bar"}', job_answer_set.user_job_order_json)
 
 
     def test_fails_mismatch_stage_group_user(self):
         job_answer_set = JobAnswerSet.objects.create(user=self.user,
                                                      questionnaire=self.questionnaire,
                                                      job_name='job 2',
-                                                     user_job_order='{"user_input":"bar"}'
+                                                     user_job_order_json='{"user_input":"bar"}'
         )
         other_user = User.objects.create_user('other_user')
         stage_group = JobFileStageGroup.objects.create(user=other_user)

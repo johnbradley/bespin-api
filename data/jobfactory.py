@@ -16,7 +16,7 @@ def create_job_factory(job_answer_set):
     user = job_answer_set.user
     workflow_version = job_answer_set.questionnaire.workflow_version
     stage_group = job_answer_set.stage_group
-    user_job_order_dict = json.loads(job_answer_set.user_job_order)
+    user_job_order_dict = json.loads(job_answer_set.user_job_order_json)
     system_job_order_dict = json.loads(job_answer_set.questionnaire.system_job_order)
     job_name = job_answer_set.job_name
     vm_project_name = job_answer_set.questionnaire.vm_project.name

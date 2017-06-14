@@ -902,32 +902,32 @@ class JobAnswerSetTests(APITestCase):
         self.stage_group = JobFileStageGroup.objects.create(user=self.user)
         self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret',
                                                    api_root='https://someserver.com/api')
-        self.user_job_order1 = json.dumps({'input1': 'value1'})
-        self.user_job_order2 = json.dumps({'input1': 'value1', 'input2': [1,2,3]})
+        self.user_job_order_json1 = json.dumps({'input1': 'value1'})
+        self.user_job_order_json2 = json.dumps({'input1': 'value1', 'input2': [1, 2, 3]})
 
     def test_user_crud(self):
         url = reverse('jobanswerset-list')
         response = self.client.post(url, format='json', data={
             'questionnaire': self.questionnaire1.id,
             'job_name': 'Test job 1',
-            'user_job_order' : self.user_job_order1,
+            'user_job_order_json' : self.user_job_order_json1,
             'stage_group' : self.stage_group.id,
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(1, len(JobAnswerSet.objects.all()))
         job_answer_set = JobAnswerSet.objects.first()
-        self.assertEqual(job_answer_set.user_job_order, self.user_job_order1)
+        self.assertEqual(job_answer_set.user_job_order_json, self.user_job_order_json1)
 
         url = '{}{}/'.format(reverse('jobanswerset-list'), response.data['id'])
         response = self.client.put(url, format='json', data={
             'questionnaire': self.questionnaire1.id,
             'job_name': 'Test job 2',
-            'user_job_order': self.user_job_order2,
+            'user_job_order_json': self.user_job_order_json2,
             'stage_group': self.stage_group.id,
         })
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         job_answer_set = JobAnswerSet.objects.first()
-        self.assertEqual(job_answer_set.user_job_order, self.user_job_order2)
+        self.assertEqual(job_answer_set.user_job_order_json, self.user_job_order_json2)
 
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -951,7 +951,7 @@ class JobAnswerSetTests(APITestCase):
         response = self.client.post(url, format='json', data={
             'questionnaire': questionnaire.id,
             'job_name': 'Test job with items',
-            'user_job_order': self.user_job_order1,
+            'user_job_order_json': self.user_job_order_json1,
             'stage_group': self.stage_group.id,
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -963,7 +963,7 @@ class JobAnswerSetTests(APITestCase):
         self.assertEqual(self.flavor.name, response.data['vm_flavor'])
         self.assertEqual(self.project.name, response.data['vm_project_name'])
         expected_job_order = json.loads(self.system_job_order1).copy()
-        expected_job_order.update(json.loads(self.user_job_order1))
+        expected_job_order.update(json.loads(self.user_job_order_json1))
         self.assertEqual(json.dumps(expected_job_order), response.data['job_order'])
         self.assertEqual(1, len(Job.objects.all()))
 

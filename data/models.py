@@ -225,8 +225,8 @@ class JobAnswerSet(models.Model):
                                       help_text='determines which questions are appropriate for this answer set')
     job_name = models.CharField(null=False, blank=False, max_length=255,
                                 help_text='Name of the job')
-    user_job_order = models.TextField(null=True,
-                                      help_text="JSON containing the portion of the job order specified by user")
+    user_job_order_json = models.TextField(null=True,
+                                           help_text="JSON containing the portion of the job order specified by user")
     stage_group = models.OneToOneField(JobFileStageGroup, null=True,
                                        help_text='Collection of files that must be staged for a job to be run')
 
