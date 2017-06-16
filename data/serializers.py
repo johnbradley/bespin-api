@@ -139,7 +139,7 @@ class JobFileStageGroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JobFileStageGroup
-        resource_name = 'job-file-stage-group'
+        resource_name = 'job-file-stage-groups'
         fields = ('id', 'user', 'dds_files', 'url_files')
 
 
