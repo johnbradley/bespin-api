@@ -5,7 +5,7 @@ djangorestframework==3.4.7
 DukeDSClient==0.2.14
 funcsigs==1.0.2
 inflection==0.3.1
--e git+https://github.com/Duke-GCB/lando-messaging.git@06dd93b1cde8083e4a11c96f3f3e77658932c674#egg=lando_messaging-master
+lando-messaging==0.7.1
 mock==2.0.0
 pbr==1.10.0
 pika==0.10.0
@@ -15,4 +15,4 @@ PyYAML==3.12
 requests==2.11.1
 requests-oauthlib==0.7.0
 six==1.10.0
-git+https://github.com/Duke-GCB/gcb-web-auth.git
+gcb-web-auth==0.4

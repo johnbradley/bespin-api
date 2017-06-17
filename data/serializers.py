@@ -68,16 +68,21 @@ class JobSerializer(serializers.ModelSerializer):
                   'job_errors', 'stage_group')
 
 
+class UserSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+    username = serializers.CharField()
+
+
 class AdminJobSerializer(serializers.ModelSerializer):
     workflow_version = WorkflowVersionSerializer(required=False)
     output_dir = JobOutputDirSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
-    user_id = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
+    user = UserSerializer(read_only=True)
     class Meta:
         model = Job
         resource_name = 'jobs'
-        fields = ('id', 'workflow_version', 'user_id', 'name', 'created', 'state', 'step', 'last_updated',
+        fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir', 'stage_group')
 
 
@@ -99,7 +104,7 @@ class DDSUserCredSerializer(serializers.ModelSerializer):
 class ReadOnlyDDSUserCredSerializer(serializers.ModelSerializer):
     """
     Non-Admin users can only see the keys from the available DukeDS credentials(setup by admin).
-    They need access to the keys so they can give download permission to the bespin user.    
+    They need access to the keys so they can give download permission to the bespin user.
     """
     class Meta:
         model = DDSUserCredential
