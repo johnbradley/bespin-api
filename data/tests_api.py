@@ -966,25 +966,22 @@ class JobAnswerSetTests(APITestCase):
         expected_job_order.update(json.loads(self.user_job_order_json1))
         self.assertEqual(json.dumps(expected_job_order), response.data['job_order'])
         self.assertEqual(1, len(Job.objects.all()))
+        self.assertEqual(1, len(JobOutputDir.objects.all()))
 
-    def test_user_order_overrides_system_order(self):
-        pass
-
-    # TODO: Restore test after creating job output dirs
-    # @patch('data.jobfactory.JobOutputDir')
-    # def test_create_job_with_exception_rolls_back(self, MockJobOutputDir):
-    #     MockJobOutputDir.objects.create.side_effect = ValueError("oops")
-    #     self.assertEqual(0, len(Job.objects.all()))
-    #     questionnaire = self.setup_minmal_questionnaire()
-    #     url = reverse('jobanswerset-list')
-    #     response = self.client.post(url, format='json', data={
-    #         'questionnaire': questionnaire.id,
-    #         'answers': [],
-    #     })
-    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-    #     job_answer_set_id = response.data['id']
-    #     url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create-job/"
-    #     with self.assertRaises(ValueError):
-    #         response = self.client.post(url, format='json', data={})
-    #     self.assertEqual(0, len(Job.objects.all()))
-
+    @patch('data.jobfactory.JobOutputDir')
+    def test_create_job_with_exception_rolls_back(self, MockJobOutputDir):
+        MockJobOutputDir.objects.create.side_effect = ValueError("oops")
+        questionnaire = self.setup_minimal_questionnaire()
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': questionnaire.id,
+            'job_name': 'Test job with items',
+            'user_job_order_json': self.user_job_order_json1,
+            'stage_group': self.stage_group.id,
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_answer_set_id = response.data['id']
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create-job/"
+        with self.assertRaises(ValueError):
+            self.client.post(url, format='json', data={})
+        self.assertEqual(0, len(Job.objects.all()))
