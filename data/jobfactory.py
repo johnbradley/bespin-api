@@ -32,7 +32,6 @@ class JobFactory(object):
     """
     Creates Job record in the database based on questions their answers.
     """
-    # TODO: Pull in job dds files and url files
     def __init__(self, user, workflow_version, stage_group, user_job_order, system_job_order, job_name, vm_project_name,
                  vm_flavor_name):
         """
