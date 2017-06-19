@@ -13,7 +13,7 @@ class JobFactoryTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('test_user')
         self.endpoint = DDSEndpoint.objects.create(name='app1', agent_key='abc123')
-        self.cred = DDSUserCredential.objects.create(user=self.user, token='abc123', endpoint=self.endpoint)
+        self.worker_cred = DDSUserCredential.objects.create(user=self.user, token='abc123', endpoint=self.endpoint)
         workflow = Workflow.objects.create(name='RnaSeq')
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                object_name='#main',
@@ -25,6 +25,7 @@ class JobFactoryTests(TestCase):
     # Checks that orders are not none
     # merges dictionaries
     # Creates a job
+    # Creates a job output dir
 
     def test_requires_user_order(self):
         user_job_order = None
@@ -52,6 +53,7 @@ class JobFactoryTests(TestCase):
         self.assertEqual(job.name, 'Test Job')
         self.assertEqual(job.vm_project_name, 'bespin-project')
         self.assertEqual(job.vm_flavor,'flavor1')
+        self.assertEqual(self.worker_cred.id, job.output_dir.dds_user_credentials.id)
 
     def test_favors_user_inputs(self):
         user_job_order = {'input1': 'user'}
