@@ -1,8 +1,7 @@
 from rest_framework import serializers
-from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
+from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError, JobAnswerSet, \
-    JobAnswer, JobQuestion, JobQuestionnaire, JobStringAnswer, JobDDSFileAnswer, JobAnswerKind, \
-    JobDDSOutputDirectoryAnswer
+    JobQuestionnaire, VMFlavor, VMProject
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -66,7 +65,7 @@ class JobSerializer(serializers.ModelSerializer):
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir',
-                  'job_errors')
+                  'job_errors', 'stage_group')
 
 
 class UserSerializer(serializers.Serializer):
@@ -84,7 +83,7 @@ class AdminJobSerializer(serializers.ModelSerializer):
         model = Job
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
-                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir')
+                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir', 'stage_group')
 
 
 class DDSEndpointSerializer(serializers.ModelSerializer):
@@ -105,21 +104,24 @@ class DDSUserCredSerializer(serializers.ModelSerializer):
 class ReadOnlyDDSUserCredSerializer(serializers.ModelSerializer):
     """
     Non-Admin users can only see the keys from the available DukeDS credentials(setup by admin).
-    They need access to the keys so they can give download permission to the bespin user.    
+    They need access to the keys so they can give download permission to the bespin user.
     """
     class Meta:
         model = DDSUserCredential
         resource_name = 'dds-user-credentials'
         fields = ('id', 'user', 'endpoint')
 
+class BaseJobInputFileSerializer(serializers.ModelSerializer):
 
-class DDSJobInputFileSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
-        # You must own the job-input-file you are attaching this output directory onto
-        if data['job_input_file'].job.user != request.user:
-            raise serializers.ValidationError("This job_input_file belongs to another user.")
+        # You must own the job-answer-set you are attaching this file onto
+        if data['stage_group'].user != request.user:
+            raise serializers.ValidationError("This stage group belongs to another user.")
         return data
+
+
+class DDSJobInputFileSerializer(BaseJobInputFileSerializer):
 
     class Meta:
         model = DDSJobInputFile
@@ -127,33 +129,23 @@ class DDSJobInputFileSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class URLJobInputFileSerializer(serializers.ModelSerializer):
+class URLJobInputFileSerializer(BaseJobInputFileSerializer):
+
     class Meta:
         model = URLJobInputFile
         resource_name = 'url-job-input-files'
         fields = '__all__'
 
 
-class JobInputFileSerializer(serializers.ModelSerializer):
-    dds_files = serializers.SerializerMethodField()
-    url_files = serializers.SerializerMethodField()
-
-    # Sort inner dds files by their index so we can keep our arrays in the same order.
-    def get_dds_files(self, obj):
-        qset = DDSJobInputFile.objects.filter(job_input_file__pk=obj.pk).order_by('index')
-        ser = DDSJobInputFileSerializer(qset, many=True, read_only=True)
-        return ser.data
-
-    # Sort inner url files by their index so we can keep our arrays in the same order.
-    def get_url_files(self, obj):
-        qset = URLJobInputFile.objects.filter(job_input_file__pk=obj.pk).order_by('index')
-        ser = URLJobInputFileSerializer(qset, many=True, read_only=True)
-        return ser.data
+class JobFileStageGroupSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
+    dds_files = DDSJobInputFileSerializer(many=True, read_only=True)
+    url_files = URLJobInputFileSerializer(many=True, read_only=True)
 
     class Meta:
-        model = JobInputFile
-        resource_name = 'job-input-files'
-        fields = ('id', 'job', 'file_type', 'workflow_name', 'dds_files', 'url_files')
+        model = JobFileStageGroup
+        resource_name = 'job-file-stage-groups'
+        fields = ('id', 'user', 'dds_files', 'url_files')
 
 
 class AdminDDSEndpointSerializer(serializers.HyperlinkedModelSerializer):
@@ -198,44 +190,23 @@ class DDSResourceSerializer(serializers.Serializer):
         resource_name = 'dds-resources'
 
 
-class JobAnswerSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
-
-    def validate(self, data):
-        if data.get('questionnaire'):
-            raise serializers.ValidationError("The questionnaire field must be null.")
-        if self.instance and self.instance.questionnaire:
-            raise serializers.ValidationError("You cannot change system answers(where questionnaire has a value).")
-        return data
+class VMFlavorSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = JobAnswer
-        resource_name = 'job-answers'
+        model = VMFlavor
+        resource_name = 'vm-flavors'
         fields = '__all__'
 
 
-class JobAnswerRelatedField(serializers.RelatedField):
-    def get_queryset(self):
-        return JobAnswer.objects.filter(user=self.request.user)
+class VMProjectSerializer(serializers.ModelSerializer):
 
-    def to_representation(self, instance):
-        return instance.id
-
-    def to_internal_value(self, data):
-        return JobAnswer.objects.filter(id=data).first()
-
+    class Meta:
+        model = VMProject
+        resource_name = 'vm-projects'
+        fields = '__all__'
 
 class JobAnswerSetSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
-    answers = JobAnswerRelatedField(many=True)
-
-    def validate(self, data):
-        for answer in data['answers']:
-            if answer.questionnaire:
-                raise serializers.ValidationError("System defined answers not allowed in a job-answer-set.")
-            if answer.user != data['user']:
-                raise serializers.ValidationError("You can only add your own answers to a job-answer-set.")
-        return data
 
     class Meta:
         model = JobAnswerSet
@@ -243,66 +214,10 @@ class JobAnswerSetSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class JobQuestionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = JobQuestion
-        resource_name = 'job-questions'
-        fields = '__all__'
-
-
 class JobQuestionnaireSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = JobQuestionnaire
         resource_name = 'job-questionnaires'
-        fields = '__all__'
-
-
-def raise_on_answer_kind_mismatch(answer, kind):
-    """
-    Raise ValidationError if answer.kind is not kind
-    :param answer: JobAnswer: answer we want to compare against
-    :param kind: str: JobAnswerKind value
-    """
-    if answer.kind != kind:
-        raise serializers.ValidationError("Answer type is {} should be {}.".format(
-            answer.kind, kind))
-
-
-class JobStringAnswerSerializer(serializers.ModelSerializer):
-    answer = serializers.PrimaryKeyRelatedField(queryset=JobAnswer.objects.all())
-
-    def validate(self, data):
-        raise_on_answer_kind_mismatch(data['answer'], JobAnswerKind.STRING)
-        return data
-
-    class Meta:
-        model = JobStringAnswer
-        resource_name = 'job-string-answers'
-        fields = '__all__'
-
-
-class JobDDSFileAnswerSerializer(serializers.ModelSerializer):
-    answer = serializers.PrimaryKeyRelatedField(queryset=JobAnswer.objects.all())
-
-    def validate(self, data):
-        raise_on_answer_kind_mismatch(data['answer'], JobAnswerKind.DDS_FILE)
-        return data
-
-    class Meta:
-        model = JobDDSFileAnswer
-        resource_name = 'job-dds-file-answers'
-        fields = '__all__'
-
-
-class JobDDSOutputDirectoryAnswerSerializer(serializers.ModelSerializer):
-    answer = serializers.PrimaryKeyRelatedField(queryset=JobAnswer.objects.all())
-
-    def validate(self, data):
-        raise_on_answer_kind_mismatch(data['answer'], JobAnswerKind.DDS_OUTPUT_DIRECTORY)
-        return data
-
-    class Meta:
-        model = JobDDSOutputDirectoryAnswer
-        resource_name = 'job-dds-output-directory-answers'
         fields = '__all__'
 

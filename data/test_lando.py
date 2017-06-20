@@ -1,6 +1,7 @@
 from django.test import TestCase
 from lando import LandoJob
-from models import LandoConnection, Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, DDSEndpoint, DDSUserCredential
+from models import LandoConnection, Workflow, WorkflowVersion, Job, JobFileStageGroup, \
+    DDSJobInputFile, DDSEndpoint, DDSUserCredential
 from django.contrib.auth.models import User
 from mock.mock import patch, call
 
@@ -17,29 +18,21 @@ class LandoJobTests(TestCase):
                                                           object_name='#main',
                                                           version='1',
                                                           url='')
+        self.stage_group = JobFileStageGroup.objects.create(user=self.user)
         self.job = Job.objects.create(workflow_version=workflow_version,
-                                      vm_project_name='abc',
                                       job_order={},
-                                      user=self.user)
-        job_input_file = JobInputFile.objects.create(job=self.job,
-                                                     file_type=JobInputFile.DUKE_DS_FILE,
-                                                     workflow_name='seq')
-        DDSJobInputFile.objects.create(job_input_file=job_input_file,
+                                      user=self.user,
+                                      stage_group=self.stage_group)
+        DDSJobInputFile.objects.create(stage_group=self.stage_group,
                                        project_id='1234',
                                        file_id='5321',
                                        dds_user_credentials=user_credentials,
-                                       destination_path='sample.fasta',
-                                       index=1)
-
-        job_input_file2 = JobInputFile.objects.create(job=self.job,
-                                                     file_type=JobInputFile.DUKE_DS_FILE,
-                                                     workflow_name='seq2')
-        DDSJobInputFile.objects.create(job_input_file=job_input_file2,
+                                       destination_path='sample.fasta')
+        DDSJobInputFile.objects.create(stage_group=self.stage_group,
                                        project_id='1235',
                                        file_id='5322',
                                        dds_user_credentials=user_credentials,
-                                       destination_path='sample2.fasta',
-                                       index=1)
+                                       destination_path='sample2.fasta')
 
     @patch('data.lando.LandoJob._make_client')
     @patch('data.lando.give_download_permissions')

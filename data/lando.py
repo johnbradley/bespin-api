@@ -81,8 +81,7 @@ class LandoJob(object):
         :param job: Job: job containing files in one or more projects
         """
         unique_project_user_cred = set()
-        for input_file in job.input_files.all():
-            for dds_file in input_file.dds_files.all():
-                unique_project_user_cred.add((dds_file.project_id, dds_file.dds_user_credentials))
+        for dds_file in job.stage_group.dds_files.all():
+            unique_project_user_cred.add((dds_file.project_id, dds_file.dds_user_credentials))
         for project_id, dds_user_credential in unique_project_user_cred:
             give_download_permissions(self.user, project_id, dds_user_credential.dds_id)

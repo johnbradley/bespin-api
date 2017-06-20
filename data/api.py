@@ -2,9 +2,9 @@ from rest_framework import viewsets, permissions, status
 from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException
-from data.models import Workflow, WorkflowVersion, Job, JobInputFile, DDSJobInputFile, \
-    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir, \
-    JobDDSOutputDirectoryAnswer
+from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
+    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir
+
 from data.serializers import *
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import detail_route
@@ -114,23 +114,23 @@ class DDSJobInputFileViewSet(viewsets.ModelViewSet):
     serializer_class = DDSJobInputFileSerializer
 
     def get_queryset(self):
-        return DDSJobInputFile.objects.filter(job_input_file__job__user=self.request.user)
+        return DDSJobInputFile.objects.filter(stage_group__user=self.request.user)
 
 
-class JobInputFileViewSet(viewsets.ModelViewSet):
+class JobFileStageGroupViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = JobInputFileSerializer
+    serializer_class = JobFileStageGroupSerializer
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('job',)
 
     def get_queryset(self):
-        return JobInputFile.objects.filter(job__user=self.request.user)
+        return JobFileStageGroup.objects.filter(user=self.request.user)
 
 
-class AdminJobInputFileViewSet(viewsets.ReadOnlyModelViewSet):
+class AdminJobFileStageGroupViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
-    serializer_class = JobInputFileSerializer
-    queryset = JobInputFile.objects.all()
+    serializer_class = JobFileStageGroupSerializer
+    queryset = JobFileStageGroup.objects.all()
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('job',)
 
@@ -140,7 +140,7 @@ class URLJobInputFileViewSet(viewsets.ModelViewSet):
     serializer_class = URLJobInputFileSerializer
 
     def get_queryset(self):
-        return URLJobInputFile.objects.filter(job_input_file__job__user=self.request.user)
+        return URLJobInputFile.objects.filter(stage_group__user=self.request.user)
 
 
 class DDSEndpointViewSet(viewsets.ModelViewSet):
@@ -201,12 +201,6 @@ class JobQuestionnaireViewSet(viewsets.ReadOnlyModelViewSet):
     filter_fields = ('workflow_version',)
 
 
-class JobQuestionViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
-    queryset = JobQuestion.objects.all()
-    serializer_class = JobQuestionSerializer
-
-
 class JobAnswerSetViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobAnswerSetSerializer
@@ -218,52 +212,10 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
     @detail_route(methods=['post'], serializer_class=JobSerializer, url_path='create-job')
     def create_job(self, request, pk=None):
         """
-        Create a new job based on our JobAnswerSet and return it's json.
+        Create a new job based on our JobAnswerSet and return its json.
         """
         job_answer_set = JobAnswerSet.objects.filter(user=request.user, pk=pk).first()
-        job_factory = create_job_factory(request.user, job_answer_set)
+        job_factory = create_job_factory(job_answer_set)
         job = job_factory.create_job()
         serializer = JobSerializer(job)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-class JobAnswerViewSet(viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = JobAnswerSerializer
-    filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('questionnaire', 'question',)
-
-    def get_queryset(self):
-        return JobAnswer.objects.filter(Q(user=self.request.user) | Q(questionnaire__isnull=False))
-
-
-class FilterableByAnswerMixin(object):
-    filter_fields = ('answer',)
-    filter_backends = (DjangoFilterBackend,)
-
-    def get_queryset(self):
-        if 'answers[]' in self.request.query_params:
-            answer_ids = self.request.query_params.getlist('answers[]')
-            queryset = self.queryset.filter(answer__id__in=answer_ids)
-            return queryset
-        else:
-            return self.queryset
-
-
-class JobStringAnswerViewSet(FilterableByAnswerMixin, viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = JobStringAnswerSerializer
-    queryset = JobStringAnswer.objects.all()
-
-
-class JobDDSFileAnswerViewSet(FilterableByAnswerMixin, viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = JobDDSFileAnswerSerializer
-    queryset = JobDDSFileAnswer.objects.all()
-
-
-class JobDDSOutputDirectoryAnswerViewSet(viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = JobDDSOutputDirectoryAnswerSerializer
-    queryset = JobDDSOutputDirectoryAnswer.objects.all()
-
