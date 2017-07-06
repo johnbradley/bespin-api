@@ -65,11 +65,22 @@ class JobFileStageGroup(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
 
 
+class JobToken(models.Model):
+    """
+    Tokens that give users permission to start a job.
+    """
+    token = models.CharField(max_length=255, blank=False, null=False, unique=True)
+
+    def __unicode__(self):
+        return 'Job Token "{}"'.format(self.token)
+
+
 class Job(models.Model):
     """
     Instance of a workflow that is in some state of progress.
     """
     JOB_STATE_NEW = 'N'
+    JOB_STATE_AUTHORIZED = 'A'
     JOB_STATE_STARTING = 'S'
     JOB_STATE_RUNNING = 'R'
     JOB_STATE_FINISHED = 'F'
@@ -79,6 +90,7 @@ class Job(models.Model):
     JOB_STATE_RESTARTING = 'r'
     JOB_STATES = (
         (JOB_STATE_NEW, 'New'),
+        (JOB_STATE_AUTHORIZED, 'Authorized'),
         (JOB_STATE_STARTING, 'Starting'),
         (JOB_STATE_RUNNING, 'Running'),
         (JOB_STATE_FINISHED, 'Finished'),
@@ -109,7 +121,7 @@ class Job(models.Model):
     created = models.DateTimeField(auto_now_add=True, blank=False)
     state = models.CharField(max_length=1, choices=JOB_STATES, default='N',
                              help_text="High level state of the project")
-    step = models.CharField(max_length=1, choices=JOB_STEPS, null=True,
+    step = models.CharField(max_length=1, choices=JOB_STEPS, null=True, blank=True,
                             help_text="Job step (progress within Running state)")
     last_updated = models.DateTimeField(auto_now=True, blank=False)
     vm_flavor = models.CharField(max_length=255, blank=False, default='m1.small',
@@ -122,6 +134,7 @@ class Job(models.Model):
                                  help_text="CWL input json for use with the workflow.")
     stage_group = models.OneToOneField(JobFileStageGroup, null=True,
                                        help_text='Group of files to stage when running this job')
+    run_token = models.OneToOneField(JobToken, null=True, help_text='Token that allows permission for a job to be run')
 
     def save(self, *args, **kwargs):
         if self.stage_group is not None and self.stage_group.user != self.user:
@@ -136,7 +149,6 @@ class Job(models.Model):
         if self.workflow_version:
             workflow_name = self.workflow_version.workflow
         return '{} ({}) for user {}'.format(workflow_name, self.get_state_display(), self.user)
-
 
 
 class JobOutputDir(models.Model):
