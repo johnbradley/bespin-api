@@ -227,4 +227,5 @@ class AdminJobTokensSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobToken
         resource_name = 'job-tokens'
-        fields = '__all__'
+        fields = ('id', 'token', 'job')
+        read_only_fields = ('job',)
