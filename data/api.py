@@ -1,9 +1,10 @@
 from rest_framework import viewsets, permissions, status
 from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content
 from rest_framework.response import Response
-from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException
+from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException, JobTokenException
 from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
-    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir
+    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir, JobToken
+from django.db import IntegrityError
 
 from data.serializers import *
 from django_filters.rest_framework import DjangoFilterBackend
@@ -94,6 +95,23 @@ class JobsViewSet(viewsets.ModelViewSet):
     @detail_route(methods=['post'])
     def restart(self, request, pk=None):
         LandoJob(pk, request.user).restart()
+        return self._serialize_job_response(pk)
+
+    @detail_route(methods=['post'])
+    def set_run_token(self, request, pk=None):
+        request_token = request.data.get('token')
+        if not request_token:
+            raise JobTokenException(detail='Missing required token field.')
+        job = Job.objects.get(pk=pk)
+        try:
+            job.run_token = JobToken.objects.get(token=request_token)
+        except JobToken.DoesNotExist:
+            raise JobTokenException(detail='This is not a valid token.')
+        job.state = Job.JOB_STATE_AUTHORIZED
+        try:
+            job.save()
+        except IntegrityError:
+            raise JobTokenException(detail='This token has already been used.')
         return self._serialize_job_response(pk)
 
     @staticmethod
@@ -219,3 +237,9 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
         job = job_factory.create_job()
         serializer = JobSerializer(job)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class AdminJobTokensViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAdminUser,)
+    serializer_class = AdminJobTokensSerializer
+    queryset = JobToken.objects.all()

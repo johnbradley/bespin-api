@@ -7,7 +7,7 @@ import json
 
 from data.models import Workflow, WorkflowVersion, Job, JobFileStageGroup, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputDir, \
-    JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject
+    JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, JobToken
 from exceptions import WrappedDataServiceException
 from util import DDSResource
 
@@ -436,7 +436,9 @@ class JobsTestCase(APITestCase):
                                  job_order={},
                                  user=normal_user,
                                  stage_group=stage_group)
-
+        job.run_token = JobToken.objects.create(token='secret1')
+        job.state = Job.JOB_STATE_AUTHORIZED
+        job.save()
         url = reverse('job-list') + str(job.id) + '/start/'
 
         # Post to /start/ for job in NEW state should work
@@ -508,6 +510,64 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job = Job.objects.first()
         self.assertEqual(job.user, normal_user)
+
+    def test_set_run_token_without_token(self):
+        normal_user = self.user_login.become_normal_user()
+        stage_group = JobFileStageGroup.objects.create(user=normal_user)
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 stage_group=stage_group)
+        url = reverse('job-list') + str(job.id) + '/set_run_token/'
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Missing required token field.')
+
+    def test_set_run_token_with_fake_token(self):
+        normal_user = self.user_login.become_normal_user()
+        stage_group = JobFileStageGroup.objects.create(user=normal_user)
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 stage_group=stage_group)
+        url = reverse('job-list') + str(job.id) + '/set_run_token/'
+        response = self.client.post(url, format='json', data={'token': 'secret1'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'This is not a valid token.')
+
+    def test_set_run_token_with_good_token(self):
+        job_token = JobToken.objects.create(token='secret1')
+        normal_user = self.user_login.become_normal_user()
+        stage_group = JobFileStageGroup.objects.create(user=normal_user)
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 stage_group=stage_group)
+        url = reverse('job-list') + str(job.id) + '/set_run_token/'
+        response = self.client.post(url, format='json', data={'token': 'secret1'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_set_run_token_with_already_used_token(self):
+        normal_user = self.user_login.become_normal_user()
+        job_token = JobToken.objects.create(token='secret1')
+        earlier_job = Job.objects.create(workflow_version=self.workflow_version,
+                                  vm_project_name='jpb67',
+                                  job_order={},
+                                  user=normal_user,
+                                  stage_group=JobFileStageGroup.objects.create(user=normal_user),
+                                  run_token=job_token)
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 stage_group=JobFileStageGroup.objects.create(user=normal_user))
+        url = reverse('job-list') + str(job.id) + '/set_run_token/'
+        response = self.client.post(url, format='json', data={'token': 'secret1'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'This token has already been used.')
 
 
 class JobStageGroupTestCase(APITestCase):
@@ -985,3 +1045,47 @@ class JobAnswerSetTests(APITestCase):
         with self.assertRaises(ValueError):
             self.client.post(url, format='json', data={})
         self.assertEqual(0, len(Job.objects.all()))
+
+
+class AdminJobTokensTestCase(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+
+    def test_only_allow_admin_users(self):
+        url = reverse('admin_jobtoken-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.user_login.become_normal_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.user_login.become_admin_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_list(self):
+        self.user_login.become_admin_user()
+        url = reverse('admin_jobtoken-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+        JobToken.objects.create(token='one')
+        JobToken.objects.create(token='two')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([x['token'] for x in response.data], ['one', 'two'])
+
+    def test_create(self):
+        self.user_login.become_admin_user()
+        url = reverse('admin_jobtoken-list')
+        response = self.client.post(url, format='json', data={
+            'token': 'secret1'
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(url, format='json', data={
+            'token': 'secret2'
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(url, format='json', data={
+            'token': 'secret1'
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

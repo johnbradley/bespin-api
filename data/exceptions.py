@@ -30,3 +30,9 @@ class JobFactoryException(APIException):
         self.detail = {
             "errors": errors
         }
+
+
+class JobTokenException(APIException):
+    def __init__(self, detail):
+        self.status_code = 400
+        self.detail = detail
