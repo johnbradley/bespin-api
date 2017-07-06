@@ -550,6 +550,21 @@ class JobsTestCase(APITestCase):
         response = self.client.post(url, format='json', data={'token': 'secret1'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_set_run_token_with_good_token_but_bad_state(self):
+        job_token = JobToken.objects.create(token='secret1')
+        normal_user = self.user_login.become_normal_user()
+        stage_group = JobFileStageGroup.objects.create(user=normal_user)
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 stage_group=stage_group,
+                                 state=Job.JOB_STATE_RUNNING)
+        url = reverse('job-list') + str(job.id) + '/set_run_token/'
+        response = self.client.post(url, format='json', data={'token': 'secret1'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Job state must be NEW.')
+
     def test_set_run_token_with_already_used_token(self):
         normal_user = self.user_login.become_normal_user()
         job_token = JobToken.objects.create(token='secret1')

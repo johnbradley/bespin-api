@@ -103,6 +103,8 @@ class JobsViewSet(viewsets.ModelViewSet):
         if not request_token:
             raise JobTokenException(detail='Missing required token field.')
         job = Job.objects.get(pk=pk)
+        if job.state != Job.JOB_STATE_NEW:
+            raise JobTokenException(detail='Job state must be NEW.')
         try:
             job.run_token = JobToken.objects.get(token=request_token)
         except JobToken.DoesNotExist:
