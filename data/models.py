@@ -134,7 +134,8 @@ class Job(models.Model):
                                  help_text="CWL input json for use with the workflow.")
     stage_group = models.OneToOneField(JobFileStageGroup, null=True,
                                        help_text='Group of files to stage when running this job')
-    run_token = models.OneToOneField(JobToken, null=True, help_text='Token that allows permission for a job to be run')
+    run_token = models.OneToOneField(JobToken, null=True, blank=True,
+                                     help_text='Token that allows permission for a job to be run')
 
     def save(self, *args, **kwargs):
         if self.stage_group is not None and self.stage_group.user != self.user:
