@@ -20,6 +20,7 @@ router.register(r'job-answer-sets', api.JobAnswerSetViewSet, 'jobanswerset')
 
 # Routes that require admin user
 router.register(r'admin/jobs', api.AdminJobsViewSet, 'admin_job')
+router.register(r'admin/job-tokens', api.AdminJobTokensViewSet, 'admin_jobtoken')
 router.register(r'admin/job-file-stage-groups', api.AdminJobFileStageGroupViewSet, 'admin_jobfilestagegroup')
 router.register(r'admin/dds-user-credentials', api.AdminDDSUserCredentialsViewSet, 'admin_ddsusercredentials')
 router.register(r'admin/job-errors', api.AdminJobErrorViewSet, 'admin_joberror')

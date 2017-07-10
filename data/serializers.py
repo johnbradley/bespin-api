@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError, JobAnswerSet, \
-    JobQuestionnaire, VMFlavor, VMProject
+    JobQuestionnaire, VMFlavor, VMProject, JobToken
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -205,6 +205,7 @@ class VMProjectSerializer(serializers.ModelSerializer):
         resource_name = 'vm-projects'
         fields = '__all__'
 
+
 class JobAnswerSetSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
 
@@ -221,3 +222,10 @@ class JobQuestionnaireSerializer(serializers.ModelSerializer):
         resource_name = 'job-questionnaires'
         fields = '__all__'
 
+
+class AdminJobTokensSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobToken
+        resource_name = 'job-tokens'
+        fields = ('id', 'token', 'job')
+        read_only_fields = ('job',)

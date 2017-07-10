@@ -4,6 +4,7 @@ from models import Workflow, WorkflowVersion
 from models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, JobOutputDir, JobError
 from models import LandoConnection
 from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject
+from models import JobToken
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
@@ -129,6 +130,7 @@ class JobTests(TestCase):
         self.assertIsNotNone(job.vm_flavor)
         self.assertEqual(None, job.vm_instance_name)
         self.assertEqual('jpb67', job.vm_project_name)
+        self.assertEqual(None, job.run_token)
 
     def test_create_with_name(self):
         Job.objects.create(name='Rna Seq for B-Lab', user=self.user)
@@ -140,6 +142,12 @@ class JobTests(TestCase):
         Job.objects.create(workflow_version=self.workflow_version, user=self.user, job_order=self.sample_json)
         job = Job.objects.first()
         self.assertEqual(Job.JOB_STATE_NEW, job.state)
+
+        # User enters token (authorizes running job)
+        job.state = Job.JOB_STATE_AUTHORIZED
+        job.run_token = JobToken.objects.create(token='secret-1')
+        job.save()
+        job = Job.objects.first()
 
         # Set state to create VM
         job.state = Job.JOB_STATE_RUNNING
@@ -203,6 +211,36 @@ class JobTests(TestCase):
         with self.assertRaises(ValidationError):
             job.stage_group = stage_group
             job.save()
+
+    def test_create_with_run_job_token(self):
+        job_token = JobToken.objects.create(token='test-this-1')
+        job = Job.objects.create(workflow_version=self.workflow_version, user=self.user,
+                                 vm_project_name='jpb67',
+                                 job_order=self.sample_json,
+                                 run_token=job_token)
+        self.assertEqual(job.run_token, job_token)
+
+    def test_save_then_set_run_job_token(self):
+        job_token2 = JobToken.objects.create(token='test-this-2')
+        job2 = Job.objects.create(workflow_version=self.workflow_version, user=self.user,
+                                 vm_project_name='jpb67',
+                                 job_order=self.sample_json)
+        self.assertEqual(job2.run_token, None)
+        job2.run_token = job_token2
+        job2.save()
+
+    def test_jobs_cant_share_job_tokens(self):
+        job_token = JobToken.objects.create(token='test-this-1')
+        job = Job.objects.create(workflow_version=self.workflow_version, user=self.user,
+                                 vm_project_name='jpb67',
+                                 job_order=self.sample_json,
+                                 run_token=job_token)
+        with self.assertRaises(IntegrityError) as raised_error:
+            job2 = Job.objects.create(workflow_version=self.workflow_version, user=self.user,
+                                     vm_project_name='jpb67',
+                                     job_order=self.sample_json,
+                                     run_token=job_token)
+        self.assertTrue(str(raised_error.exception).startswith('UNIQUE constraint failed'))
 
 
 class JobFileStageGroupTests(TestCase):
@@ -371,3 +409,21 @@ class JobAnswerSetTests(TestCase):
         with self.assertRaises(ValidationError):
             job_answer_set.stage_group = stage_group
             job_answer_set.save()
+
+
+class JobTokenTests(TestCase):
+    def test_create(self):
+        self.assertEqual(0, len(JobToken.objects.all()))
+        JobToken.objects.create(token='secret1')
+        self.assertEqual(1, len(JobToken.objects.all()))
+        JobToken.objects.create(token='secret2')
+        job_tokens = [x.token for x in JobToken.objects.all()]
+        self.assertIn('secret1', job_tokens)
+        self.assertIn('secret2', job_tokens)
+        self.assertEqual(2, len(job_tokens))
+
+    def test_token_must_be_unique(self):
+        JobToken.objects.create(token='secret1')
+        with self.assertRaises(IntegrityError) as raised_error:
+            JobToken.objects.create(token='secret1')
+        self.assertTrue(str(raised_error.exception).startswith('UNIQUE constraint failed'))
