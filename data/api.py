@@ -98,7 +98,10 @@ class JobsViewSet(viewsets.ModelViewSet):
         return self._serialize_job_response(pk)
 
     @detail_route(methods=['post'])
-    def set_run_token(self, request, pk=None):
+    def authorize(self, request, pk=None):
+        """
+        Authorizes this job for running by supplying a valid job token.
+        """
         request_token = request.data.get('token')
         if not request_token:
             raise JobTokenException(detail='Missing required token field.')

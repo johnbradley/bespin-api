@@ -511,7 +511,7 @@ class JobsTestCase(APITestCase):
         job = Job.objects.first()
         self.assertEqual(job.user, normal_user)
 
-    def test_set_run_token_without_token(self):
+    def test_authorize_without_token(self):
         normal_user = self.user_login.become_normal_user()
         stage_group = JobFileStageGroup.objects.create(user=normal_user)
         job = Job.objects.create(workflow_version=self.workflow_version,
@@ -519,12 +519,12 @@ class JobsTestCase(APITestCase):
                                  job_order={},
                                  user=normal_user,
                                  stage_group=stage_group)
-        url = reverse('job-list') + str(job.id) + '/set_run_token/'
+        url = reverse('job-list') + str(job.id) + '/authorize/'
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], 'Missing required token field.')
 
-    def test_set_run_token_with_fake_token(self):
+    def test_authorize_with_fake_token(self):
         normal_user = self.user_login.become_normal_user()
         stage_group = JobFileStageGroup.objects.create(user=normal_user)
         job = Job.objects.create(workflow_version=self.workflow_version,
@@ -532,12 +532,12 @@ class JobsTestCase(APITestCase):
                                  job_order={},
                                  user=normal_user,
                                  stage_group=stage_group)
-        url = reverse('job-list') + str(job.id) + '/set_run_token/'
+        url = reverse('job-list') + str(job.id) + '/authorize/'
         response = self.client.post(url, format='json', data={'token': 'secret1'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], 'This is not a valid token.')
 
-    def test_set_run_token_with_good_token(self):
+    def test_authorize_with_good_token(self):
         job_token = JobToken.objects.create(token='secret1')
         normal_user = self.user_login.become_normal_user()
         stage_group = JobFileStageGroup.objects.create(user=normal_user)
@@ -546,11 +546,11 @@ class JobsTestCase(APITestCase):
                                  job_order={},
                                  user=normal_user,
                                  stage_group=stage_group)
-        url = reverse('job-list') + str(job.id) + '/set_run_token/'
+        url = reverse('job-list') + str(job.id) + '/authorize/'
         response = self.client.post(url, format='json', data={'token': 'secret1'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_set_run_token_with_good_token_but_bad_state(self):
+    def test_authorize_with_good_token_but_bad_state(self):
         job_token = JobToken.objects.create(token='secret1')
         normal_user = self.user_login.become_normal_user()
         stage_group = JobFileStageGroup.objects.create(user=normal_user)
@@ -560,12 +560,12 @@ class JobsTestCase(APITestCase):
                                  user=normal_user,
                                  stage_group=stage_group,
                                  state=Job.JOB_STATE_RUNNING)
-        url = reverse('job-list') + str(job.id) + '/set_run_token/'
+        url = reverse('job-list') + str(job.id) + '/authorize/'
         response = self.client.post(url, format='json', data={'token': 'secret1'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], 'Job state must be NEW.')
 
-    def test_set_run_token_with_already_used_token(self):
+    def test_authorize_with_already_used_token(self):
         normal_user = self.user_login.become_normal_user()
         job_token = JobToken.objects.create(token='secret1')
         earlier_job = Job.objects.create(workflow_version=self.workflow_version,
@@ -579,7 +579,7 @@ class JobsTestCase(APITestCase):
                                  job_order={},
                                  user=normal_user,
                                  stage_group=JobFileStageGroup.objects.create(user=normal_user))
-        url = reverse('job-list') + str(job.id) + '/set_run_token/'
+        url = reverse('job-list') + str(job.id) + '/authorize/'
         response = self.client.post(url, format='json', data={'token': 'secret1'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], 'This token has already been used.')
