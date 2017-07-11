@@ -126,4 +126,5 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
         'data.parsers.JSONRootObjectParser',
     ),
+    'EXCEPTION_HANDLER': 'data.exception_handlers.switching_exception_handler',
 }
