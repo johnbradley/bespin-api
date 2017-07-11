@@ -36,13 +36,16 @@ class LandoJob(object):
         The job must be at the NEW state or this will raise ValidationError.
         """
         job = self.get_job()
-        if job.state == Job.JOB_STATE_NEW:
+        if job.state == Job.JOB_STATE_AUTHORIZED:
             job.state = Job.JOB_STATE_STARTING
             job.save()
             self._give_download_permissions(job)
             self._make_client().start_job(self.job_id)
         else:
-            raise ValidationError("Job is not at NEW state. Current state: {}.".format(job.get_state_display()))
+            error_msg = "Job is not at AUTHORIZED state. Current state: {}.".format(job.get_state_display())
+            if job.state == Job.JOB_STATE_NEW:
+                error_msg = "Job needs authorization token before it can start."
+            raise ValidationError(error_msg)
 
     def _make_client(self):
         return LandoClient(self.config, self.config.work_queue_config.queue_name)

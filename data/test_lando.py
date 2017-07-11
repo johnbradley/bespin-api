@@ -3,6 +3,7 @@ from lando import LandoJob
 from models import LandoConnection, Workflow, WorkflowVersion, Job, JobFileStageGroup, \
     DDSJobInputFile, DDSEndpoint, DDSUserCredential
 from django.contrib.auth.models import User
+from rest_framework.exceptions import ValidationError
 from mock.mock import patch, call
 
 
@@ -36,7 +37,17 @@ class LandoJobTests(TestCase):
 
     @patch('data.lando.LandoJob._make_client')
     @patch('data.lando.give_download_permissions')
+    def test_start_job_new_state(self, mock_give_download_permissions, mock_make_client):
+        job = LandoJob(self.job.id, self.user)
+        with self.assertRaises(ValidationError) as raised_exception:
+            job.start()
+        self.assertEqual(raised_exception.exception.detail[0], 'Job needs authorization token before it can start.')
+
+    @patch('data.lando.LandoJob._make_client')
+    @patch('data.lando.give_download_permissions')
     def test_start_job(self, mock_give_download_permissions, mock_make_client):
+        self.job.state = Job.JOB_STATE_AUTHORIZED
+        self.job.save()
         job = LandoJob(self.job.id, self.user)
         job.start()
         mock_make_client().start_job.assert_called()
@@ -44,6 +55,7 @@ class LandoJobTests(TestCase):
             call(self.user, '1234', '5432'),
             call(self.user, '1235', '5432')
         ])
+
 
     @patch('data.lando.LandoJob._make_client')
     @patch('data.lando.give_download_permissions')
