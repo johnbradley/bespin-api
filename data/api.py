@@ -97,7 +97,7 @@ class JobsViewSet(viewsets.ModelViewSet):
         LandoJob(pk, request.user).restart()
         return self._serialize_job_response(pk)
 
-    @detail_route(methods=['post'])
+    @detail_route(methods=['post'], serializer_class=JobTokensSerializer)
     def authorize(self, request, pk=None):
         """
         Authorizes this job for running by supplying a valid job token.
