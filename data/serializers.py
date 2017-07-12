@@ -236,4 +236,4 @@ class JobTokensSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobToken
         resource_name = 'job-tokens'
-        fields = ('id', 'token', 'job')
+        fields = ('token', 'job')
