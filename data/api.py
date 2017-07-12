@@ -97,6 +97,9 @@ class JobsViewSet(viewsets.ModelViewSet):
         LandoJob(pk, request.user).restart()
         return self._serialize_job_response(pk)
 
+    # Wrapping this in JobTokensSerializer so we can pass in the token inside a job-tokens payload when
+    # used with vnd.rootobject+json Content-type. Returns serialized 'job' as part of the response inside the
+    # job-tokens payload when used with vnd.rootobject+json Accept.
     @detail_route(methods=['post'], serializer_class=JobTokensSerializer)
     def authorize(self, request, pk=None):
         """
