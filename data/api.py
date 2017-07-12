@@ -117,7 +117,8 @@ class JobsViewSet(viewsets.ModelViewSet):
             job.save()
         except IntegrityError:
             raise JobTokenException(detail='This token has already been used.')
-        return self._serialize_job_response(pk)
+        serializer = JobTokensSerializer(job.run_token)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @staticmethod
     def _serialize_job_response(pk, job_status=status.HTTP_200_OK):
