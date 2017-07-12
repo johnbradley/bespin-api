@@ -46,6 +46,15 @@ class JSONRootObjectRendererTestCase(ParserRendererTestCase):
     def test_media_type(self):
         self.assertEqual(self.renderer.media_type, 'application/vnd.rootobject+json')
 
+    def test_renders_without_wrapper_when_error(self):
+        self.renderer_context['response'] = MagicMock(status_code=404)
+        rendered = self._render()
+        self.assertEqual(json.loads(rendered), self.data)
+
+        self.renderer_context['response'] = MagicMock(status_code=500)
+        rendered = self._render()
+        self.assertEqual(json.loads(rendered), self.data)
+
 
 class JSONRootObjectParserTestCase(ParserRendererTestCase):
 
