@@ -549,6 +549,7 @@ class JobsTestCase(APITestCase):
         url = reverse('job-list') + str(job.id) + '/authorize/'
         response = self.client.post(url, format='json', data={'token': 'secret1'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['job']['id'], job.id)
 
     def test_authorize_with_good_token_but_bad_state(self):
         job_token = JobToken.objects.create(token='secret1')

@@ -97,7 +97,10 @@ class JobsViewSet(viewsets.ModelViewSet):
         LandoJob(pk, request.user).restart()
         return self._serialize_job_response(pk)
 
-    @detail_route(methods=['post'])
+    # Wrapping this in JobTokensSerializer so we can pass in the token inside a job-tokens payload when
+    # used with vnd.rootobject+json Content-type. Returns serialized 'job' as part of the response inside the
+    # job-tokens payload when used with vnd.rootobject+json Accept.
+    @detail_route(methods=['post'], serializer_class=JobTokensSerializer)
     def authorize(self, request, pk=None):
         """
         Authorizes this job for running by supplying a valid job token.
@@ -117,7 +120,8 @@ class JobsViewSet(viewsets.ModelViewSet):
             job.save()
         except IntegrityError:
             raise JobTokenException(detail='This token has already been used.')
-        return self._serialize_job_response(pk)
+        serializer = JobTokensSerializer(job.run_token)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @staticmethod
     def _serialize_job_response(pk, job_status=status.HTTP_200_OK):
