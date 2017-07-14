@@ -30,21 +30,22 @@ class JobFactoryTests(TestCase):
     def test_requires_user_order(self):
         user_job_order = None
         system_job_order = {}
-        job_factory = JobFactory(self.user, None, None, user_job_order, system_job_order, None, None, None)
+        job_factory = JobFactory(self.user, None, None, user_job_order, system_job_order, None, None, None, 150)
         with self.assertRaises(JobFactoryException):
             job_factory.create_job()
 
     def test_requires_system_order(self):
         user_job_order = {}
         system_job_order = None
-        job_factory = JobFactory(self.user, None, None, user_job_order, system_job_order, None, None, None)
+        job_factory = JobFactory(self.user, None, None, user_job_order, system_job_order, None, None, None, 150)
         with self.assertRaises(JobFactoryException):
             job_factory.create_job()
 
     def test_creates_job(self):
         user_job_order = {'input1': 'user'}
         system_job_order = {'input2' : 'system'}
-        job_factory = JobFactory(self.user, self.workflow_version, self.stage_group, user_job_order, system_job_order, 'Test Job', 'bespin-project', 'flavor1')
+        job_factory = JobFactory(self.user, self.workflow_version, self.stage_group, user_job_order, system_job_order,
+                                 'Test Job', 'bespin-project', 'flavor1', 110)
         job = job_factory.create_job()
         self.assertEqual(job.user, self.user)
         self.assertEqual(job.workflow_version, self.workflow_version)
@@ -54,11 +55,13 @@ class JobFactoryTests(TestCase):
         self.assertEqual(job.vm_project_name, 'bespin-project')
         self.assertEqual(job.vm_flavor,'flavor1')
         self.assertEqual(self.worker_cred.id, job.output_dir.dds_user_credentials.id)
+        self.assertEqual(job.volume_size, 110)
 
     def test_favors_user_inputs(self):
         user_job_order = {'input1': 'user'}
         system_job_order = {'input1' : 'system'}
-        job_factory = JobFactory(self.user, self.workflow_version, self.stage_group, user_job_order, system_job_order, 'Test Job', 'bespin-project', 'flavor1')
+        job_factory = JobFactory(self.user, self.workflow_version, self.stage_group, user_job_order, system_job_order,
+                                 'Test Job', 'bespin-project', 'flavor1', 120)
         job = job_factory.create_job()
         expected_job_order = json.dumps({'input1':'user'})
         self.assertEqual(expected_job_order, job.job_order)

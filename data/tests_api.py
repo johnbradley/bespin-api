@@ -1054,6 +1054,7 @@ class JobAnswerSetTests(APITestCase):
             'job_name': 'Test job with items',
             'user_job_order_json': self.user_job_order_json1,
             'stage_group': self.stage_group.id,
+            'volume_size': 200
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job_answer_set_id = response.data['id']

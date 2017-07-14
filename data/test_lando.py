@@ -23,7 +23,8 @@ class LandoJobTests(TestCase):
         self.job = Job.objects.create(workflow_version=workflow_version,
                                       job_order={},
                                       user=self.user,
-                                      stage_group=self.stage_group)
+                                      stage_group=self.stage_group,
+                                      volume_size=100)
         DDSJobInputFile.objects.create(stage_group=self.stage_group,
                                        project_id='1234',
                                        file_id='5321',
