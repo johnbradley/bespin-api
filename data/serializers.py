@@ -65,7 +65,7 @@ class JobSerializer(serializers.ModelSerializer):
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir',
-                  'job_errors', 'stage_group')
+                  'job_errors', 'stage_group', 'volume_size')
 
 
 class UserSerializer(serializers.Serializer):
@@ -83,7 +83,8 @@ class AdminJobSerializer(serializers.ModelSerializer):
         model = Job
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
-                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir', 'stage_group')
+                  'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir', 'stage_group',
+                  'volume_size')
 
 
 class DDSEndpointSerializer(serializers.ModelSerializer):
@@ -110,6 +111,7 @@ class ReadOnlyDDSUserCredSerializer(serializers.ModelSerializer):
         model = DDSUserCredential
         resource_name = 'dds-user-credentials'
         fields = ('id', 'user', 'endpoint')
+
 
 class BaseJobInputFileSerializer(serializers.ModelSerializer):
 

@@ -66,7 +66,8 @@ class JobFactory(object):
                                  name=self.job_name,
                                  vm_project_name=self.vm_project_name,
                                  vm_flavor=self.vm_flavor_name,
-                                 job_order=json.dumps(job_order)
+                                 job_order=json.dumps(job_order),
+                                 volume_size=200
         )
         # Create output directory that will contain resulting project
         # just taking the first worker user credential for now(there is only one production DukeDS instance)
