@@ -109,7 +109,7 @@ STATICFILES_DIRS = [
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-    'gcb_web_auth.backends.oauth.OAuth2Backend',
+    'bespin.backend.BespinOAuth2Backend',
 ]
 
 REST_FRAMEWORK = {
