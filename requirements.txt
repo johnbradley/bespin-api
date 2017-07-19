@@ -5,15 +5,13 @@ django-filter==1.0.1
 djangorestframework==3.4.7
 DukeDSClient==0.2.14
 funcsigs==1.0.2
-gcb-web-auth==0.5
+gcb-web-auth==0.5.1
 inflection==0.3.1
 lando-messaging==0.7.2
 mock==2.0.0
 pbr==1.10.0
 pika==0.10.0
 psycopg2==2.6.2
-PyJWT==1.4.2
 PyYAML==3.12
 requests==2.11.1
-requests-oauthlib==0.7.0
 six==1.10.0
