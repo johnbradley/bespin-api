@@ -13,6 +13,9 @@ class DDSEndpoint(models.Model):
     agent_key = models.CharField(max_length=32, blank=False, unique=True)
     api_root = models.URLField()
 
+    def __unicode__(self):
+        return '{} - {}'.format(self.name, self.api_root, )
+
 
 class DDSUserCredential(models.Model):
     """
@@ -25,6 +28,9 @@ class DDSUserCredential(models.Model):
 
     class Meta:
         unique_together = ('endpoint', 'user',)
+
+    def __unicode__(self):
+        return '{} - {}'.format(self.endpoint, self.user, )
 
 
 class Workflow(models.Model):
@@ -185,6 +191,9 @@ class LandoConnection(models.Model):
     username = models.CharField(max_length=255, blank=False, null=False)
     password = models.CharField(max_length=255, blank=False, null=False)
     queue_name = models.CharField(max_length=255, blank=False, null=False)
+
+    def __unicode__(self):
+        return '{} on {}'.format(self.username, self.host, )
 
 
 class VMFlavor(models.Model):
