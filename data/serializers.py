@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError, JobAnswerSet, \
-    JobQuestionnaire, VMFlavor, VMProject, JobToken
+    JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -84,7 +84,7 @@ class AdminJobSerializer(serializers.ModelSerializer):
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir', 'stage_group',
-                  'volume_size')
+                  'volume_size', 'share_group')
 
 
 class DDSEndpointSerializer(serializers.ModelSerializer):
@@ -239,3 +239,18 @@ class JobTokensSerializer(serializers.ModelSerializer):
         model = JobToken
         resource_name = 'job-tokens'
         fields = ('token', 'job')
+
+
+class DDSUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DDSUser
+        resource_name = 'dds-users'
+        fields = '__all__'
+
+
+class ShareGroupSerializer(serializers.ModelSerializer):
+    users = DDSUserSerializer(many=True, read_only=True)
+    class Meta:
+        model = ShareGroup
+        resource_name = 'share-groups'
+        fields = '__all__'

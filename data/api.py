@@ -252,3 +252,9 @@ class AdminJobTokensViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
     serializer_class = AdminJobTokensSerializer
     queryset = JobToken.objects.all()
+
+
+class AdminShareGroupViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAdminUser,)
+    serializer_class = ShareGroupSerializer
+    queryset = ShareGroup.objects.all()

@@ -25,6 +25,7 @@ router.register(r'admin/job-file-stage-groups', api.AdminJobFileStageGroupViewSe
 router.register(r'admin/dds-user-credentials', api.AdminDDSUserCredentialsViewSet, 'admin_ddsusercredentials')
 router.register(r'admin/job-errors', api.AdminJobErrorViewSet, 'admin_joberror')
 router.register(r'admin/job-output-dirs', api.AdminJobOutputDirViewSet, 'admin_joboutputdir')
+router.register(r'admin/share-groups', api.AdminShareGroupViewSet, 'admin_sharegroup')
 
 urlpatterns = [
     url(r'^', include(router.urls)),
