@@ -96,7 +96,7 @@ class JobToken(models.Model):
 
 
 class ShareGroup(models.Model):
-    """
+    """A
     Group of users who will have data shared with them when a job finishes
     """
     name = models.CharField(max_length=255, blank=False, null=False,
@@ -170,8 +170,8 @@ class Job(models.Model):
                                      help_text='Token that allows permission for a job to be run')
     volume_size = models.IntegerField(null=False, blank=False, default=100,
                                       help_text='Size in GB of volume created for running this job')
-    share_group = models.OneToOneField(ShareGroup, blank=False, null=True,
-                                       help_text='Users who will have job output shared with them')
+    share_group = models.ForeignKey(ShareGroup, blank=False, null=True,
+                                    help_text='Users who will have job output shared with them')
 
     def save(self, *args, **kwargs):
         if self.stage_group is not None and self.stage_group.user != self.user:
@@ -265,8 +265,8 @@ class JobQuestionnaire(models.Model):
                                    help_text='Project name to use when creating VM instances for this questionnaire')
     volume_size = models.IntegerField(null=False, blank=False, default=100,
                                       help_text='Size in GB of volume created for running this job')
-    share_group = models.OneToOneField(ShareGroup, blank=False, null=True,
-                                       help_text='Users who will have job output shared with them')
+    share_group = models.ForeignKey(ShareGroup, blank=False, null=True,
+                                    help_text='Users who will have job output shared with them')
 
     def __unicode__(self):
         return '{} desc:{}'.format(self.id, self.description)

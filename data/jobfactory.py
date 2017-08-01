@@ -22,9 +22,10 @@ def create_job_factory(job_answer_set):
     vm_project_name = job_answer_set.questionnaire.vm_project.name
     vm_flavor_name = job_answer_set.questionnaire.vm_flavor.name
     volume_size = job_answer_set.questionnaire.volume_size
+    share_group = job_answer_set.questionnaire.share_group
 
     factory = JobFactory(user, workflow_version, stage_group, user_job_order_dict, system_job_order_dict, job_name, vm_project_name,
-                         vm_flavor_name, volume_size)
+                         vm_flavor_name, volume_size, share_group)
 
     return factory
 
@@ -34,7 +35,7 @@ class JobFactory(object):
     Creates Job record in the database based on questions their answers.
     """
     def __init__(self, user, workflow_version, stage_group, user_job_order, system_job_order, job_name, vm_project_name,
-                 vm_flavor_name, volume_size):
+                 vm_flavor_name, volume_size, share_group):
         """
         Setup factory
         :param user: User: user we are creating this job for and who's credentials we will use
@@ -49,6 +50,7 @@ class JobFactory(object):
         self.vm_project_name = vm_project_name
         self.vm_flavor_name = vm_flavor_name
         self.volume_size = volume_size
+        self.share_group = share_group
 
     def create_job(self):
         """
@@ -69,7 +71,8 @@ class JobFactory(object):
                                  vm_project_name=self.vm_project_name,
                                  vm_flavor=self.vm_flavor_name,
                                  job_order=json.dumps(job_order),
-                                 volume_size=self.volume_size
+                                 volume_size=self.volume_size,
+                                 share_group=self.share_group
         )
         # Create output directory that will contain resulting project
         # just taking the first worker user credential for now(there is only one production DukeDS instance)
