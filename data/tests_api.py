@@ -298,14 +298,11 @@ class JobsTestCase(APITestCase):
     def testUserOnlySeeTheirData(self):
         url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
-        response = self.client.post(url, format='json',
-                                    data={
-                                        'name': 'my job',
-                                        'workflow_version': self.workflow_version.id,
-                                        'vm_project_name': 'jpb67',
-                                        'job_order': '{}',
-                                    })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        Job.objects.create(name='my job',
+                           workflow_version=self.workflow_version,
+                           vm_project_name='jpb67',
+                           job_order={},
+                           user=normal_user)
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
@@ -314,14 +311,11 @@ class JobsTestCase(APITestCase):
         self.assertEqual(self.workflow_version.id, response.data[0]['workflow_version'])
 
         other_user = self.user_login.become_other_normal_user()
-        response = self.client.post(url, format='json',
-                            data={
-                                'name': 'my job2',
-                                'workflow_version': self.workflow_version.id,
-                                'vm_project_name': 'jpb88',
-                                'job_order': '{}',
-                            })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        Job.objects.create(name='my job2',
+                           workflow_version=self.workflow_version,
+                           vm_project_name='jpb88',
+                           job_order={},
+                           user=other_user)
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
@@ -331,29 +325,22 @@ class JobsTestCase(APITestCase):
     def testAdminSeeAllData(self):
         url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
-        response = self.client.post(url, format='json',
-                                    data={
-                                        'name': 'my job',
-                                        'workflow_version': self.workflow_version.id,
-                                        'vm_project_name': 'jpb67',
-                                        'job_order': '{}',
-                                    })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        Job.objects.create(name='my job',
+                           workflow_version=self.workflow_version,
+                           vm_project_name='jpb67',
+                           job_order={},
+                           user=normal_user)
         # normal user can't see admin endpoint
         url = reverse('admin_job-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         other_user = self.user_login.become_other_normal_user()
-        url = reverse('job-list')
-        response = self.client.post(url, format='json',
-                            data={
-                                'name': 'my job2',
-                                'workflow_version': self.workflow_version.id,
-                                'vm_project_name': 'jpb88',
-                                'job_order': '{}',
-                            })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        Job.objects.create(name='my job2',
+                           workflow_version=self.workflow_version,
+                           vm_project_name='jpb88',
+                           job_order={},
+                           user=other_user)
 
         # admin user can see both via admin endpoint
         admin_user = self.user_login.become_admin_user()
@@ -385,25 +372,24 @@ class JobsTestCase(APITestCase):
         self.assertIn('Err1', job_errors_content)
         self.assertIn('Err2', job_errors_content)
 
-    def testStopRegularUserFromSettingStateOrStep(self):
+    def test_normal_user_trying_to_update_job(self):
         """
         Only admin should change job state or job step.
         """
-        url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
-        response = self.client.post(url, format='json',
+        job = Job.objects.create(name='somejob',
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 )
+        url = reverse('job-list') + '{}/'.format(job.id)
+        response = self.client.put(url, format='json',
                                     data={
-                                        'name': 'my job',
-                                        'workflow_version': self.workflow_version.id,
-                                        'vm_project_name': 'jpb67',
-                                        'job_order': '{}',
                                         'state': Job.JOB_STATE_FINISHED,
                                         'step': Job.JOB_STEP_RUNNING,
                                     })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        job = Job.objects.first()
-        self.assertEqual(Job.JOB_STATE_NEW, job.state)
-        self.assertEqual(None, job.step)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def testAdminUserUpdatesStateAndStep(self):
         """
@@ -497,7 +483,7 @@ class JobsTestCase(APITestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def testJobAutoFillsInUser(self):
+    def test_normal_user_trying_create_job_directly(self):
         url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
         response = self.client.post(url, format='json',
@@ -507,9 +493,7 @@ class JobsTestCase(APITestCase):
                                         'vm_project_name': 'jpb67',
                                         'job_order': '{}',
                                     })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        job = Job.objects.first()
-        self.assertEqual(job.user, normal_user)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_authorize_without_token(self):
         normal_user = self.user_login.become_normal_user()
