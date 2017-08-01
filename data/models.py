@@ -38,7 +38,7 @@ class DDSUser(models.Model):
     """
     Details about a DukeDS user.
     """
-    name = models.CharField(max_length=255, blank=False,
+    name = models.CharField(max_length=255, blank=False, null=False,
                             help_text="Name of the user")
     dds_id = models.CharField(max_length=255, blank=False, unique=True, null=False,
                               help_text="Unique ID assigned to the user in DukeDS")
@@ -170,7 +170,7 @@ class Job(models.Model):
                                      help_text='Token that allows permission for a job to be run')
     volume_size = models.IntegerField(null=False, blank=False, default=100,
                                       help_text='Size in GB of volume created for running this job')
-    share_group = models.ForeignKey(ShareGroup, blank=False, null=True,
+    share_group = models.ForeignKey(ShareGroup, blank=False, null=False,
                                     help_text='Users who will have job output shared with them')
 
     def save(self, *args, **kwargs):
@@ -258,14 +258,14 @@ class JobQuestionnaire(models.Model):
                                              help_text="JSON containing the portion of the job order specified by system.")
     user_fields_json = models.TextField(null=True,
                                         help_text="JSON containing the array of fields required by the user when providing "
-                                             "a job answer set.")
+                                                  "a job answer set.")
     vm_flavor = models.ForeignKey(VMFlavor, null=False,
                                   help_text='VM Flavor to use when creating VM instances for this questionnaire')
     vm_project = models.ForeignKey(VMProject, null=False,
                                    help_text='Project name to use when creating VM instances for this questionnaire')
     volume_size = models.IntegerField(null=False, blank=False, default=100,
                                       help_text='Size in GB of volume created for running this job')
-    share_group = models.ForeignKey(ShareGroup, blank=False, null=True,
+    share_group = models.ForeignKey(ShareGroup, blank=False, null=False,
                                     help_text='Users who will have job output shared with them')
 
     def __unicode__(self):

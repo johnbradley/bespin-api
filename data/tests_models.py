@@ -5,6 +5,7 @@ from models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, Job
 from models import LandoConnection
 from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject
 from models import JobToken
+from models import DDSUser, ShareGroup
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
@@ -116,11 +117,13 @@ class JobTests(TestCase):
                                                                url=CWL_URL)
         self.user = User.objects.create_user('test_user')
         self.sample_json = "{'type': 1}"
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
 
     def test_create(self):
         Job.objects.create(workflow_version=self.workflow_version, user=self.user,
                            vm_project_name='jpb67',
-                           job_order=self.sample_json)
+                           job_order=self.sample_json,
+                           share_group=self.share_group)
         job = Job.objects.first()
         self.assertEqual(self.workflow_version, job.workflow_version)
         self.assertEqual(self.user, job.user)
@@ -133,13 +136,14 @@ class JobTests(TestCase):
         self.assertEqual(None, job.run_token)
 
     def test_create_with_name(self):
-        Job.objects.create(name='Rna Seq for B-Lab', user=self.user)
+        Job.objects.create(name='Rna Seq for B-Lab', user=self.user, share_group=self.share_group)
         job = Job.objects.first()
         self.assertEqual('Rna Seq for B-Lab', job.name)
 
     def test_state_changes(self):
         # Create job which should start in new state
-        Job.objects.create(workflow_version=self.workflow_version, user=self.user, job_order=self.sample_json)
+        Job.objects.create(workflow_version=self.workflow_version, user=self.user, job_order=self.sample_json,
+                           share_group=self.share_group)
         job = Job.objects.first()
         self.assertEqual(Job.JOB_STATE_NEW, job.state)
 
@@ -168,6 +172,7 @@ class JobTests(TestCase):
 
     @staticmethod
     def add_job_fields(obj):
+        share_group = ShareGroup.objects.create(name='Results Checkers')
         obj.user = User.objects.create_user('test_user')
         obj.endpoint = DDSEndpoint.objects.create(name='app1', agent_key='abc123')
         obj.user_credentials = DDSUserCredential.objects.create(user=obj.user, token='abc123', endpoint=obj.endpoint)
@@ -178,34 +183,41 @@ class JobTests(TestCase):
                                                                url=CWL_URL)
         obj.sample_json = "{'type': 1}"
         obj.job = Job.objects.create(workflow_version=obj.workflow_version, user=obj.user,
-                                     job_order=obj.sample_json)
+                                     job_order=obj.sample_json,
+                                     share_group=share_group)
 
     def test_sorted_by_created(self):
         j1 = Job.objects.create(workflow_version=self.workflow_version,
                                 user=self.user,
-                                job_order=self.sample_json)
+                                job_order=self.sample_json,
+                                share_group=self.share_group)
         j2 = Job.objects.create(workflow_version=self.workflow_version,
                                 user=self.user,
-                                job_order=self.sample_json)
+                                job_order=self.sample_json,
+                                share_group=self.share_group)
         j3 = Job.objects.create(workflow_version=self.workflow_version,
                                 user=self.user,
-                                job_order=self.sample_json)
+                                job_order=self.sample_json,
+                                share_group=self.share_group)
         j4 = Job.objects.create(workflow_version=self.workflow_version,
                                 user=self.user,
-                                job_order=self.sample_json)
+                                job_order=self.sample_json,
+                                share_group=self.share_group)
         job_ids = [job.id for job in Job.objects.all()]
         self.assertEqual([j1.id, j2.id, j3.id, j4.id], job_ids)
         j2.delete()
         j2 = Job.objects.create(workflow_version=self.workflow_version,
                                 user=self.user,
-                                job_order=self.sample_json)
+                                job_order=self.sample_json,
+                                share_group=self.share_group)
         job_ids = [job.id for job in Job.objects.all()]
         self.assertEqual([j1.id, j3.id, j4.id, j2.id], job_ids)
 
     def test_fails_mismatch_stage_group_user(self):
         job = Job.objects.create(workflow_version=self.workflow_version, user=self.user,
                                  vm_project_name='jpb67',
-                                 job_order=self.sample_json)
+                                 job_order=self.sample_json,
+                                 share_group=self.share_group,)
         other_user = User.objects.create_user('other_user')
         stage_group = JobFileStageGroup.objects.create(user=other_user)
         with self.assertRaises(ValidationError):
@@ -217,14 +229,16 @@ class JobTests(TestCase):
         job = Job.objects.create(workflow_version=self.workflow_version, user=self.user,
                                  vm_project_name='jpb67',
                                  job_order=self.sample_json,
-                                 run_token=job_token)
+                                 run_token=job_token,
+                                 share_group=self.share_group)
         self.assertEqual(job.run_token, job_token)
 
     def test_save_then_set_run_job_token(self):
         job_token2 = JobToken.objects.create(token='test-this-2')
         job2 = Job.objects.create(workflow_version=self.workflow_version, user=self.user,
                                  vm_project_name='jpb67',
-                                 job_order=self.sample_json)
+                                 job_order=self.sample_json,
+                                 share_group=self.share_group)
         self.assertEqual(job2.run_token, None)
         job2.run_token = job_token2
         job2.save()
@@ -234,12 +248,14 @@ class JobTests(TestCase):
         job = Job.objects.create(workflow_version=self.workflow_version, user=self.user,
                                  vm_project_name='jpb67',
                                  job_order=self.sample_json,
-                                 run_token=job_token)
+                                 run_token=job_token,
+                                 share_group=self.share_group)
         with self.assertRaises(IntegrityError) as raised_error:
             job2 = Job.objects.create(workflow_version=self.workflow_version, user=self.user,
                                      vm_project_name='jpb67',
                                      job_order=self.sample_json,
-                                     run_token=job_token)
+                                     run_token=job_token,
+                                     share_group=self.share_group)
         self.assertTrue(str(raised_error.exception).startswith('UNIQUE constraint failed'))
 
 
@@ -331,6 +347,7 @@ class JobErrorTests(TestCase):
         self.assertEqual(Job.JOB_STEP_CREATE_VM, job_error.job_step)
         self.assertIsNotNone(job_error.created)
 
+
 class JobQuestionnaireTests(TestCase):
 
     @staticmethod
@@ -347,6 +364,7 @@ class JobQuestionnaireTests(TestCase):
 
     def setUp(self):
         self.add_workflowversion_fields(self)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
 
     def test_two_questionnaires(self):
         questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
@@ -354,13 +372,15 @@ class JobQuestionnaireTests(TestCase):
                                                         workflow_version=self.workflow_version,
                                                         system_job_order_json='{"system_input": "foo"}',
                                                         vm_flavor=self.flavor1,
-                                                        vm_project=self.project)
+                                                        vm_project=self.project,
+                                                        share_group=self.share_group)
         questionnaire = JobQuestionnaire.objects.create(name='Human RnaSeq',
                                                         description='Uses reference genome zew and gene index def',
                                                         workflow_version=self.workflow_version,
                                                         system_job_order_json='{"system_input":"bar"}',
                                                         vm_flavor=self.flavor2,
-                                                        vm_project=self.project)
+                                                        vm_project=self.project,
+                                                        share_group=self.share_group)
         ant_questionnaire = JobQuestionnaire.objects.filter(name='Ant RnaSeq').first()
         self.assertEqual('Ant RnaSeq', ant_questionnaire.name)
         self.assertEqual('Uses reference genome xyz and gene index abc', ant_questionnaire.description)
@@ -375,16 +395,19 @@ class JobQuestionnaireTests(TestCase):
         self.assertEqual('flavor2', human_questionnaire.vm_flavor.name)
         self.assertEqual('bespin-project', human_questionnaire.vm_project.name)
 
+
 class JobAnswerSetTests(TestCase):
 
     def setUp(self):
         JobQuestionnaireTests.add_workflowversion_fields(self)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.questionnaire = JobQuestionnaire.objects.create(name='Exome Seq Q',
                                                         description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=self.workflow_version,
                                                         system_job_order_json='{"system_input": "foo"}',
                                                         vm_flavor=self.flavor1,
-                                                        vm_project=self.project)
+                                                        vm_project=self.project,
+                                                        share_group=self.share_group)
     def test_basic_functionality(self):
         JobAnswerSet.objects.create(user=self.user,
                                     questionnaire=self.questionnaire,
@@ -427,3 +450,42 @@ class JobTokenTests(TestCase):
         with self.assertRaises(IntegrityError) as raised_error:
             JobToken.objects.create(token='secret1')
         self.assertTrue(str(raised_error.exception).startswith('UNIQUE constraint failed'))
+
+
+class DDSUserTests(TestCase):
+    def test_create(self):
+        self.assertEqual(0, len(DDSUser.objects.all()))
+        DDSUser.objects.create(name='John', dds_id='123')
+        self.assertEqual(1, len(DDSUser.objects.all()))
+        DDSUser.objects.create(name='Dan', dds_id='456')
+        self.assertEqual(2, len(DDSUser.objects.all()))
+        ddsusers = DDSUser.objects.all()
+        names = [ddsuser.name for ddsuser in ddsusers]
+        self.assertIn("John", names)
+        self.assertIn("Dan", names)
+        dds_ids = [ddsuser.dds_id for ddsuser in ddsusers]
+        self.assertIn("123", dds_ids)
+        self.assertIn("456", dds_ids)
+
+    def test_dds_id_unique(self):
+        DDSUser.objects.create(name='John', dds_id='123')
+        with self.assertRaises(IntegrityError):
+            DDSUser.objects.create(name='Dan', dds_id='123',)
+
+
+class ShareGroupTests(TestCase):
+    def setUp(self):
+        self.ddsuser1 = DDSUser.objects.create(name='John', dds_id='123')
+        self.ddsuser2 = DDSUser.objects.create(name='Dan', dds_id='456')
+
+    def test_create_and_add_users(self):
+        self.assertEqual(0, len(ShareGroup.objects.all()))
+        group = ShareGroup.objects.create(name="ExomeSeq data checkers")
+        group.users = [self.ddsuser1, self.ddsuser2]
+        group.save()
+        group = ShareGroup.objects.first()
+        self.assertEqual(group.name, "ExomeSeq data checkers")
+        group_users = list(group.users.all())
+        self.assertEqual(2, len(group_users))
+        self.assertIn(self.ddsuser1, group_users)
+        self.assertIn(self.ddsuser2, group_users)

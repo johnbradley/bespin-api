@@ -1,7 +1,7 @@
 from django.test import TestCase
 from lando import LandoJob
 from models import LandoConnection, Workflow, WorkflowVersion, Job, JobFileStageGroup, \
-    DDSJobInputFile, DDSEndpoint, DDSUserCredential
+    DDSJobInputFile, DDSEndpoint, DDSUserCredential, ShareGroup
 from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
 from mock.mock import patch, call
@@ -20,10 +20,12 @@ class LandoJobTests(TestCase):
                                                           version='1',
                                                           url='')
         self.stage_group = JobFileStageGroup.objects.create(user=self.user)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.job = Job.objects.create(workflow_version=workflow_version,
                                       job_order={},
                                       user=self.user,
                                       stage_group=self.stage_group,
+                                      share_group=self.share_group,
                                       volume_size=100)
         DDSJobInputFile.objects.create(stage_group=self.stage_group,
                                        project_id='1234',
@@ -56,7 +58,6 @@ class LandoJobTests(TestCase):
             call(self.user, '1234', '5432'),
             call(self.user, '1235', '5432')
         ])
-
 
     @patch('data.lando.LandoJob._make_client')
     @patch('data.lando.give_download_permissions')

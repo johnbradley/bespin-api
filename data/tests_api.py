@@ -7,7 +7,7 @@ import json
 
 from data.models import Workflow, WorkflowVersion, Job, JobFileStageGroup, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputDir, \
-    JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, JobToken
+    JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, JobToken, ShareGroup
 from exceptions import WrappedDataServiceException
 from util import DDSResource
 
@@ -294,18 +294,18 @@ class JobsTestCase(APITestCase):
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
                                                                url=cwl_url)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
 
     def testUserOnlySeeTheirData(self):
         url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
-        response = self.client.post(url, format='json',
-                                    data={
-                                        'name': 'my job',
-                                        'workflow_version': self.workflow_version.id,
-                                        'vm_project_name': 'jpb67',
-                                        'job_order': '{}',
-                                    })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job = Job.objects.create(name='my job',
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 share_group=self.share_group,
+                                 )
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
@@ -314,14 +314,13 @@ class JobsTestCase(APITestCase):
         self.assertEqual(self.workflow_version.id, response.data[0]['workflow_version'])
 
         other_user = self.user_login.become_other_normal_user()
-        response = self.client.post(url, format='json',
-                            data={
-                                'name': 'my job2',
-                                'workflow_version': self.workflow_version.id,
-                                'vm_project_name': 'jpb88',
-                                'job_order': '{}',
-                            })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job = Job.objects.create(name='my job2',
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb88',
+                                 job_order={},
+                                 user=other_user,
+                                 share_group=self.share_group,
+                                 )
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
@@ -331,30 +330,26 @@ class JobsTestCase(APITestCase):
     def testAdminSeeAllData(self):
         url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
-        response = self.client.post(url, format='json',
-                                    data={
-                                        'name': 'my job',
-                                        'workflow_version': self.workflow_version.id,
-                                        'vm_project_name': 'jpb67',
-                                        'job_order': '{}',
-                                    })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job = Job.objects.create(name='my job',
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 share_group=self.share_group,
+                                 )
         # normal user can't see admin endpoint
         url = reverse('admin_job-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         other_user = self.user_login.become_other_normal_user()
-        url = reverse('job-list')
-        response = self.client.post(url, format='json',
-                            data={
-                                'name': 'my job2',
-                                'workflow_version': self.workflow_version.id,
-                                'vm_project_name': 'jpb88',
-                                'job_order': '{}',
-                            })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
+        job = Job.objects.create(name='my job2',
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb88',
+                                 job_order={},
+                                 user=other_user,
+                                 share_group=self.share_group,
+                                 )
         # admin user can see both via admin endpoint
         admin_user = self.user_login.become_admin_user()
         url = reverse('admin_job-list')
@@ -374,6 +369,7 @@ class JobsTestCase(APITestCase):
                                  vm_project_name='jpb67',
                                  job_order={},
                                  user=normal_user,
+                                 share_group=self.share_group,
                                  )
         JobError.objects.create(job=job, content='Err1', job_step='R')
         JobError.objects.create(job=job, content='Err2', job_step='R')
@@ -388,22 +384,24 @@ class JobsTestCase(APITestCase):
     def testStopRegularUserFromSettingStateOrStep(self):
         """
         Only admin should change job state or job step.
+        Regular users can only change the state and step via the start, cancel and restart job endpoints.
         """
         url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
-        response = self.client.post(url, format='json',
-                                    data={
-                                        'name': 'my job',
-                                        'workflow_version': self.workflow_version.id,
-                                        'vm_project_name': 'jpb67',
-                                        'job_order': '{}',
+        job = Job.objects.create(name='somejob',
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 share_group=self.share_group,
+                                 )
+        url = reverse('admin_job-list') + '{}/'.format(job.id)
+        response = self.client.put(url, format='json',
+                                   data={
                                         'state': Job.JOB_STATE_FINISHED,
                                         'step': Job.JOB_STEP_RUNNING,
-                                    })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        job = Job.objects.first()
-        self.assertEqual(Job.JOB_STATE_NEW, job.state)
-        self.assertEqual(None, job.step)
+                                   })
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def testAdminUserUpdatesStateAndStep(self):
         """
@@ -414,7 +412,8 @@ class JobsTestCase(APITestCase):
                                  workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
                                  job_order={},
-                                 user=admin_user
+                                 user=admin_user,
+                                 share_group=self.share_group,
                                  )
         url = reverse('admin_job-list') + '{}/'.format(job.id)
         response = self.client.put(url, format='json',
@@ -435,7 +434,9 @@ class JobsTestCase(APITestCase):
                                  vm_project_name='jpb67',
                                  job_order={},
                                  user=normal_user,
-                                 stage_group=stage_group)
+                                 stage_group=stage_group,
+                                 share_group=self.share_group,
+                                 )
         job.run_token = JobToken.objects.create(token='secret1')
         job.state = Job.JOB_STATE_AUTHORIZED
         job.save()
@@ -460,7 +461,9 @@ class JobsTestCase(APITestCase):
                                  vm_project_name='jpb67',
                                  job_order={},
                                  user=normal_user,
-                                 stage_group=stage_group)
+                                 stage_group=stage_group,
+                                 share_group=self.share_group,
+                                 )
         url = reverse('job-list') + str(job.id) + '/cancel/'
         # Post to /cancel/ for job should work
         response = self.client.post(url)
@@ -475,7 +478,9 @@ class JobsTestCase(APITestCase):
                                  vm_project_name='jpb67',
                                  job_order={},
                                  user=normal_user,
-                                 stage_group=stage_group)
+                                 stage_group=stage_group,
+                                 share_group=self.share_group,
+                                 )
         url = reverse('job-list') + str(job.id) + '/restart/'
 
         # Post to /restart/ for job in NEW state should fail (user should use /start/)
@@ -497,7 +502,7 @@ class JobsTestCase(APITestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def testJobAutoFillsInUser(self):
+    def testPreventNormalUsersCreateJobDirectly(self):
         url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
         response = self.client.post(url, format='json',
@@ -507,9 +512,7 @@ class JobsTestCase(APITestCase):
                                         'vm_project_name': 'jpb67',
                                         'job_order': '{}',
                                     })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        job = Job.objects.first()
-        self.assertEqual(job.user, normal_user)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_authorize_without_token(self):
         normal_user = self.user_login.become_normal_user()
@@ -518,7 +521,9 @@ class JobsTestCase(APITestCase):
                                  vm_project_name='jpb67',
                                  job_order={},
                                  user=normal_user,
-                                 stage_group=stage_group)
+                                 stage_group=stage_group,
+                                 share_group=self.share_group,
+                                 )
         url = reverse('job-list') + str(job.id) + '/authorize/'
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -531,7 +536,9 @@ class JobsTestCase(APITestCase):
                                  vm_project_name='jpb67',
                                  job_order={},
                                  user=normal_user,
-                                 stage_group=stage_group)
+                                 stage_group=stage_group,
+                                 share_group=self.share_group,
+                                 )
         url = reverse('job-list') + str(job.id) + '/authorize/'
         response = self.client.post(url, format='json', data={'token': 'secret1'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -545,7 +552,9 @@ class JobsTestCase(APITestCase):
                                  vm_project_name='jpb67',
                                  job_order={},
                                  user=normal_user,
-                                 stage_group=stage_group)
+                                 stage_group=stage_group,
+                                 share_group=self.share_group,
+                                 )
         url = reverse('job-list') + str(job.id) + '/authorize/'
         response = self.client.post(url, format='json', data={'token': 'secret1'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -560,7 +569,9 @@ class JobsTestCase(APITestCase):
                                  job_order={},
                                  user=normal_user,
                                  stage_group=stage_group,
-                                 state=Job.JOB_STATE_RUNNING)
+                                 state=Job.JOB_STATE_RUNNING,
+                                 share_group=self.share_group,
+                                 )
         url = reverse('job-list') + str(job.id) + '/authorize/'
         response = self.client.post(url, format='json', data={'token': 'secret1'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -570,16 +581,20 @@ class JobsTestCase(APITestCase):
         normal_user = self.user_login.become_normal_user()
         job_token = JobToken.objects.create(token='secret1')
         earlier_job = Job.objects.create(workflow_version=self.workflow_version,
-                                  vm_project_name='jpb67',
-                                  job_order={},
-                                  user=normal_user,
-                                  stage_group=JobFileStageGroup.objects.create(user=normal_user),
-                                  run_token=job_token)
+                                         vm_project_name='jpb67',
+                                         job_order={},
+                                         user=normal_user,
+                                         stage_group=JobFileStageGroup.objects.create(user=normal_user),
+                                         run_token=job_token,
+                                         share_group=self.share_group,
+                                         )
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
                                  job_order={},
                                  user=normal_user,
-                                 stage_group=JobFileStageGroup.objects.create(user=normal_user))
+                                 stage_group=JobFileStageGroup.objects.create(user=normal_user),
+                                 share_group=self.share_group,
+                                 )
         url = reverse('job-list') + str(job.id) + '/authorize/'
         response = self.client.post(url, format='json', data={'token': 'secret1'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -594,6 +609,7 @@ class JobStageGroupTestCase(APITestCase):
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
                                                                url=cwl_url)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
 
     def testOnlySeeOwnStageGroups(self):
         other_user = self.user_login.become_normal_user()
@@ -602,14 +618,18 @@ class JobStageGroupTestCase(APITestCase):
                                        vm_project_name='test',
                                        job_order='{}',
                                        user=other_user,
-                                       stage_group=other_stage_group)
+                                       stage_group=other_stage_group,
+                                       share_group=self.share_group,
+                                       )
         this_user = self.user_login.become_other_normal_user()
         this_stage_group = JobFileStageGroup.objects.create(user=this_user)
         this_job = Job.objects.create(workflow_version=self.workflow_version,
                                       vm_project_name='test',
                                       job_order='{}',
                                       user=this_user,
-                                      stage_group=this_stage_group)
+                                      stage_group=this_stage_group,
+                                      share_group=self.share_group,
+                                      )
         # User endpoint only shows current user's data
         url = reverse('jobfilestagegroup-list')
         response = self.client.get(url, format='json')
@@ -642,6 +662,7 @@ class JobErrorTestCase(APITestCase):
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
                                                                url=cwl_url)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
 
     def testNormalUserReadOnly(self):
         other_user = self.user_login.become_normal_user()
@@ -649,6 +670,7 @@ class JobErrorTestCase(APITestCase):
                                        vm_project_name='test',
                                        job_order='{}',
                                        user=other_user,
+                                       share_group=self.share_group,
                                        )
         JobError.objects.create(job=other_job, content='Out of memory.', job_step=Job.JOB_STEP_RUNNING)
         # Normal user can't write
@@ -661,6 +683,7 @@ class JobErrorTestCase(APITestCase):
                                     vm_project_name='test',
                                     job_order='{}',
                                     user=my_user,
+                                    share_group=self.share_group,
                                     )
         JobError.objects.create(job=my_job, content='Out of memory.', job_step=Job.JOB_STEP_RUNNING)
 
@@ -689,6 +712,7 @@ class JobErrorTestCase(APITestCase):
                                     vm_project_name='test',
                                     job_order='{}',
                                     user=my_user,
+                                    share_group=self.share_group
                                     )
         url = reverse('admin_joberror-list')
         response = self.client.post(url, format='json', data={
@@ -711,11 +735,13 @@ class DDSJobInputFileTestCase(APITestCase):
         self.other_user = self.user_login.become_other_normal_user()
         self.my_user = self.user_login.become_normal_user()
         self.stage_group = JobFileStageGroup.objects.create(user=self.my_user)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.my_job = Job.objects.create(workflow_version=self.workflow_version,
                                          vm_project_name='test',
                                          job_order='{}',
                                          user=self.my_user,
-                                         stage_group=self.stage_group)
+                                         stage_group=self.stage_group,
+                                         share_group=self.share_group)
         endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret', api_root='https://someserver.com/api')
         self.cred = DDSUserCredential.objects.create(endpoint=endpoint, user=self.my_user, token='secret2', dds_id='1')
         self.other_cred = DDSUserCredential.objects.create(endpoint=endpoint, user=self.other_user, token='secret3',
@@ -759,11 +785,14 @@ class URLJobInputFileTestCase(APITestCase):
                                                                url=cwl_url)
         self.my_user = self.user_login.become_normal_user()
         self.stage_group = JobFileStageGroup.objects.create(user=self.my_user)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.my_job = Job.objects.create(workflow_version=self.workflow_version,
                                          vm_project_name='test',
                                          job_order='{}',
                                          user=self.my_user,
-                                         stage_group=self.stage_group)
+                                         stage_group=self.stage_group,
+                                         share_group=self.share_group,
+                                         )
 
     def testPostAndRead(self):
         url = reverse('urljobinputfile-list')
@@ -790,10 +819,12 @@ class JobOutputDirTestCase(APITestCase):
                                                                url=cwl_url)
         self.other_user = self.user_login.become_other_normal_user()
         self.my_user = self.user_login.become_normal_user()
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.my_job = Job.objects.create(workflow_version=self.workflow_version,
                                          vm_project_name='test',
                                          job_order='{}',
-                                         user=self.my_user
+                                         user=self.my_user,
+                                         share_group=self.share_group,
                                          )
         self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret', api_root='https://someserver.com/api')
         self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=self.my_user, token='secret2',
@@ -887,13 +918,14 @@ class JobQuestionnaireTestCase(APITestCase):
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
                                                                url=cwl_url)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.questionnaire1 = JobQuestionnaire.objects.create(name='Workflow1',
                                                               description='A really large workflow',
                                                               workflow_version=self.workflow_version,
                                                               system_job_order_json=self.system_job_order_json1,
-                                                              vm_flavor = self.flavor,
-                                                              vm_project = self.project,
-
+                                                              vm_flavor=self.flavor,
+                                                              vm_project=self.project,
+                                                              share_group=self.share_group,
                                                               )
         self.questionnaire2 = JobQuestionnaire.objects.create(name='Workflow2',
                                                               description='A rather small workflow',
@@ -901,6 +933,7 @@ class JobQuestionnaireTestCase(APITestCase):
                                                               system_job_order_json=self.system_job_order_json2,
                                                               vm_flavor = self.flavor,
                                                               vm_project = self.project,
+                                                              share_group=self.share_group,
                                                               )
         self.questionnaire2.save()
 
@@ -961,17 +994,20 @@ class JobAnswerSetTests(APITestCase):
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
                                                                url=cwl_url)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
                                                               workflow_version=self.workflow_version,
                                                               system_job_order_json=self.system_job_order_json1,
                                                               vm_flavor=self.flavor,
                                                               vm_project=self.project,
+                                                              share_group=self.share_group
                                                               )
         self.questionnaire2 = JobQuestionnaire.objects.create(description='Workflow1',
                                                               workflow_version=self.workflow_version,
                                                               system_job_order_json=self.system_job_order_json2,
                                                               vm_flavor=self.flavor,
                                                               vm_project=self.project,
+                                                              share_group=self.share_group
                                                               )
         self.other_user = self.user_login.become_other_normal_user()
         self.user = self.user_login.become_normal_user()
@@ -1018,6 +1054,7 @@ class JobAnswerSetTests(APITestCase):
                                                         system_job_order_json=self.system_job_order_json1,
                                                         vm_flavor=self.flavor,
                                                         vm_project=self.project,
+                                                        share_group=self.share_group,
                                                         )
         return questionnaire
 

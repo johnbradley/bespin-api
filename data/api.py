@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, mixins
 from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException, JobTokenException
@@ -75,7 +75,10 @@ class WorkflowVersionsViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = WorkflowVersionSerializer
 
 
-class JobsViewSet(viewsets.ModelViewSet):
+class JobsViewSet(mixins.RetrieveModelMixin,
+                  mixins.UpdateModelMixin,
+                  mixins.ListModelMixin,
+                  viewsets.GenericViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobSerializer
 

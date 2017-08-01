@@ -85,6 +85,7 @@ class AdminJobSerializer(serializers.ModelSerializer):
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_project_name', 'job_order', 'output_dir', 'stage_group',
                   'volume_size', 'share_group')
+        read_only_fields = ('share_group',)
 
 
 class DDSEndpointSerializer(serializers.ModelSerializer):
