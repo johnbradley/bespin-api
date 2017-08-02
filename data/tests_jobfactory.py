@@ -9,6 +9,7 @@ import json
 
 FLY_RNASEQ_URL = "https://raw.githubusercontent.com/Duke-GCB/bespin-cwl/master/packed-workflows/rnaseq-pt1-packed.cwl"
 
+
 class JobFactoryTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('test_user')
@@ -59,6 +60,7 @@ class JobFactoryTests(TestCase):
         self.assertEqual(job.vm_flavor,'flavor1')
         self.assertEqual(self.worker_cred.id, job.output_dir.dds_user_credentials.id)
         self.assertEqual(job.volume_size, 110)
+        self.assertEqual(job.share_group, self.share_group)
 
     def test_favors_user_inputs(self):
         user_job_order = {'input1': 'user'}

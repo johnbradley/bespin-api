@@ -134,6 +134,7 @@ class JobTests(TestCase):
         self.assertEqual(None, job.vm_instance_name)
         self.assertEqual('jpb67', job.vm_project_name)
         self.assertEqual(None, job.run_token)
+        self.assertEqual(self.share_group, job.share_group)
 
     def test_create_with_name(self):
         Job.objects.create(name='Rna Seq for B-Lab', user=self.user, share_group=self.share_group)
@@ -387,6 +388,7 @@ class JobQuestionnaireTests(TestCase):
         self.assertEqual('foo',json.loads(ant_questionnaire.system_job_order_json)['system_input'])
         self.assertEqual('flavor1', ant_questionnaire.vm_flavor.name)
         self.assertEqual('bespin-project', ant_questionnaire.vm_project.name)
+        self.assertEqual(self.share_group, ant_questionnaire.share_group)
 
         human_questionnaire = JobQuestionnaire.objects.filter(name='Human RnaSeq').first()
         self.assertEqual('Human RnaSeq', human_questionnaire.name)
@@ -394,6 +396,7 @@ class JobQuestionnaireTests(TestCase):
         self.assertEqual('bar',json.loads(human_questionnaire.system_job_order_json)['system_input'])
         self.assertEqual('flavor2', human_questionnaire.vm_flavor.name)
         self.assertEqual('bespin-project', human_questionnaire.vm_project.name)
+        self.assertEqual(self.share_group, human_questionnaire.share_group)
 
 
 class JobAnswerSetTests(TestCase):

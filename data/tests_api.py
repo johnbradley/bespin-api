@@ -7,7 +7,7 @@ import json
 
 from data.models import Workflow, WorkflowVersion, Job, JobFileStageGroup, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobOutputDir, \
-    JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, JobToken, ShareGroup
+    JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser
 from exceptions import WrappedDataServiceException
 from util import DDSResource
 
@@ -328,7 +328,6 @@ class JobsTestCase(APITestCase):
         self.assertEqual(self.workflow_version.id, response.data[0]['workflow_version'])
 
     def testAdminSeeAllData(self):
-        url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(name='my job',
                                  workflow_version=self.workflow_version,
@@ -361,6 +360,7 @@ class JobsTestCase(APITestCase):
         self.assertIn('my job', [item['name'] for item in response.data])
         self.assertIn('my job2', [item['name'] for item in response.data])
         self.assertEqual(['RnaSeq', 'RnaSeq'], [item['workflow_version']['name'] for item in response.data])
+        self.assertIn(self.share_group.id, [item['share_group'] for item in response.data])
 
     def testNormalUserSeeErrors(self):
         normal_user = self.user_login.become_normal_user()
@@ -1044,7 +1044,6 @@ class JobAnswerSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(0, len(JobAnswerSet.objects.all()))
 
-
     def setup_minimal_questionnaire(self):
         # user_cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=self.user, token='secret2',
         #                                              dds_id='1')
@@ -1142,3 +1141,60 @@ class AdminJobTokensTestCase(APITestCase):
             'token': 'secret1'
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class AdminShareGroupTestCase(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+
+    def test_only_allow_admin_users(self):
+        url = reverse('admin_sharegroup-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.user_login.become_normal_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.user_login.become_admin_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_list(self):
+        dds_user1 = DDSUser.objects.create(name='Joe', dds_id='123')
+        dds_user2 = DDSUser.objects.create(name='Jim', dds_id='456')
+        dds_user3 = DDSUser.objects.create(name='Bob', dds_id='789')
+        share_group1 = ShareGroup.objects.create(name='Data validation team 1')
+        share_group1.users = [dds_user1, dds_user2]
+        share_group1.save()
+        share_group2 = ShareGroup.objects.create(name='Data validation team 2')
+        share_group2.users = [dds_user1, dds_user3]
+        share_group2.save()
+
+        url = reverse('admin_sharegroup-list')
+        self.user_login.become_admin_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(2, len(response.data))
+        group = response.data[0]
+        self.assertEqual('Data validation team 1', group['name'])
+        group_users = [group_user['dds_id'] for group_user in group['users']]
+        self.assertEqual(['123','456'], group_users)
+        group = response.data[1]
+        self.assertEqual('Data validation team 2', group['name'])
+        group_users = [group_user['dds_id'] for group_user in group['users']]
+        self.assertEqual(['123','789'], group_users)
+
+    def test_read_single_group(self):
+        # Test that we can read a single group (so we can share results with the group members)
+        dds_user1 = DDSUser.objects.create(name='Joe', dds_id='123')
+        dds_user2 = DDSUser.objects.create(name='Jim', dds_id='456')
+        share_group1 = ShareGroup.objects.create(name='Data validation team 1')
+        share_group1.users = [dds_user1, dds_user2]
+        share_group1.save()
+        url = reverse('admin_sharegroup-list') + "{}/".format(share_group1.id)
+        self.user_login.become_admin_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        group = response.data
+        self.assertEqual('Data validation team 1', group['name'])
+        group_users = [group_user['dds_id'] for group_user in group['users']]
+        self.assertEqual(['123','456'], group_users)
