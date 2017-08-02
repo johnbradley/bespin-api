@@ -391,7 +391,7 @@ class JobsTestCase(APITestCase):
                                  workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
                                  job_order={},
-                                 user=normal_user
+                                 user=normal_user,
                                  share_group=self.share_group,
                                  )
         url = reverse('admin_job-list') + '{}/'.format(job.id)
