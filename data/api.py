@@ -76,7 +76,6 @@ class WorkflowVersionsViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class JobsViewSet(mixins.RetrieveModelMixin,
-                  mixins.UpdateModelMixin,
                   mixins.ListModelMixin,
                   viewsets.GenericViewSet):
     permission_classes = (permissions.IsAuthenticated,)

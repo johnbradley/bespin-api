@@ -381,18 +381,17 @@ class JobsTestCase(APITestCase):
         self.assertIn('Err1', job_errors_content)
         self.assertIn('Err2', job_errors_content)
 
-    def testStopRegularUserFromSettingStateOrStep(self):
+    def test_normal_user_trying_to_update_job(self):
         """
         Only admin should change job state or job step.
         Regular users can only change the state and step via the start, cancel and restart job endpoints.
         """
-        url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(name='somejob',
                                  workflow_version=self.workflow_version,
                                  vm_project_name='jpb67',
                                  job_order={},
-                                 user=normal_user,
+                                 user=normal_user
                                  share_group=self.share_group,
                                  )
         url = reverse('admin_job-list') + '{}/'.format(job.id)
@@ -502,7 +501,7 @@ class JobsTestCase(APITestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def testPreventNormalUsersCreateJobDirectly(self):
+    def test_normal_user_trying_create_job_directly(self):
         url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
         response = self.client.post(url, format='json',
