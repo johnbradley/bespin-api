@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 import json
 
+
 class DDSEndpoint(models.Model):
     """
     Stores the agent key for this application
@@ -31,6 +32,19 @@ class DDSUserCredential(models.Model):
 
     def __unicode__(self):
         return '{} - {}'.format(self.endpoint, self.user, )
+
+
+class DDSUser(models.Model):
+    """
+    Details about a DukeDS user.
+    """
+    name = models.CharField(max_length=255, blank=False, null=False,
+                            help_text="Name of the user")
+    dds_id = models.CharField(max_length=255, blank=False, unique=True, null=False,
+                              help_text="Unique ID assigned to the user in DukeDS")
+
+    def __unicode__(self):
+        return 'DDSUser {}'.format(self.name, )
 
 
 class Workflow(models.Model):
@@ -79,6 +93,18 @@ class JobToken(models.Model):
 
     def __unicode__(self):
         return 'Job Token "{}"'.format(self.token)
+
+
+class ShareGroup(models.Model):
+    """A
+    Group of users who will have data shared with them when a job finishes
+    """
+    name = models.CharField(max_length=255, blank=False, null=False,
+                            help_text="Name of this group")
+    users = models.ManyToManyField(DDSUser, help_text="Users that belong to this group")
+
+    def __unicode__(self):
+        return 'Share Group: {}'.format(self.name)
 
 
 class Job(models.Model):
@@ -144,6 +170,8 @@ class Job(models.Model):
                                      help_text='Token that allows permission for a job to be run')
     volume_size = models.IntegerField(null=False, blank=False, default=100,
                                       help_text='Size in GB of volume created for running this job')
+    share_group = models.ForeignKey(ShareGroup, blank=False, null=False,
+                                    help_text='Users who will have job output shared with them')
 
     def save(self, *args, **kwargs):
         if self.stage_group is not None and self.stage_group.user != self.user:
@@ -193,7 +221,7 @@ class LandoConnection(models.Model):
     queue_name = models.CharField(max_length=255, blank=False, null=False)
 
     def __unicode__(self):
-        return '{} on {}'.format(self.username, self.host, )
+        return '{} on {}'.format(self.username, self.host)
 
 
 class VMFlavor(models.Model):
@@ -230,13 +258,15 @@ class JobQuestionnaire(models.Model):
                                              help_text="JSON containing the portion of the job order specified by system.")
     user_fields_json = models.TextField(null=True,
                                         help_text="JSON containing the array of fields required by the user when providing "
-                                             "a job answer set.")
+                                                  "a job answer set.")
     vm_flavor = models.ForeignKey(VMFlavor, null=False,
                                   help_text='VM Flavor to use when creating VM instances for this questionnaire')
     vm_project = models.ForeignKey(VMProject, null=False,
                                    help_text='Project name to use when creating VM instances for this questionnaire')
     volume_size = models.IntegerField(null=False, blank=False, default=100,
                                       help_text='Size in GB of volume created for running this job')
+    share_group = models.ForeignKey(ShareGroup, blank=False, null=False,
+                                    help_text='Users who will have job output shared with them')
 
     def __unicode__(self):
         return '{} desc:{}'.format(self.id, self.description)
