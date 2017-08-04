@@ -160,6 +160,8 @@ class Job(models.Model):
                                  help_text="Determines CPUs and RAM VM allocation used to run this job.")
     vm_instance_name = models.CharField(max_length=255, blank=True, null=True,
                                         help_text="Name of the vm this job is/was running on.")
+    vm_volume_name = models.CharField(max_length=255, blank=True, null=True,
+                                      help_text="Name of the volume attached to store data for this job.")
     vm_project_name = models.CharField(max_length=255, blank=False, null=False,
                                        help_text="Name of the cloud project where vm will be created.")
     job_order = models.TextField(null=True,
