@@ -131,9 +131,10 @@ class JobTests(TestCase):
         self.assertEqual(Job.JOB_STATE_NEW, job.state)
         self.assertIsNotNone(job.last_updated)
         self.assertIsNotNone(job.vm_flavor)
-        self.assertEqual(None, job.vm_instance_name)
+        self.assertIsNone(job.vm_instance_name)
+        self.assertIsNone(job.vm_volume_name)
         self.assertEqual('jpb67', job.vm_project_name)
-        self.assertEqual(None, job.run_token)
+        self.assertIsNone(job.run_token)
         self.assertEqual(self.share_group, job.share_group)
 
     def test_create_with_name(self):
