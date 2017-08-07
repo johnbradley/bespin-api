@@ -7,7 +7,7 @@ DukeDSClient==0.3.16
 funcsigs==1.0.2
 gcb-web-auth==0.6
 inflection==0.3.1
-lando-messaging==0.8.0
+lando-messaging==0.7.2
 mock==2.0.0
 pbr==1.10.0
 pika==0.10.0
