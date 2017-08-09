@@ -1,8 +1,9 @@
 from django.core.management.base import BaseCommand
 from argparse import FileType
-from data.models import Workflow, WorkflowVersion, JobQuestionnaire, VMFlavor, VMProject
+from data.models import Workflow, WorkflowVersion, JobQuestionnaire, VMFlavor, VMProject, ShareGroup
 from cwltool.load_tool import load_tool
 from cwltool.workflow import defaultMakeTool
+from _private import BaseCreator
 import json
 import sys
 
@@ -47,28 +48,7 @@ class CWLDocument(object):
         return self.parsed.tool.get(key)
 
 
-class BaseImporter(object):
-    """
-    Base for importer with simple logging facility
-    """
-
-    def __init__(self, stdout=sys.stdout, stderr=sys.stderr):
-        """
-        Creates a base importer with logging IO streams
-        :param stdout: For writing info log messages
-        :param stderr: For writing error messages
-        """
-        self.stdout = stdout
-        self.stderr = stderr
-
-    def log_creation(self, created, kind, name, id):
-        if created:
-            self.stdout.write("{} '{}' created with id {}".format(kind, name, id))
-        else:
-            self.stderr.write("{} '{}' already exists with id {}".format(kind, name, id))
-
-
-class JobQuestionnaireImporter(BaseImporter):
+class JobQuestionnaireImporter(BaseCreator):
     """
     Creates a JobQuestionnaire model for a WorkflowVersion with the supplied system job order
     """
@@ -80,6 +60,7 @@ class JobQuestionnaireImporter(BaseImporter):
                  system_job_order_file,
                  vm_flavor_name,
                  vm_project_name,
+                 share_group_name,
                  stdout=sys.stdout,
                  stderr=sys.stderr):
         super(JobQuestionnaireImporter, self).__init__(stdout, stderr)
@@ -89,6 +70,7 @@ class JobQuestionnaireImporter(BaseImporter):
         self.system_job_order_dict = json.load(system_job_order_file)
         self.vm_flavor_name = vm_flavor_name
         self.vm_project_name = vm_project_name
+        self.share_group_name = share_group_name
         # django model objects built up
         self.vm_flavor = None
         self.vm_project = None
@@ -101,6 +83,9 @@ class JobQuestionnaireImporter(BaseImporter):
         # vm_project
         self.vm_project, created = VMProject.objects.get_or_create(name=self.vm_project_name)
         self.log_creation(created, 'VMProject', self.vm_project_name, self.vm_project.id)
+        # share group
+        self.share_group, created = ShareGroup.objects.get_or_create(name=self.share_group_name)
+        self.log_creation(created, 'ShareGroup', self.share_group_name, self.share_group.id)
 
         # Extract fields that are not system-provided
         user_fields = []
@@ -118,6 +103,7 @@ class JobQuestionnaireImporter(BaseImporter):
             user_fields_json=json.dumps(user_fields),
             vm_flavor=self.vm_flavor,
             vm_project=self.vm_project,
+            share_group=self.share_group,
         )
         self.log_creation(created, 'JobQuestionnaire', self.job_questionnaire.name, self.job_questionnaire.id)
 
@@ -128,7 +114,7 @@ class JobQuestionnaireImporter(BaseImporter):
         self.job_questionnaire.delete()
 
 
-class WorkflowImporter(BaseImporter):
+class WorkflowImporter(BaseCreator):
     """
     Creates Workflow and WorkflowVersion model objects from a CWL document and supplied version number
     """
@@ -191,6 +177,7 @@ class Command(BaseCommand):
                                                    '(e.g. reference genome files)', type=FileType('r'))
         parser.add_argument('vm-flavor', help='Name of VM flavor to use when running jobs(e.g. \'m1.large\')')
         parser.add_argument('vm-project', help='Name of Openstack to use when running jobs')
+        parser.add_argument('share-group', help='Name of Share group to attach to the job questionnaire')
 
     def handle(self, *args, **options):
         wf_importer = WorkflowImporter(options.get('cwl-url'),
@@ -205,6 +192,7 @@ class Command(BaseCommand):
             options.get('system-job-order-file'),
             options.get('vm-flavor'),
             options.get('vm-project'),
+            options.get('share-group'),
             stdout=self.stdout,
             stderr=self.stderr,
         )
