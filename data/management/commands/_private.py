@@ -1,6 +1,6 @@
 import sys
 
-class CommandLogger(object):
+class BaseCreator(object):
     """
     Base for command with simple logging facility
     """
