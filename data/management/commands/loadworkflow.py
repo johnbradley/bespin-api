@@ -3,6 +3,7 @@ from argparse import FileType
 from data.models import Workflow, WorkflowVersion, JobQuestionnaire, VMFlavor, VMProject
 from cwltool.load_tool import load_tool
 from cwltool.workflow import defaultMakeTool
+from _private import CommandLogger
 import json
 import sys
 
@@ -47,28 +48,7 @@ class CWLDocument(object):
         return self.parsed.tool.get(key)
 
 
-class BaseImporter(object):
-    """
-    Base for importer with simple logging facility
-    """
-
-    def __init__(self, stdout=sys.stdout, stderr=sys.stderr):
-        """
-        Creates a base importer with logging IO streams
-        :param stdout: For writing info log messages
-        :param stderr: For writing error messages
-        """
-        self.stdout = stdout
-        self.stderr = stderr
-
-    def log_creation(self, created, kind, name, id):
-        if created:
-            self.stdout.write("{} '{}' created with id {}".format(kind, name, id))
-        else:
-            self.stderr.write("{} '{}' already exists with id {}".format(kind, name, id))
-
-
-class JobQuestionnaireImporter(BaseImporter):
+class JobQuestionnaireImporter(CommandLogger):
     """
     Creates a JobQuestionnaire model for a WorkflowVersion with the supplied system job order
     """
@@ -128,7 +108,7 @@ class JobQuestionnaireImporter(BaseImporter):
         self.job_questionnaire.delete()
 
 
-class WorkflowImporter(BaseImporter):
+class WorkflowImporter(CommandLogger):
     """
     Creates Workflow and WorkflowVersion model objects from a CWL document and supplied version number
     """
