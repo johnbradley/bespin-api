@@ -387,6 +387,26 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(False, response.data['cleanup_vm'])
 
+        mock_settings.BESPIN_JOB_CLEANUP_VM = 'TRUE'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(True, response.data['cleanup_vm'])
+
+        mock_settings.BESPIN_JOB_CLEANUP_VM = 'FALSE'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(False, response.data['cleanup_vm'])
+
+        mock_settings.BESPIN_JOB_CLEANUP_VM = 'True'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(True, response.data['cleanup_vm'])
+
+        mock_settings.BESPIN_JOB_CLEANUP_VM = 'False'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(False, response.data['cleanup_vm'])
+
     def testNormalUserSeeErrors(self):
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(name='somejob',
