@@ -59,7 +59,6 @@ class JobSerializer(serializers.ModelSerializer):
     step = serializers.CharField(read_only=True)
     user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
     job_errors = JobErrorSerializer(required=False, read_only=True, many=True)
-
     class Meta:
         model = Job
         resource_name = 'jobs'
@@ -84,7 +83,7 @@ class AdminJobSerializer(serializers.ModelSerializer):
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_volume_name', 'vm_project_name', 'job_order',
-                  'output_dir', 'stage_group', 'volume_size', 'share_group')
+                  'output_dir', 'stage_group', 'volume_size', 'share_group', 'cleanup_vm')
         read_only_fields = ('share_group',)
 
 

@@ -136,6 +136,23 @@ class JobTests(TestCase):
         self.assertEqual('jpb67', job.vm_project_name)
         self.assertIsNone(job.run_token)
         self.assertEqual(self.share_group, job.share_group)
+        self.assertEqual(True, job.cleanup_vm)
+
+    def test_create_with_cleanup_vm(self):
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 user=self.user,
+                                 vm_project_name='jpb67',
+                                 job_order=self.sample_json,
+                                 share_group=self.share_group,
+                                 cleanup_vm=True)
+        self.assertEqual(True, job.cleanup_vm)
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 user=self.user,
+                                 vm_project_name='jpb67',
+                                 job_order=self.sample_json,
+                                 share_group=self.share_group,
+                                 cleanup_vm=False)
+        self.assertEqual(False, job.cleanup_vm)
 
     def test_create_with_name(self):
         Job.objects.create(name='Rna Seq for B-Lab', user=self.user, share_group=self.share_group)

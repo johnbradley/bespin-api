@@ -361,6 +361,30 @@ class JobsTestCase(APITestCase):
         self.assertIn('my job2', [item['name'] for item in response.data])
         self.assertEqual(['RnaSeq', 'RnaSeq'], [item['workflow_version']['name'] for item in response.data])
         self.assertIn(self.share_group.id, [item['share_group'] for item in response.data])
+        self.assertEqual([None, None], [item['user'].get('cleanup_job_vm') for item in response.data])
+
+    def test_settings_effect_job_cleanup_vm(self):
+        admin_user = self.user_login.become_admin_user()
+        job = Job.objects.create(name='somejob',
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=admin_user,
+                                 share_group=self.share_group,
+                                 )
+        url = reverse('admin_job-list') + '{}/'.format(job.id)
+
+        job.cleanup_vm = True
+        job.save()
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(True, response.data['cleanup_vm'])
+
+        job.cleanup_vm = False
+        job.save()
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(False, response.data['cleanup_vm'])
 
     def testNormalUserSeeErrors(self):
         normal_user = self.user_login.become_normal_user()

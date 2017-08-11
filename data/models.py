@@ -174,6 +174,8 @@ class Job(models.Model):
                                       help_text='Size in GB of volume created for running this job')
     share_group = models.ForeignKey(ShareGroup, blank=False, null=False,
                                     help_text='Users who will have job output shared with them')
+    cleanup_vm = models.BooleanField(default=True, blank=False, null=False,
+                                     help_text='Should the VM and Volume be deleted upon job completion')
 
     def save(self, *args, **kwargs):
         if self.stage_group is not None and self.stage_group.user != self.user:
