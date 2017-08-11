@@ -128,5 +128,3 @@ REST_FRAMEWORK = {
     ),
     'EXCEPTION_HANDLER': 'data.exception_handlers.switching_exception_handler',
 }
-
-BESPIN_CLEANUP_JOB_VM = os.getenv('BESPIN_JOB_CLEANUP_VM', 'false')

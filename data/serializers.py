@@ -2,7 +2,6 @@ from rest_framework import serializers
 from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError, JobAnswerSet, \
     JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser
-from django.conf import settings
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -79,28 +78,13 @@ class AdminJobSerializer(serializers.ModelSerializer):
     vm_project_name = serializers.CharField(required=False)
     name = serializers.CharField(required=False)
     user = UserSerializer(read_only=True)
-    cleanup_vm = serializers.SerializerMethodField(read_only=True)
-
-    def get_cleanup_vm(self, values):
-        """
-        Should delete the VM and Volume associated with a job when the job is completed or canceled.
-        canceled. Currently this is a global setting. It may be removed or turned into a job specific setting
-        depending upon how often this debugging feature is needed.
-        :return: bool: true when the VM and associated volume should be deleted upon job complete/error
-        """
-        cleanup_job_vm_str = settings.BESPIN_JOB_CLEANUP_VM
-        if cleanup_job_vm_str:
-            if cleanup_job_vm_str.upper() == 'TRUE':
-                return True
-        return False
-
     class Meta:
         model = Job
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_volume_name', 'vm_project_name', 'job_order',
                   'output_dir', 'stage_group', 'volume_size', 'share_group', 'cleanup_vm')
-        read_only_fields = ('share_group', 'cleanup_vm',)
+        read_only_fields = ('share_group',)
 
 
 class DDSEndpointSerializer(serializers.ModelSerializer):

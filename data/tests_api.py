@@ -327,9 +327,7 @@ class JobsTestCase(APITestCase):
         self.assertEqual(other_user.id, response.data[0]['user'])
         self.assertEqual(self.workflow_version.id, response.data[0]['workflow_version'])
 
-    @patch('data.serializers.settings')
-    def testAdminSeeAllData(self, mock_settings):
-        mock_settings.BESPIN_JOB_CLEANUP_VM = None
+    def testAdminSeeAllData(self):
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(name='my job',
                                  workflow_version=self.workflow_version,
@@ -365,8 +363,7 @@ class JobsTestCase(APITestCase):
         self.assertIn(self.share_group.id, [item['share_group'] for item in response.data])
         self.assertEqual([None, None], [item['user'].get('cleanup_job_vm') for item in response.data])
 
-    @patch('data.serializers.settings')
-    def test_settings_effect_job_cleanup_vm(self, mock_settings):
+    def test_settings_effect_job_cleanup_vm(self):
         admin_user = self.user_login.become_admin_user()
         job = Job.objects.create(name='somejob',
                                  workflow_version=self.workflow_version,
@@ -377,32 +374,14 @@ class JobsTestCase(APITestCase):
                                  )
         url = reverse('admin_job-list') + '{}/'.format(job.id)
 
-        mock_settings.BESPIN_JOB_CLEANUP_VM = 'true'
+        job.cleanup_vm = True
+        job.save()
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(True, response.data['cleanup_vm'])
 
-        mock_settings.BESPIN_JOB_CLEANUP_VM = 'false'
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(False, response.data['cleanup_vm'])
-
-        mock_settings.BESPIN_JOB_CLEANUP_VM = 'TRUE'
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(True, response.data['cleanup_vm'])
-
-        mock_settings.BESPIN_JOB_CLEANUP_VM = 'FALSE'
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(False, response.data['cleanup_vm'])
-
-        mock_settings.BESPIN_JOB_CLEANUP_VM = 'True'
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(True, response.data['cleanup_vm'])
-
-        mock_settings.BESPIN_JOB_CLEANUP_VM = 'False'
+        job.cleanup_vm = False
+        job.save()
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(False, response.data['cleanup_vm'])
@@ -447,12 +426,10 @@ class JobsTestCase(APITestCase):
                                    })
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    @patch('data.serializers.settings')
-    def testAdminUserUpdatesStateAndStep(self, mock_settings):
+    def testAdminUserUpdatesStateAndStep(self):
         """
         Admin should be able to change job state and job step.
         """
-        mock_settings.BESPIN_JOB_CLEANUP_VM = None
         admin_user = self.user_login.become_admin_user()
         job = Job.objects.create(name='somejob',
                                  workflow_version=self.workflow_version,
