@@ -125,6 +125,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': (
         'rest_framework.parsers.JSONParser',
         'data.parsers.JSONRootObjectParser',
+        'rest_framework.parsers.MultiPartParser',
     ),
     'EXCEPTION_HANDLER': 'data.exception_handlers.switching_exception_handler',
 }

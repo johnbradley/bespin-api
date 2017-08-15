@@ -49,7 +49,7 @@ class JobErrorSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobError
         resource_name = 'job-errors'
-        fields = '__all__'
+        fields = ('job', 'job_step', 'created')
 
 
 class JobSerializer(serializers.ModelSerializer):

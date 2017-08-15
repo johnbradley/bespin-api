@@ -210,7 +210,7 @@ class JobError(models.Model):
     Record of a particular error that happened with a job including the state the job was at when the error happened.
     """
     job = models.ForeignKey(Job, on_delete=models.CASCADE, null=False, related_name='job_errors')
-    content = models.TextField(null=False)
+    details = models.BinaryField(null=True)
     job_step = models.CharField(max_length=1, choices=Job.JOB_STEPS)
     created = models.DateTimeField(auto_now_add=True, blank=False)
 

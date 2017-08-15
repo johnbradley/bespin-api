@@ -13,6 +13,7 @@ from lando import LandoJob
 from django.db.models import Q
 from django.db import transaction
 from jobfactory import create_job_factory
+from django.http import HttpResponse
 
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
@@ -208,6 +209,17 @@ class AdminJobErrorViewSet(viewsets.ModelViewSet):
     serializer_class = JobErrorSerializer
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('job',)
+
+    @detail_route(methods=['post', 'get'])
+    def details(self, request, pk=None):
+        job_error = JobError.objects.get(pk=pk)
+        if request.method == 'POST':
+            job_error.details = request.FILES['file'].read()
+            job_error.save()
+            serializer = JobErrorSerializer(job_error)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return HttpResponse(job_error.details, content_type='text/plain')
 
 
 class JobOutputDirViewSet(viewsets.ModelViewSet):
