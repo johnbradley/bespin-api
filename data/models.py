@@ -272,8 +272,6 @@ class JobQuestionnaire(models.Model):
                                       help_text='Size in GB of volume created for running this job')
     share_group = models.ForeignKey(ShareGroup, blank=False, null=False,
                                     help_text='Users who will have job output shared with them')
-    fund_code = models.CharField(max_length=255, blank=True, null=True,
-                                 help_text="Fund code this job will be charged to.")
 
     def __unicode__(self):
         return '{} desc:{}'.format(self.id, self.description)
@@ -293,6 +291,8 @@ class JobAnswerSet(models.Model):
                                            help_text="JSON containing the portion of the job order specified by user")
     stage_group = models.OneToOneField(JobFileStageGroup, null=True,
                                        help_text='Collection of files that must be staged for a job to be run')
+    fund_code = models.CharField(max_length=255, blank=True, null=True,
+                                 help_text="Fund code this job will be charged to.")
 
     def __unicode__(self):
         return '{} questionnaire:{}'.format(self.id, self.questionnaire.description)

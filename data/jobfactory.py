@@ -5,7 +5,6 @@ from exceptions import JobFactoryException
 import json
 
 
-
 def create_job_factory(job_answer_set):
     """
     Create JobFactory based on questions and answers referenced by job_answer_set.
@@ -23,7 +22,7 @@ def create_job_factory(job_answer_set):
     vm_flavor_name = job_answer_set.questionnaire.vm_flavor.name
     volume_size = job_answer_set.questionnaire.volume_size
     share_group = job_answer_set.questionnaire.share_group
-    fund_code = job_answer_set.questionnaire.fund_code
+    fund_code = job_answer_set.fund_code
 
     factory = JobFactory(user, workflow_version, stage_group, user_job_order_dict, system_job_order_dict, job_name, vm_project_name,
                          vm_flavor_name, volume_size, share_group, fund_code)

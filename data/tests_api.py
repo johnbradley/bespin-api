@@ -1047,6 +1047,7 @@ class JobAnswerSetTests(APITestCase):
             'job_name': 'Test job 1',
             'user_job_order_json' : self.user_job_order_json1,
             'stage_group' : self.stage_group.id,
+            'fund_code': '123-4'
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(1, len(JobAnswerSet.objects.all()))
@@ -1059,10 +1060,12 @@ class JobAnswerSetTests(APITestCase):
             'job_name': 'Test job 2',
             'user_job_order_json': self.user_job_order_json2,
             'stage_group': self.stage_group.id,
+            'fund_code': '123-5'
         })
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         job_answer_set = JobAnswerSet.objects.first()
         self.assertEqual(job_answer_set.user_job_order_json, self.user_job_order_json2)
+        self.assertEqual(job_answer_set.fund_code, '123-5')
 
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -1076,7 +1079,7 @@ class JobAnswerSetTests(APITestCase):
                                                         system_job_order_json=self.system_job_order_json1,
                                                         vm_flavor=self.flavor,
                                                         vm_project=self.project,
-                                                        share_group=self.share_group,
+                                                        share_group=self.share_group
                                                         )
         return questionnaire
 
@@ -1088,6 +1091,7 @@ class JobAnswerSetTests(APITestCase):
             'job_name': 'Test job with items',
             'user_job_order_json': self.user_job_order_json1,
             'stage_group': self.stage_group.id,
+            'fund_code': '123-5'
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job_answer_set_id = response.data['id']
@@ -1097,6 +1101,7 @@ class JobAnswerSetTests(APITestCase):
         self.assertEqual('Test job with items', response.data['name'])
         self.assertEqual(self.flavor.name, response.data['vm_flavor'])
         self.assertEqual(self.project.name, response.data['vm_project_name'])
+        self.assertEqual('123-5', response.data['fund_code'])
         expected_job_order = json.loads(self.system_job_order_json1).copy()
         expected_job_order.update(json.loads(self.user_job_order_json1))
         self.assertEqual(json.dumps(expected_job_order), response.data['job_order'])
