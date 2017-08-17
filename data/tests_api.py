@@ -735,7 +735,7 @@ class JobErrorTestCase(APITestCase):
                                     vm_project_name='test',
                                     job_order='{}',
                                     user=my_user,
-                                    share_group=self.share_group
+                                    share_group=self.share_group,
                                     )
         url = reverse('admin_joberror-list')
         response = self.client.post(url, format='json', data={
