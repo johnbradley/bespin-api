@@ -1176,7 +1176,7 @@ class AdminShareGroupTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
 
-    def test_only_allow_admin_users(self):
+    def test_admin_only_allow_admin_users(self):
         url = reverse('admin_sharegroup-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -1187,7 +1187,7 @@ class AdminShareGroupTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_list(self):
+    def test_admin_list(self):
         dds_user1 = DDSUser.objects.create(name='Joe', dds_id='123')
         dds_user2 = DDSUser.objects.create(name='Jim', dds_id='456')
         dds_user3 = DDSUser.objects.create(name='Bob', dds_id='789')
@@ -1212,7 +1212,7 @@ class AdminShareGroupTestCase(APITestCase):
         group_users = [group_user['dds_id'] for group_user in group['users']]
         self.assertEqual(['123','789'], group_users)
 
-    def test_read_single_group(self):
+    def test_admin_read_single_group(self):
         # Test that we can read a single group (so we can share results with the group members)
         dds_user1 = DDSUser.objects.create(name='Joe', dds_id='123')
         dds_user2 = DDSUser.objects.create(name='Jim', dds_id='456')
@@ -1227,3 +1227,52 @@ class AdminShareGroupTestCase(APITestCase):
         self.assertEqual('Data validation team 1', group['name'])
         group_users = [group_user['dds_id'] for group_user in group['users']]
         self.assertEqual(['123','456'], group_users)
+
+    def test_user_only_allow_auth_or_admin_users(self):
+        url = reverse('sharegroup-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.user_login.become_normal_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user_login.become_admin_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_user_list(self):
+        dds_user1 = DDSUser.objects.create(name='Joe', dds_id='123')
+        dds_user2 = DDSUser.objects.create(name='Jim', dds_id='456')
+        dds_user3 = DDSUser.objects.create(name='Bob', dds_id='789')
+        share_group1 = ShareGroup.objects.create(name='Data validation team 1')
+        share_group1.users = [dds_user1, dds_user2]
+        share_group1.save()
+        share_group2 = ShareGroup.objects.create(name='Data validation team 2')
+        share_group2.users = [dds_user1, dds_user3]
+        share_group2.save()
+
+        url = reverse('sharegroup-list')
+        self.user_login.become_normal_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(2, len(response.data))
+        group = response.data[0]
+        self.assertEqual('Data validation team 1', group['name'])
+        self.assertEqual(None, group.get('users'))  # Regular users cannot see users in groups
+        group = response.data[1]
+        self.assertEqual('Data validation team 2', group['name'])
+        self.assertEqual(None, group.get('users'))  # Regular users cannot see users in groups
+
+    def test_user_read_single_group(self):
+        # Test that we can read a single group (so we can share results with the group members)
+        dds_user1 = DDSUser.objects.create(name='Joe', dds_id='123')
+        dds_user2 = DDSUser.objects.create(name='Jim', dds_id='456')
+        share_group1 = ShareGroup.objects.create(name='Data validation team 1')
+        share_group1.users = [dds_user1, dds_user2]
+        share_group1.save()
+        url = reverse('sharegroup-list') + "{}/".format(share_group1.id)
+        self.user_login.become_normal_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        group = response.data
+        self.assertEqual('Data validation team 1', group['name'])
+        self.assertEqual(None, group.get('users'))  # Regular users cannot see users in groups
