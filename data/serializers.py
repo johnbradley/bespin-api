@@ -64,7 +64,7 @@ class JobSerializer(serializers.ModelSerializer):
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_volume_name', 'vm_project_name', 'job_order',
-                  'output_dir', 'job_errors', 'stage_group', 'volume_size', 'fund_code')
+                  'output_dir', 'job_errors', 'stage_group', 'volume_size', 'fund_code', 'share_group')
 
 
 class UserSerializer(serializers.Serializer):
@@ -249,6 +249,13 @@ class DDSUserSerializer(serializers.ModelSerializer):
 
 
 class ShareGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShareGroup
+        resource_name = 'share-groups'
+        fields = ('id', 'name',)
+
+
+class AdminShareGroupSerializer(serializers.ModelSerializer):
     users = DDSUserSerializer(many=True, read_only=True)
     class Meta:
         model = ShareGroup

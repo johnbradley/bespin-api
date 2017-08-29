@@ -258,5 +258,11 @@ class AdminJobTokensViewSet(viewsets.ModelViewSet):
 
 class AdminShareGroupViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
+    serializer_class = AdminShareGroupSerializer
+    queryset = ShareGroup.objects.all()
+
+
+class ShareGroupViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
     serializer_class = ShareGroupSerializer
     queryset = ShareGroup.objects.all()
