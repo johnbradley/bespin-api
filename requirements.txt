@@ -5,7 +5,7 @@ django-filter==1.0.1
 djangorestframework==3.4.7
 DukeDSClient==0.3.16
 funcsigs==1.0.2
-gcb-web-auth==0.6
+gcb-web-auth==0.7
 inflection==0.3.1
 lando-messaging==0.7.2
 mock==2.0.0
