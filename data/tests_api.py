@@ -285,6 +285,27 @@ class WorkflowVersionTestCase(APITestCase):
         response = self.client.post(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def testFilterByWorkflow(self):
+        workflow1 = Workflow.objects.create(name='RnaSeq')
+        cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
+        WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url)
+        workflow2 = Workflow.objects.create(name='RnaSeq2')
+        WorkflowVersion.objects.create(workflow=workflow2, version="30", url=cwl_url)
+        self.user_login.become_normal_user()
+        url = reverse('workflowversion-list')
+
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+        response = self.client.get('{}?workflow={}'.format(url, workflow1.id), format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+        response = self.client.get('{}?workflow={}'.format(url, 202020), format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)
+
 
 class JobsTestCase(APITestCase):
     def setUp(self):
