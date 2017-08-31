@@ -1,5 +1,4 @@
 from rest_framework.views import exception_handler
-from rest_framework.exceptions import ValidationError
 from renderers import JSONRootObjectRenderer
 
 SOURCE_POINTER_PREFIX = '/data/attributes'
