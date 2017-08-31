@@ -34,8 +34,6 @@ def make_json_root_error(status_code, data, exc):
 
 
 def json_root_object_exception_handler(exc, context):
-    if isinstance(exc, ValidationError):  # EmberJS requires 422 for client validation errors
-        exc.status_code = 422
     # Call REST framework's default exception handler first,
     # to get the standard error response.
     response = exception_handler(exc, context)
