@@ -1,5 +1,8 @@
 from rest_framework.views import exception_handler
+from rest_framework.exceptions import ValidationError
 from renderers import JSONRootObjectRenderer
+
+SOURCE_POINTER_PREFIX = '/data/attributes'
 
 
 def switching_exception_handler(exc, context):
@@ -16,13 +19,23 @@ def make_json_root_error(status_code, data, exc):
     if isinstance(data, str):
         error['detail'] = data
     elif isinstance(data, dict):
-        error['detail'] = data.get('detail')
-        if data.get('id'):
+        if 'detail' in data:
+            error['detail'] = data['detail']
+        else:
+            for key in data.keys():
+                value = data[key]
+                error['source'] = {
+                    'pointer': '{}/{}'.format(SOURCE_POINTER_PREFIX, key)
+                }
+                error['detail'] = value
+        if 'id' in data:
             error['id'] = data.get('id')
     return error
 
 
 def json_root_object_exception_handler(exc, context):
+    if isinstance(exc, ValidationError):  # EmberJS requires 422 for client validation errors
+        exc.status_code = 422
     # Call REST framework's default exception handler first,
     # to get the standard error response.
     response = exception_handler(exc, context)
@@ -31,7 +44,6 @@ def json_root_object_exception_handler(exc, context):
     # return appropriate responses. For now, we'll just return None from the handler to aid ongoing development
     if response is None:
         return None
-
     # response.data may be list or a single object
     if isinstance(response.data, list):
         errors = [make_json_root_error(response.status_code, data, exc) for data in response.data]

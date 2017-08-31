@@ -21,7 +21,7 @@ class SwitchingExceptionHandlerTestCase(TestCase):
 
 class MakeJsonRootErrorTestCase(TestCase):
 
-    def test_makes_error_object_from_dict(self):
+    def test_makes_error_object_from_dict_with_detail(self):
         status_code = 401
         exc = MagicMock()
         data = {'detail': 'Detail message', 'id': 6}
@@ -30,6 +30,16 @@ class MakeJsonRootErrorTestCase(TestCase):
         self.assertEqual(error['detail'], 'Detail message',
                          'JSON root error should use the data detail as the detail message')
         self.assertEqual(error['id'], 6, 'With a dict containing id, JSON root error should include this id')
+
+    def test_makes_error_object_from_dict_with_field_keys(self):
+        status_code = 400
+        exc = MagicMock()
+        data = {'jobName': 'Some value'}
+        error = make_json_root_error(status_code, data, exc)
+        self.assertEqual(error['status'], status_code, 'JSON root error should contain the status code')
+        self.assertEqual(error['detail'], 'Some value',
+                         'JSON root error should use the key values as the detail message')
+        self.assertEqual(error['source'], {'pointer': '/data/attributes/jobName'})
 
     def test_makes_error_object_from_str(self):
         status_code = 401
