@@ -291,7 +291,8 @@ class JobFileStageGroupTests(TestCase):
                                        project_id='1234',
                                        file_id='5321',
                                        dds_user_credentials=self.user_credentials,
-                                       destination_path='sample.fasta')
+                                       destination_path='sample.fasta',
+                                       size=10000)
         # Test job fields
         stage_group = JobFileStageGroup.objects.first()
         self.assertEqual(self.job, stage_group.job)
@@ -305,6 +306,7 @@ class JobFileStageGroupTests(TestCase):
         self.assertEqual('1234', dds_file.project_id)
         self.assertEqual(self.user_credentials, dds_file.dds_user_credentials)
         self.assertEqual('sample.fasta', dds_file.destination_path)
+        self.assertEqual(10000, dds_file.size)
 
     def test_url_file(self):
         stage_group = JobFileStageGroup.objects.create(user=self.user)
@@ -312,7 +314,8 @@ class JobFileStageGroupTests(TestCase):
         self.job.save()
         URLJobInputFile.objects.create(stage_group=stage_group,
                                        url='https://data.org/sample.fasta',
-                                       destination_path='sample.fasta')
+                                       destination_path='sample.fasta',
+                                       size=20000)
 
         # Test job fields
         stage_group = JobFileStageGroup.objects.first()
@@ -326,6 +329,7 @@ class JobFileStageGroupTests(TestCase):
         self.assertEqual(stage_group, url_file.stage_group)
         self.assertEqual('https://data.org/sample.fasta', url_file.url)
         self.assertEqual('sample.fasta', url_file.destination_path)
+        self.assertEqual(20000, url_file.size)
 
 
 class JobOutputDirTests(TestCase):
@@ -392,14 +396,18 @@ class JobQuestionnaireTests(TestCase):
                                                         system_job_order_json='{"system_input": "foo"}',
                                                         vm_flavor=self.flavor1,
                                                         vm_project=self.project,
-                                                        share_group=self.share_group)
+                                                        share_group=self.share_group,
+                                                        volume_size_base=10,
+                                                        volume_size_factor=5)
         questionnaire = JobQuestionnaire.objects.create(name='Human RnaSeq',
                                                         description='Uses reference genome zew and gene index def',
                                                         workflow_version=self.workflow_version,
                                                         system_job_order_json='{"system_input":"bar"}',
                                                         vm_flavor=self.flavor2,
                                                         vm_project=self.project,
-                                                        share_group=self.share_group)
+                                                        share_group=self.share_group,
+                                                        volume_size_base=3,
+                                                        volume_size_factor=2)
         ant_questionnaire = JobQuestionnaire.objects.filter(name='Ant RnaSeq').first()
         self.assertEqual('Ant RnaSeq', ant_questionnaire.name)
         self.assertEqual('Uses reference genome xyz and gene index abc', ant_questionnaire.description)
@@ -407,6 +415,8 @@ class JobQuestionnaireTests(TestCase):
         self.assertEqual('flavor1', ant_questionnaire.vm_flavor.name)
         self.assertEqual('bespin-project', ant_questionnaire.vm_project.name)
         self.assertEqual(self.share_group, ant_questionnaire.share_group)
+        self.assertEqual(10, ant_questionnaire.volume_size_base)
+        self.assertEqual(5, ant_questionnaire.volume_size_factor)
 
         human_questionnaire = JobQuestionnaire.objects.filter(name='Human RnaSeq').first()
         self.assertEqual('Human RnaSeq', human_questionnaire.name)
@@ -415,6 +425,8 @@ class JobQuestionnaireTests(TestCase):
         self.assertEqual('flavor2', human_questionnaire.vm_flavor.name)
         self.assertEqual('bespin-project', human_questionnaire.vm_project.name)
         self.assertEqual(self.share_group, human_questionnaire.share_group)
+        self.assertEqual(3, human_questionnaire.volume_size_base)
+        self.assertEqual(2, human_questionnaire.volume_size_factor)
 
 
 class JobAnswerSetTests(TestCase):

@@ -61,6 +61,8 @@ class JobQuestionnaireImporter(BaseCreator):
                  vm_flavor_name,
                  vm_project_name,
                  share_group_name,
+                 volume_size_base,
+                 volume_size_factor,
                  stdout=sys.stdout,
                  stderr=sys.stderr):
         super(JobQuestionnaireImporter, self).__init__(stdout, stderr)
@@ -71,6 +73,8 @@ class JobQuestionnaireImporter(BaseCreator):
         self.vm_flavor_name = vm_flavor_name
         self.vm_project_name = vm_project_name
         self.share_group_name = share_group_name
+        self.volume_size_base = volume_size_base
+        self.volume_size_factor = volume_size_factor
         # django model objects built up
         self.vm_flavor = None
         self.vm_project = None
@@ -104,6 +108,8 @@ class JobQuestionnaireImporter(BaseCreator):
             vm_flavor=self.vm_flavor,
             vm_project=self.vm_project,
             share_group=self.share_group,
+            volume_size_base=self.volume_size_base,
+            volume_size_factor=self.volume_size_factor,
         )
         self.log_creation(created, 'JobQuestionnaire', self.job_questionnaire.name, self.job_questionnaire.id)
 
@@ -178,6 +184,8 @@ class Command(BaseCommand):
         parser.add_argument('vm-flavor', help='Name of VM flavor to use when running jobs(e.g. \'m1.large\')')
         parser.add_argument('vm-project', help='Name of Openstack to use when running jobs')
         parser.add_argument('share-group', help='Name of Share group to attach to the job questionnaire')
+        parser.add_argument('volume-size-base', help='Base volume size (in GB) used for this workflow.')
+        parser.add_argument('volume-size-factor', help='Integer factor multiplied by input data size when running this workflow.')
 
     def handle(self, *args, **options):
         wf_importer = WorkflowImporter(options.get('cwl-url'),
@@ -193,6 +201,8 @@ class Command(BaseCommand):
             options.get('vm-flavor'),
             options.get('vm-project'),
             options.get('share-group'),
+            options.get('volume-size-base'),
+            options.get('volume-size-factor'),
             stdout=self.stdout,
             stderr=self.stderr,
         )
