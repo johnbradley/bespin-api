@@ -184,7 +184,6 @@ class Command(BaseCommand):
         parser.add_argument('vm-flavor', help='Name of VM flavor to use when running jobs(e.g. \'m1.large\')')
         parser.add_argument('vm-project', help='Name of Openstack to use when running jobs')
         parser.add_argument('share-group', help='Name of Share group to attach to the job questionnaire')
-        parser.add_argument('vm-project', help='Name of Openstack to use when running jobs')
         parser.add_argument('volume-size-base', help='Base volume size (in GB) used for this workflow.')
         parser.add_argument('volume-size-factor', help='Integer factor multiplied by input data size when running this workflow.')
 

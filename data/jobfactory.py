@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 from util import get_file_name
 from exceptions import JobFactoryException
 import json
+import math
 
 BYTES_TO_GB_DIVISOR = 1024 * 1024 * 1024
 
@@ -40,7 +41,7 @@ def calculate_volume_size(job_answer_set):
     base_in_gb = job_answer_set.questionnaire.volume_size_base
     factor = job_answer_set.questionnaire.volume_size_factor
     data_size_in_gb = calculate_stage_group_size(job_answer_set.stage_group)
-    return int(round(base_in_gb + float(factor) * data_size_in_gb))
+    return int(math.ceil(base_in_gb + float(factor) * data_size_in_gb))
 
 
 def calculate_stage_group_size(stage_group):

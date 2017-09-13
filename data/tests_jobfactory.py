@@ -83,7 +83,7 @@ class JobFactoryTests(TestCase):
             DDSJobInputFile.objects.create(stage_group=stage_group, dds_user_credentials=self.worker_cred, size=size)
         for size in url_file_sizes:
             URLJobInputFile.objects.create(stage_group=stage_group, size=size)
-        self.assertEqual(3, int(calculate_stage_group_size(stage_group)))
+        self.assertEqual(3.00977, round(calculate_stage_group_size(stage_group), 5))
 
     @patch('data.jobfactory.calculate_stage_group_size')
     def test_calculate_volume_size(self, mock_calculate_stage_group_size):
