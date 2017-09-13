@@ -268,8 +268,11 @@ class JobQuestionnaire(models.Model):
                                   help_text='VM Flavor to use when creating VM instances for this questionnaire')
     vm_project = models.ForeignKey(VMProject, null=False,
                                    help_text='Project name to use when creating VM instances for this questionnaire')
-    volume_size = models.IntegerField(null=False, blank=False, default=100,
-                                      help_text='Size in GB of volume created for running this job')
+    volume_size_base = models.IntegerField(null=False, blank=False, default=100,
+                                           help_text='Base size in GB of for determining job volume size')
+    volume_size_factor = models.IntegerField(null=False, blank=False, default=0,
+                                             help_text='Number multiplied by total staged data size for '
+                                                       'determining job volume size')
     share_group = models.ForeignKey(ShareGroup, blank=False, null=False,
                                     help_text='Users who will have job output shared with them')
 
@@ -314,6 +317,7 @@ class DDSJobInputFile(models.Model):
     file_id = models.CharField(max_length=255, blank=False, null=True)
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE)
     destination_path = models.CharField(max_length=255, blank=False, null=True)
+    size = models.IntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
 
     def __unicode__(self):
         return 'DDS Job Input File "{}" id:{}'.format(self.destination_path, self.file_id)
@@ -328,6 +332,7 @@ class URLJobInputFile(models.Model):
                                     related_name='url_files')
     url = models.URLField(null=True)
     destination_path = models.CharField(max_length=255, blank=False, null=True)
+    size = models.IntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
 
     def __unicode__(self):
         return 'URL Job Input File "{}"'.format(self.url)

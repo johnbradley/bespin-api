@@ -2,8 +2,9 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
 from mock.mock import MagicMock, patch, Mock
-from models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion, JobFileStageGroup, ShareGroup
-from jobfactory import JobFactory, JobFactoryException
+from models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion, JobFileStageGroup, ShareGroup, \
+    DDSJobInputFile, URLJobInputFile
+from jobfactory import JobFactory, JobFactoryException, calculate_stage_group_size, calculate_volume_size
 import json
 
 
@@ -71,3 +72,22 @@ class JobFactoryTests(TestCase):
         job = job_factory.create_job()
         expected_job_order = json.dumps({'input1':'user'})
         self.assertEqual(expected_job_order, job.job_order)
+
+    def test_calculate_stage_group_size(self):
+        stage_group = JobFileStageGroup.objects.create(user=self.user)
+        dds_file_sizes = [10 * 1024 * 1024,  # 10 MB
+                          2.5 * 1024 * 1024 * 1024,  # 2.5 GB
+                          ]
+        url_file_sizes = [0.5 * 1024 * 1024 * 1024]  # 0.5 GB
+        for size in dds_file_sizes:
+            DDSJobInputFile.objects.create(stage_group=stage_group, dds_user_credentials=self.worker_cred, size=size)
+        for size in url_file_sizes:
+            URLJobInputFile.objects.create(stage_group=stage_group, size=size)
+        self.assertEqual(3, int(calculate_stage_group_size(stage_group)))
+
+    @patch('data.jobfactory.calculate_stage_group_size')
+    def test_calculate_volume_size(self, mock_calculate_stage_group_size):
+        mock_calculate_stage_group_size.return_value = 20
+        mock_questionnaire = Mock(volume_size_base=10, volume_size_factor=4)
+        mock_job_answer_set = Mock(questionnaire=mock_questionnaire)
+        self.assertEqual(4 * 20 + 10, calculate_volume_size(mock_job_answer_set))
