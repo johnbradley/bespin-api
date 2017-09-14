@@ -79,7 +79,6 @@ class WorkflowVersionsViewSet(viewsets.ReadOnlyModelViewSet):
 
 class JobsViewSet(mixins.RetrieveModelMixin,
                   mixins.ListModelMixin,
-                  mixins.DestroyModelMixin,
                   viewsets.GenericViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobSerializer
@@ -133,14 +132,6 @@ class JobsViewSet(mixins.RetrieveModelMixin,
         job = Job.objects.get(pk=pk)
         serializer = JobSerializer(job)
         return Response(serializer.data, status=job_status)
-
-    def destroy(self, request, *args, **kwargs):
-        job = self.get_object()
-        # Only delete job if it hasn't been started yet
-        if job.state not in [Job.JOB_STATE_NEW, Job.JOB_STATE_AUTHORIZED]:
-            raise BespinAPIException(400, 'You may only delete jobs in NEW and AUTHORIZED states.')
-        self.perform_destroy(job)
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AdminJobsViewSet(viewsets.ModelViewSet):

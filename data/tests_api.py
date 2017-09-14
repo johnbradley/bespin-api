@@ -644,34 +644,6 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['detail'], 'This token has already been used.')
 
-    def test_delete_job(self):
-        normal_user = self.user_login.become_normal_user()
-        values = [
-            # job state         expected response status code
-            (Job.JOB_STATE_NEW, status.HTTP_204_NO_CONTENT),
-            (Job.JOB_STATE_AUTHORIZED, status.HTTP_204_NO_CONTENT),
-            (Job.JOB_STATE_STARTING, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_RUNNING, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_FINISHED, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_ERROR, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_CANCELING, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_CANCEL, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_RESTARTING, status.HTTP_400_BAD_REQUEST),
-        ]
-        for job_state, expected_response_status_code in values:
-            job = Job.objects.create(workflow_version=self.workflow_version,
-                                     vm_project_name='jpb67',
-                                     job_order={},
-                                     user=normal_user,
-                                     stage_group=JobFileStageGroup.objects.create(user=normal_user),
-                                     share_group=self.share_group,
-                                     )
-            job.state = job_state
-            job.save()
-            url = reverse('job-list') + str(job.id) + '/'
-            response = self.client.delete(url)
-            self.assertEqual(response.status_code, expected_response_status_code)
-
 
 class JobStageGroupTestCase(APITestCase):
     def setUp(self):
