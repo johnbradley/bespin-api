@@ -251,7 +251,7 @@ class VMProject(models.Model):
 
 class JobQuestionnaire(models.Model):
     """
-    Specifies a Workflow Version and a set of system-provided answers in JSON format 
+    Specifies a Workflow Version and a set of system-provided answers in JSON format
     """
     name = models.CharField(max_length=255, blank=False, null=False,
                             help_text="Short user facing name")
@@ -317,7 +317,7 @@ class DDSJobInputFile(models.Model):
     file_id = models.CharField(max_length=255, blank=False, null=True)
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE)
     destination_path = models.CharField(max_length=255, blank=False, null=True)
-    size = models.IntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
+    size = models.BigIntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
 
     def __unicode__(self):
         return 'DDS Job Input File "{}" id:{}'.format(self.destination_path, self.file_id)
@@ -332,7 +332,7 @@ class URLJobInputFile(models.Model):
                                     related_name='url_files')
     url = models.URLField(null=True)
     destination_path = models.CharField(max_length=255, blank=False, null=True)
-    size = models.IntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
+    size = models.BigIntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
 
     def __unicode__(self):
         return 'URL Job Input File "{}"'.format(self.url)
