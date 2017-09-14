@@ -818,6 +818,18 @@ class DDSJobInputFileTestCase(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def testLargeFileSize(self):
+        url = reverse('ddsjobinputfile-list')
+        response = self.client.post(url, format='json', data={
+            'stage_group': self.stage_group.id,
+            'project_id': '654321',
+            'file_id': '212121',
+            'dds_user_credentials': self.other_cred.id,
+            'destination_path': 'data.txt',
+            'size': 8 * 1024 * 1024 * 1024
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
 
 class URLJobInputFileTestCase(APITestCase):
     def setUp(self):
@@ -851,6 +863,16 @@ class URLJobInputFileTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
         self.assertEqual('http://stuff.com/data.txt', response.data[0]['url'])
+
+    def testLargeFileSize(self):
+        url = reverse('urljobinputfile-list')
+        response = self.client.post(url, format='json', data={
+            'stage_group': self.stage_group.id,
+            'url': 'http://stuff.com/data.txt',
+            'destination_path': 'data.txt',
+            'size': 8 * 1024 * 1024 * 1024
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
 class JobOutputDirTestCase(APITestCase):
