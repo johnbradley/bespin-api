@@ -59,12 +59,14 @@ class JobSerializer(serializers.ModelSerializer):
     step = serializers.CharField(read_only=True)
     user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
     job_errors = JobErrorSerializer(required=False, read_only=True, many=True)
+    run_token = serializers.CharField(required=False, read_only=True, source='run_token.token')
     class Meta:
         model = Job
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_volume_name', 'vm_project_name', 'job_order',
-                  'output_dir', 'job_errors', 'stage_group', 'volume_size', 'fund_code', 'share_group')
+                  'output_dir', 'job_errors', 'stage_group', 'volume_size', 'fund_code', 'share_group',
+                  'run_token',)
 
 
 class UserSerializer(serializers.Serializer):
