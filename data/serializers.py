@@ -254,7 +254,7 @@ class ShareGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShareGroup
         resource_name = 'share-groups'
-        fields = ('id', 'name',)
+        fields = ('id', 'name', 'email',)
 
 
 class AdminShareGroupSerializer(serializers.ModelSerializer):
