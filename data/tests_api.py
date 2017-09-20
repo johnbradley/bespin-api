@@ -672,6 +672,24 @@ class JobsTestCase(APITestCase):
             response = self.client.delete(url)
             self.assertEqual(response.status_code, expected_response_status_code)
 
+    def test_job_includes_run_token(self):
+        normal_user = self.user_login.become_normal_user()
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                     vm_project_name='jpb67',
+                                     job_order={},
+                                     user=normal_user,
+                                     stage_group=JobFileStageGroup.objects.create(user=normal_user),
+                                     share_group=self.share_group,
+                                 )
+        run_token = JobToken.objects.create(token='test-token')
+        job.run_token = run_token;
+        job.save()
+        url = reverse('job-list') + '{}/'.format(job.id)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        print(response.data)
+        self.assertEqual(response.data['run_token'], 'test-token')
+
 
 class JobStageGroupTestCase(APITestCase):
     def setUp(self):
