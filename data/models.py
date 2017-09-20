@@ -78,6 +78,17 @@ class WorkflowVersion(models.Model):
         return '{} version: {} created: {}'.format(self.workflow.name, self.version, self.created)
 
 
+class WorkflowMethodsDocument(models.Model):
+    """
+    Methods document for a particular workflow version.
+    """
+    workflow_version = models.OneToOneField(WorkflowVersion, on_delete=models.CASCADE, null=False,
+                                            related_name='methods_document')
+    content = models.TextField(blank=False, null=False, help_text="Methods document contents.")
+    filename = models.CharField(max_length=255, blank=False, null=False,
+                                help_text="Filename to save the methods document into.")
+
+
 class JobFileStageGroup(models.Model):
     """
     Group of files to stage for a job
