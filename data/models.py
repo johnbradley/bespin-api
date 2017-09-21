@@ -84,9 +84,7 @@ class WorkflowMethodsDocument(models.Model):
     """
     workflow_version = models.OneToOneField(WorkflowVersion, on_delete=models.CASCADE, null=False,
                                             related_name='methods_document')
-    content = models.TextField(blank=False, null=False, help_text="Methods document contents.")
-    filename = models.CharField(max_length=255, blank=False, null=False,
-                                help_text="Filename to save the methods document into.")
+    content = models.TextField(blank=False, null=False, help_text="Methods document contents in markdown.")
 
 
 class JobFileStageGroup(models.Model):
