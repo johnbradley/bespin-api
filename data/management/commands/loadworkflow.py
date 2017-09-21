@@ -180,7 +180,6 @@ class WorkflowImporter(BaseCreator):
                  cwl_url,
                  version_number=1,
                  methods_jinja_template_url=None,
-                 methods_filename=None,
                  stdout=sys.stdout,
                  stderr=sys.stderr):
         """
@@ -194,7 +193,6 @@ class WorkflowImporter(BaseCreator):
         self.cwl_url = cwl_url
         self.version_number = version_number
         self.methods_jinja_template_url = methods_jinja_template_url
-        self.methods_filename = methods_filename
         # django model objects built up
         self.workflow = None
         self.workflow_version = None
@@ -219,7 +217,6 @@ class WorkflowImporter(BaseCreator):
         WorkflowMethodsDocument.objects.get_or_create(
             workflow_version=workflow_version,
             content=methods_document.get_content(),
-            filename=self.methods_filename
         )
         self.log_creation(created, 'Workflow Version', workflow_version_description, workflow_version.id)
         self.workflow = workflow
@@ -250,15 +247,12 @@ class Command(BaseCommand):
         parser.add_argument('volume-size-base', help='Base volume size (in GB) used for this workflow.')
         parser.add_argument('volume-size-factor', help='Integer factor multiplied by input data size when running this workflow.')
         parser.add_argument('methods-jinja-template-url',
-                            help='URL that references a jinja2 template used to build the methods file associated with this workflow.')
-        parser.add_argument('methods-filename',
-                            help='Filename to be used when adding the methods to the resulting project.')
+                            help='URL that references a jinja2 template used to build the methods markdown file for this workflow.')
 
     def handle(self, *args, **options):
         wf_importer = WorkflowImporter(options.get('cwl-url'),
                                        version_number=options.get('version-number'),
                                        methods_jinja_template_url=options.get('methods-jinja-template-url'),
-                                       methods_filename=options.get('methods-filename'),
                                        stdout=self.stdout,
                                        stderr=self.stderr)
         wf_importer.run()
