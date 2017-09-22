@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand
 from argparse import FileType
 from data.models import Workflow, WorkflowVersion, JobQuestionnaire, VMFlavor, VMProject, ShareGroup, WorkflowMethodsDocument
-import cwltool.workflow
 from cwltool.load_tool import load_tool
 from cwltool.workflow import defaultMakeTool
 from _private import BaseCreator
@@ -64,8 +63,7 @@ class CWLDocument(object):
         return hints
 
     def _extract_tool_hints_recursive(self, hints, workflow_node, hint_class_name):
-        if isinstance(workflow_node, cwltool.workflow.Workflow) or \
-                isinstance(workflow_node, cwltool.workflow.WorkflowStep):
+        if hasattr(workflow_node, 'steps'):
             for step in workflow_node.steps:
                 self._extract_tool_hints_recursive(hints, step.embedded_tool, hint_class_name=hint_class_name)
         else:
