@@ -672,6 +672,24 @@ class JobsTestCase(APITestCase):
             response = self.client.delete(url)
             self.assertEqual(response.status_code, expected_response_status_code)
 
+    def test_job_includes_run_token(self):
+        normal_user = self.user_login.become_normal_user()
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                     vm_project_name='jpb67',
+                                     job_order={},
+                                     user=normal_user,
+                                     stage_group=JobFileStageGroup.objects.create(user=normal_user),
+                                     share_group=self.share_group,
+                                 )
+        run_token = JobToken.objects.create(token='test-token')
+        job.run_token = run_token;
+        job.save()
+        url = reverse('job-list') + '{}/'.format(job.id)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        print(response.data)
+        self.assertEqual(response.data['run_token'], 'test-token')
+
 
 class JobStageGroupTestCase(APITestCase):
     def setUp(self):
@@ -1288,6 +1306,7 @@ class AdminShareGroupTestCase(APITestCase):
         dds_user1 = DDSUser.objects.create(name='Joe', dds_id='123')
         dds_user2 = DDSUser.objects.create(name='Jim', dds_id='456')
         share_group1 = ShareGroup.objects.create(name='Data validation team 1')
+        share_group1.email = 'data1@example.com'
         share_group1.users = [dds_user1, dds_user2]
         share_group1.save()
         url = reverse('admin_sharegroup-list') + "{}/".format(share_group1.id)
@@ -1296,6 +1315,7 @@ class AdminShareGroupTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         group = response.data
         self.assertEqual('Data validation team 1', group['name'])
+        self.assertEqual('data1@example.com', group['email'])
         group_users = [group_user['dds_id'] for group_user in group['users']]
         self.assertEqual(['123','456'], group_users)
 
@@ -1314,10 +1334,10 @@ class AdminShareGroupTestCase(APITestCase):
         dds_user1 = DDSUser.objects.create(name='Joe', dds_id='123')
         dds_user2 = DDSUser.objects.create(name='Jim', dds_id='456')
         dds_user3 = DDSUser.objects.create(name='Bob', dds_id='789')
-        share_group1 = ShareGroup.objects.create(name='Data validation team 1')
+        share_group1 = ShareGroup.objects.create(name='Data validation team 1', email='data1@example.com')
         share_group1.users = [dds_user1, dds_user2]
         share_group1.save()
-        share_group2 = ShareGroup.objects.create(name='Data validation team 2')
+        share_group2 = ShareGroup.objects.create(name='Data validation team 2', email='data2@example.com')
         share_group2.users = [dds_user1, dds_user3]
         share_group2.save()
 
@@ -1328,16 +1348,18 @@ class AdminShareGroupTestCase(APITestCase):
         self.assertEqual(2, len(response.data))
         group = response.data[0]
         self.assertEqual('Data validation team 1', group['name'])
+        self.assertEqual('data1@example.com', group['email'])
         self.assertEqual(None, group.get('users'))  # Regular users cannot see users in groups
         group = response.data[1]
         self.assertEqual('Data validation team 2', group['name'])
+        self.assertEqual('data2@example.com', group['email'])
         self.assertEqual(None, group.get('users'))  # Regular users cannot see users in groups
 
     def test_user_read_single_group(self):
         # Test that we can read a single group (so we can share results with the group members)
         dds_user1 = DDSUser.objects.create(name='Joe', dds_id='123')
         dds_user2 = DDSUser.objects.create(name='Jim', dds_id='456')
-        share_group1 = ShareGroup.objects.create(name='Data validation team 1')
+        share_group1 = ShareGroup.objects.create(name='Data validation team 1', email='data@example.com')
         share_group1.users = [dds_user1, dds_user2]
         share_group1.save()
         url = reverse('sharegroup-list') + "{}/".format(share_group1.id)
@@ -1346,4 +1368,5 @@ class AdminShareGroupTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         group = response.data
         self.assertEqual('Data validation team 1', group['name'])
+        self.assertEqual('data@example.com', group['email'])
         self.assertEqual(None, group.get('users'))  # Regular users cannot see users in groups

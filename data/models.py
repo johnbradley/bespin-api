@@ -102,6 +102,7 @@ class ShareGroup(models.Model):
     name = models.CharField(max_length=255, blank=False, null=False,
                             help_text="Name of this group")
     users = models.ManyToManyField(DDSUser, help_text="Users that belong to this group")
+    email = models.EmailField(null=True, help_text="Contact email for this group")
 
     def __unicode__(self):
         return 'Share Group: {}'.format(self.name)
