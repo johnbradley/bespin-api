@@ -1335,7 +1335,7 @@ class WorkflowMethodsDocumentTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url)
         self.methods_document = WorkflowMethodsDocument.objects.create(workflow_version=self.workflow_version,
-                                                                       content="#One")
+                                                                       contents="#One")
 
     def test_cannot_write(self):
         self.user_login.become_normal_user()
@@ -1359,11 +1359,11 @@ class WorkflowMethodsDocumentTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
-        self.assertEqual('#One', response.data[0]['content'])
+        self.assertEqual('#One', response.data[0]['contents'])
 
         url = reverse('admin_workflowmethodsdocument-list')
         self.user_login.become_admin_user()
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
-        self.assertEqual('#One', response.data[0]['content'])
+        self.assertEqual('#One', response.data[0]['contents'])

@@ -29,7 +29,7 @@ class WorkflowMethodsDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowMethodsDocument
         resource_name = 'workflow-methods-documents'
-        fields = ('id', 'workflow_version', 'content')
+        fields = ('id', 'workflow_version', 'contents')
 
 
 class JobOutputDirSerializer(serializers.ModelSerializer):
