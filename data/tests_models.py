@@ -534,19 +534,19 @@ class WorkflowMethodsDocumentTests(TestCase):
 
     def test_crud(self):
         WorkflowMethodsDocument.objects.create(workflow_version=self.workflow_version,
-                                               contents='#Good Stuff\nSome text.')
+                                               content='#Good Stuff\nSome text.')
         self.assertEqual(1, len(WorkflowMethodsDocument.objects.all()))
         methods_document = WorkflowMethodsDocument.objects.first()
         self.assertEqual(methods_document.workflow_version.id, self.workflow_version.id)
-        self.assertEqual(methods_document.contents, '#Good Stuff\nSome text.')
-        methods_document.contents = '#NEW CONTENT'
+        self.assertEqual(methods_document.content, '#Good Stuff\nSome text.')
+        methods_document.content = '#NEW CONTENT'
         methods_document.save()
         methods_document = WorkflowMethodsDocument.objects.first()
-        self.assertEqual(methods_document.contents, '#NEW CONTENT')
+        self.assertEqual(methods_document.content, '#NEW CONTENT')
         methods_document.delete()
         self.assertEqual(0, len(WorkflowMethodsDocument.objects.all()))
 
     def test_workflow_version_link(self):
         methods_document = WorkflowMethodsDocument.objects.create(workflow_version=self.workflow_version,
-                                                                  contents='#Good Stuff\nSome text.')
-        self.assertEqual('#Good Stuff\nSome text.', self.workflow_version.methods_document.contents)
+                                                                  content='#Good Stuff\nSome text.')
+        self.assertEqual('#Good Stuff\nSome text.', self.workflow_version.methods_document.content)
