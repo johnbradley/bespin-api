@@ -595,3 +595,12 @@ class EmailMessageTests(TestCase):
         error_dict = val.exception.error_dict
         self.assertIn('Enter a valid email address.', error_dict.get('to_email')[0].message)
         self.assertIn('Enter a valid email address.', error_dict.get('sender_email')[0].message)
+
+    def test_marks_states(self):
+        message = EmailMessage.objects.create()
+        self.assertEqual(message.state, EmailMessage.MESSAGE_STATE_NEW)
+        message.mark_sent()
+        self.assertEqual(message.state, EmailMessage.MESSAGE_STATE_SENT)
+        message.mark_error('SMTP Error')
+        self.assertEqual(message.state, EmailMessage.MESSAGE_STATE_ERROR)
+        self.assertEqual(message.errors, 'SMTP Error')

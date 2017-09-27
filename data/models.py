@@ -383,3 +383,12 @@ class EmailMessage(models.Model):
     to_email = models.EmailField('Email address of the recipient')
     state = models.TextField(choices=MESSAGE_STATES, default=MESSAGE_STATE_NEW)
     errors = models.TextField(blank=True, null=True)
+
+    def mark_sent(self):
+        self.state = self.MESSAGE_STATE_SENT
+        self.save()
+
+    def mark_error(self, errors):
+        self.state = self.MESSAGE_STATE_ERROR
+        self.errors = errors
+        self.save()
