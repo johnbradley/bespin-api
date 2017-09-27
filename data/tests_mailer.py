@@ -3,6 +3,7 @@ from mailer import EmailMessageFactory, EmailMessageSender
 from models import EmailMessage, EmailTemplate
 from mock import MagicMock, patch
 
+
 class EmailMessageFactoryTestCase(TestCase):
 
     def setUp(self):
@@ -47,7 +48,6 @@ class EmailMessageSenderTestCase(TestCase):
             sender_email=self.sender_email,
             to_email=self.to_email
         )
-
 
     @patch('data.mailer.DjangoEmailMessage')
     def test_sends_email(self, MockDjangoEmailMessage):

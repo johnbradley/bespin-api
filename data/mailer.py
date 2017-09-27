@@ -1,7 +1,6 @@
 from django.core.mail import EmailMessage as DjangoEmailMessage
 from django.template import Template, Context
 from django.utils.safestring import mark_safe
-
 from models import EmailMessage, EmailTemplate
 
 
