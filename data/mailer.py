@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 from models import EmailMessage, EmailTemplate
 
 
-class EmailMessageGenerator(object):
+class EmailMessageFactory(object):
 
     def __init__(self, email_template):
         self.email_template = email_template
@@ -23,7 +23,7 @@ class EmailMessageGenerator(object):
     def _render_body(self, context):
         return self._render(self.email_template.body_template, context)
 
-    def generate(self, context, sender_email, to_email):
+    def make_message(self, context, sender_email, to_email):
         body = self._render_body(context)
         subject = self._render_subject(context)
         message = EmailMessage.objects.create(

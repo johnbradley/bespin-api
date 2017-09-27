@@ -1,9 +1,9 @@
 from django.test import TestCase
-from mailer import EmailMessageGenerator, EmailMessageSender
+from mailer import EmailMessageFactory, EmailMessageSender
 from models import EmailMessage, EmailTemplate
 from mock import MagicMock, patch
 
-class EmailMessageGeneratorTestCase(TestCase):
+class EmailMessageFactoryTestCase(TestCase):
 
     def setUp(self):
         self.email_template = EmailTemplate.objects.create(
@@ -18,10 +18,10 @@ class EmailMessageGeneratorTestCase(TestCase):
         self.sender_email = 'sender@example.com'
         self.to_email = 'recipient@university.edu'
 
-    def test_generates_message(self):
-        generator = EmailMessageGenerator(self.email_template)
+    def test_makes_message(self):
+        factory = EmailMessageFactory(self.email_template)
 
-        message = generator.generate(
+        message = factory.make_message(
             self.context,
             self.sender_email,
             self.to_email
