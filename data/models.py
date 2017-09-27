@@ -346,3 +346,40 @@ class URLJobInputFile(models.Model):
 
     def __unicode__(self):
         return 'URL Job Input File "{}"'.format(self.url)
+
+
+class EmailTemplate(models.Model):
+    """
+    Represents a base email message that can be sent
+    """
+    name = models.CharField(unique=True, max_length=255,
+                            help_text='Short name of the template')
+    body_template = models.TextField(help_text='Template text for the message body')
+    subject_template = models.TextField(help_text='Template text for the message subject')
+
+    def __str__(self):
+        return 'Email Template <{}>, subject: {}'.format(
+            self.name,
+            self.subject,
+        )
+
+
+class EmailMessage(models.Model):
+    """
+    Emails messages to send
+    """
+    MESSAGE_STATE_NEW = 'N'
+    MESSAGE_STATE_SENT = 'S'
+    MESSAGE_STATE_ERROR = 'E'
+    MESSAGE_STATES = (
+        (MESSAGE_STATE_NEW, 'New'),
+        (MESSAGE_STATE_SENT, 'Sent'),
+        (MESSAGE_STATE_ERROR, 'Error'),
+    )
+
+    body = models.TextField('Text of the message body')
+    subject = models.TextField('Text of the message subject')
+    sender_email = models.EmailField('Email address of the sender')
+    to_email = models.EmailField('Email address of the recipient')
+    state = models.TextField(choices=MESSAGE_STATES, default=MESSAGE_STATE_NEW)
+    errors = models.TextField(blank=True, null=True)
