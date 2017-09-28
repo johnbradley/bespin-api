@@ -109,7 +109,6 @@ class MailerConfig(object):
     """
     def __init__(self):
         self.work_queue_config = LandoConnection.objects.first()
-        print(self.work_queue_config)
 
 
 class MailerClient(object):
