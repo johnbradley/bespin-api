@@ -69,7 +69,7 @@ class EmailMessageSender(object):
 
 class JobMailer(object):
 
-    def __init__(self, job, queue_messages=False, sender_email=None):
+    def __init__(self, job, queue_messages=True, sender_email=None):
         if sender_email is None:
             sender_email = settings.DEFAULT_FROM_EMAIL
         self.job = job
