@@ -12,7 +12,7 @@ from lando import LandoJob
 from django.db.models import Q
 from django.db import transaction
 from jobfactory import create_job_factory
-from mailer import EmailMessageSender
+from mailer import EmailMessageSender, JobMailer
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -152,6 +152,16 @@ class AdminJobsViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
     serializer_class = AdminJobSerializer
     queryset = Job.objects.all()
+
+    def perform_update(self, serializer):
+        # Overrides perform update to notify about state changes
+        # If the job state changed, notify about the state change
+        original_state = self.get_object().state
+        serializer.save()
+        new_state = self.get_object().state
+        if original_state != new_state:
+            mailer = JobMailer(self.get_object())
+            mailer.mail_current_state()
 
 
 class DDSJobInputFileViewSet(viewsets.ModelViewSet):

@@ -448,7 +448,8 @@ class JobsTestCase(APITestCase):
                                    })
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def testAdminUserUpdatesStateAndStep(self):
+    @patch('data.api.JobMailer')
+    def testAdminUserUpdatesStateAndStep(self, MockJobMailer):
         """
         Admin should be able to change job state and job step.
         """
@@ -470,6 +471,57 @@ class JobsTestCase(APITestCase):
         job = Job.objects.first()
         self.assertEqual(Job.JOB_STATE_RUNNING, job.state)
         self.assertEqual(Job.JOB_STEP_CREATE_VM, job.step)
+
+    @patch('data.api.JobMailer')
+    def test_mails_when_job_state_changes(self, MockJobMailer):
+        mock_mail_current_state = Mock()
+        MockJobMailer.return_value.mail_current_state = mock_mail_current_state
+        """
+        Admin should be able to change job state and job step.
+        """
+        admin_user = self.user_login.become_admin_user()
+        job = Job.objects.create(name='somejob',
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=admin_user,
+                                 share_group=self.share_group,
+                                 state=Job.JOB_STATE_AUTHORIZED
+                                 )
+        url = reverse('admin_job-list') + '{}/'.format(job.id)
+        response = self.client.put(url, format='json',
+                                    data={
+                                        'state': Job.JOB_STATE_RUNNING,
+                                        'step': Job.JOB_STEP_CREATE_VM,
+                                    })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(mock_mail_current_state.called)
+
+    @patch('data.api.JobMailer')
+    def test_does_not_mail_when_job_state_stays(self, MockJobMailer):
+        mock_mail_current_state = Mock()
+        MockJobMailer.return_value.mail_current_state = mock_mail_current_state
+        """
+        Admin should be able to change job state and job step.
+        """
+        admin_user = self.user_login.become_admin_user()
+        job = Job.objects.create(name='somejob',
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=admin_user,
+                                 share_group=self.share_group,
+                                 state=Job.JOB_STATE_RUNNING,
+                                 step=Job.JOB_STEP_CREATE_VM
+                                 )
+        url = reverse('admin_job-list') + '{}/'.format(job.id)
+        response = self.client.put(url, format='json',
+                                    data={
+                                        'state': Job.JOB_STATE_RUNNING,
+                                        'step': Job.JOB_STEP_RUNNING,
+                                    })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(mock_mail_current_state.called)
 
     @patch('data.lando.LandoJob._make_client')
     def test_job_start(self, mock_make_client):
