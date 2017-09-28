@@ -377,10 +377,11 @@ class EmailMessage(models.Model):
         (MESSAGE_STATE_ERROR, 'Error'),
     )
 
-    body = models.TextField('Text of the message body')
-    subject = models.TextField('Text of the message subject')
-    sender_email = models.EmailField('Email address of the sender')
-    to_email = models.EmailField('Email address of the recipient')
+    body = models.TextField(help_text='Text of the message body')
+    subject = models.TextField(help_text='Text of the message subject')
+    sender_email = models.EmailField(help_text='Email address of the sender')
+    to_email = models.EmailField(help_text='Email address of the recipient')
+    bcc_email = models.EmailField(null=True, blank=True, help_text='Email address to bcc')
     state = models.TextField(choices=MESSAGE_STATES, default=MESSAGE_STATE_NEW)
     errors = models.TextField(blank=True, null=True)
 
