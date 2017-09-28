@@ -40,4 +40,4 @@ CORS_ORIGIN_WHITELIST = (
 )
 
 DEFAULT_FROM_EMAIL = 'gcb-bespin@duke.edu'
-BESPIN_MAILER_ADMIN_BCC = ['dan.leehr@duke.edu']
+BESPIN_MAILER_ADMIN_BCC = []
