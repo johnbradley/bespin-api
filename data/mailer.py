@@ -69,7 +69,8 @@ class JobMailer(object):
 
     def _deliver(self, message):
         if self.queue_messages:
-            raise NotImplementedError('Queuing not yet implemented')
+            client = MailerClient()
+            client.send(message.id)
         else:
             sender = EmailMessageSender(message)
             sender.send()
