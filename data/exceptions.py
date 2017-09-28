@@ -36,3 +36,8 @@ class JobTokenException(APIException):
     def __init__(self, detail):
         self.status_code = 400
         self.detail = detail
+
+
+class EmailException(APIException):
+    status_code = 503
+    default_detail = 'Unable to send email, try again later'

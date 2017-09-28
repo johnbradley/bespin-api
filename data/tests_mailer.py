@@ -2,7 +2,7 @@ from django.test import TestCase
 from mailer import EmailMessageFactory, EmailMessageSender
 from models import EmailMessage, EmailTemplate
 from mock import MagicMock, patch
-
+from exceptions import EmailException
 
 class EmailMessageFactoryTestCase(TestCase):
 
@@ -65,7 +65,8 @@ class EmailMessageSenderTestCase(TestCase):
         mock_send.side_effect = Exception('Email error')
         MockDjangoEmailMessage.return_value.send = mock_send
         sender = EmailMessageSender(self.email_message)
-        sender.send()
+        with self.assertRaises(EmailException):
+            sender.send()
         self.assertEqual(self.email_message.state, EmailMessage.MESSAGE_STATE_ERROR)
         self.assertEqual(self.email_message.errors, 'Email error')
         self.assertEqual(mock_send.call_count, 1)
