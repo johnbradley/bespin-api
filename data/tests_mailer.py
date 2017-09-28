@@ -3,6 +3,7 @@ from mailer import EmailMessageFactory, EmailMessageSender, JobMailer
 from models import EmailMessage, EmailTemplate, Job
 from mock import MagicMock, patch, call
 from exceptions import EmailException
+from django.test.utils import override_settings
 
 class EmailMessageFactoryTestCase(TestCase):
 
@@ -72,7 +73,11 @@ class EmailMessageSenderTestCase(TestCase):
         self.assertEqual(mock_send.call_count, 1)
         self.assertTrue(mock_send.call_args(self.subject, self.body, self.sender_email, [self.to_email],))
 
+FROM_EMAIL = 'sender@otherdomain.com'
+ADMIN_BCC = ['admin-bcc@domain.com']
 
+@override_settings(DEFAULT_FROM_EMAIL=FROM_EMAIL)
+@override_settings(BESPIN_MAILER_ADMIN_BCC=ADMIN_BCC)
 class JobMailerTestCase(TestCase):
     def setUp(self):
         EmailTemplate.objects.create(
@@ -108,16 +113,17 @@ class JobMailerTestCase(TestCase):
         expected_body = 'Started TEST'
         expected_subject = 'Job 56 has started'
         expected_to_email = 'user@domain.com'
-        expected_sender_email = 'sender@otherdomain.com'
+        expected_sender_email = FROM_EMAIL
+        expected_bcc = ADMIN_BCC
         user = MagicMock(email=expected_to_email)
         job = MagicMock(state=Job.JOB_STATE_RUNNING, id=56, user=user)
         job.name = 'TEST'
-        mailer = JobMailer(job,sender_email=expected_sender_email)
+        mailer = JobMailer(job)
         mailer.mail_current_state()
         self.assertTrue(MockSender.called)
         self.assertEqual(mock_send.call_count, 1)
         expected_calls = [
-            call(expected_subject, expected_body, expected_sender_email, [expected_to_email]),
+            call(expected_subject, expected_body, expected_sender_email, [expected_to_email], bcc=expected_bcc),
             call().send()
         ]
         self.assertEqual(MockSender.mock_calls, expected_calls)
@@ -129,16 +135,17 @@ class JobMailerTestCase(TestCase):
         expected_body = 'Canceled TEST'
         expected_subject = 'Job 33 has been canceled'
         expected_to_email = 'user@domain.com'
-        expected_sender_email = 'sender@otherdomain.com'
+        expected_sender_email = FROM_EMAIL
+        expected_bcc = ADMIN_BCC
         user = MagicMock(email=expected_to_email)
         job = MagicMock(state=Job.JOB_STATE_CANCEL, id=33, user=user)
         job.name = 'TEST'
-        mailer = JobMailer(job,sender_email=expected_sender_email)
+        mailer = JobMailer(job)
         mailer.mail_current_state()
         self.assertTrue(MockSender.called)
         self.assertEqual(mock_send.call_count, 1)
         expected_calls = [
-            call(expected_subject, expected_body, expected_sender_email, [expected_to_email]),
+            call(expected_subject, expected_body, expected_sender_email, [expected_to_email], bcc=expected_bcc),
             call().send()
         ]
         self.assertEqual(MockSender.mock_calls, expected_calls)
@@ -153,19 +160,20 @@ class JobMailerTestCase(TestCase):
         expected_sharegroup_subject = 'Share Group: Job 66 has completed'
         expected_user_email = 'user@domain.com'
         expected_sharegroup_email = 'sharegroup@domain.com'
-        expected_sender_email = 'sender@otherdomain.com'
+        expected_sender_email = FROM_EMAIL
+        expected_bcc = ADMIN_BCC
         user = MagicMock(email=expected_user_email)
         sharegroup = MagicMock(email=expected_sharegroup_email)
         job = MagicMock(state=Job.JOB_STATE_FINISHED, id=66, user=user, share_group=sharegroup)
         job.name = 'TEST'
-        mailer = JobMailer(job,sender_email=expected_sender_email)
+        mailer = JobMailer(job)
         mailer.mail_current_state()
         self.assertTrue(MockSender.called)
         self.assertEqual(mock_send.call_count, 2)
         expected_calls = [
-            call(expected_user_subject, expected_user_body, expected_sender_email, [expected_user_email]),
+            call(expected_user_subject, expected_user_body, expected_sender_email, [expected_user_email], bcc=expected_bcc),
             call().send(),
-            call(expected_sharegroup_subject, expected_sharegroup_body, expected_sender_email, [expected_sharegroup_email]),
+            call(expected_sharegroup_subject, expected_sharegroup_body, expected_sender_email, [expected_sharegroup_email], bcc=expected_bcc),
             call().send(),
         ]
         self.assertEqual(MockSender.mock_calls, expected_calls)
@@ -177,16 +185,17 @@ class JobMailerTestCase(TestCase):
         expected_body = 'Errored TEST'
         expected_subject = 'Job 61 has failed'
         expected_to_email = 'user@domain.com'
-        expected_sender_email = 'sender@otherdomain.com'
+        expected_sender_email = FROM_EMAIL
+        expected_bcc = ADMIN_BCC
         user = MagicMock(email=expected_to_email)
         job = MagicMock(state=Job.JOB_STATE_ERROR, id=61, user=user)
         job.name = 'TEST'
-        mailer = JobMailer(job,sender_email=expected_sender_email)
+        mailer = JobMailer(job)
         mailer.mail_current_state()
         self.assertTrue(MockSender.called)
         self.assertEqual(mock_send.call_count, 1)
         expected_calls = [
-            call(expected_subject, expected_body, expected_sender_email, [expected_to_email]),
+            call(expected_subject, expected_body, expected_sender_email, [expected_to_email], bcc=expected_bcc),
             call().send()
         ]
         self.assertEqual(MockSender.mock_calls, expected_calls)

@@ -1,6 +1,7 @@
 from django.core.mail import EmailMessage as DjangoEmailMessage
 from django.template import Template, Context
 from django.utils.safestring import mark_safe
+from django.conf import settings
 from models import Job, EmailMessage, EmailTemplate, LandoConnection
 from exceptions import EmailException
 import pickle
@@ -8,7 +9,6 @@ from lando_messaging.workqueue import WorkQueueConnection
 
 EMAIL_EXCHANGE = "EmailExchange"
 ROUTING_KEY = "SendEmail"
-JOB_MAILER_DEFAULT_EMAIL = 'bespin-service@duke.edu'
 
 class EmailMessageFactory(object):
 
@@ -28,7 +28,9 @@ class EmailMessageFactory(object):
     def _render_body(self, context):
         return self._render(self.email_template.body_template, context)
 
-    def make_message(self, context, sender_email, to_email):
+    def make_message(self, context, sender_email, to_email, bcc_email=None):
+        if bcc_email is None:
+            bcc_email = settings.BESPIN_MAILER_ADMIN_BCC
         body = self._render_body(context)
         subject = self._render_subject(context)
         message = EmailMessage.objects.create(
@@ -36,6 +38,7 @@ class EmailMessageFactory(object):
             subject=subject,
             sender_email=sender_email,
             to_email=to_email,
+            bcc_email=' '.join(bcc_email)
         )
         return message
 
@@ -50,7 +53,8 @@ class EmailMessageSender(object):
             self.email_message.subject,
             self.email_message.body,
             self.email_message.sender_email,
-            [self.email_message.to_email]
+            [self.email_message.to_email],
+            bcc=[self.email_message.bcc_email],
         )
         try:
             django_message.send()
@@ -62,7 +66,9 @@ class EmailMessageSender(object):
 
 class JobMailer(object):
 
-    def __init__(self, job, queue_messages=False, sender_email=JOB_MAILER_DEFAULT_EMAIL):
+    def __init__(self, job, queue_messages=False, sender_email=None):
+        if sender_email is None:
+            sender_email = settings.DEFAULT_FROM_EMAIL
         self.job = job
         self.sender_email = sender_email
         self.queue_messages = queue_messages
