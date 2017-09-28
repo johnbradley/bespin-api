@@ -51,4 +51,4 @@ class EmailMessageSender(object):
             self.email_message.mark_sent()
         except Exception as e:
             self.email_message.mark_error(str(e))
-            raise  EmailException(e)
+            raise EmailException(e)

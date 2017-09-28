@@ -2,8 +2,7 @@ from rest_framework import viewsets, permissions, status, mixins
 from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException, JobTokenException
-from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
-    DDSEndpoint, DDSUserCredential, URLJobInputFile, JobError, JobOutputDir, JobToken, WorkflowMethodsDocument
+from data.models import *
 from django.db import IntegrityError
 
 from data.serializers import *
@@ -13,7 +12,7 @@ from lando import LandoJob
 from django.db.models import Q
 from django.db import transaction
 from jobfactory import create_job_factory
-
+from mailer import EmailMessageSender
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -283,3 +282,20 @@ class ShareGroupViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = ShareGroupSerializer
     queryset = ShareGroup.objects.all()
+
+
+class AdminEmailMessageViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAdminUser,)
+    serializer_class = AdminEmailMessageSerializer
+    queryset = EmailMessage.objects.all()
+
+    @detail_route(methods=['post'], url_path='send')
+    def send(self, request, pk=None):
+        """
+        Send an email message
+        """
+        message = self.get_object()
+        sender = EmailMessageSender(message)
+        sender.send()
+        serializer = self.get_serializer(message)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

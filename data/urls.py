@@ -30,6 +30,7 @@ router.register(r'admin/job-output-dirs', api.AdminJobOutputDirViewSet, 'admin_j
 router.register(r'admin/share-groups', api.AdminShareGroupViewSet, 'admin_sharegroup')
 router.register(r'admin/workflow-methods-documents', api.WorkflowMethodsDocumentViewSet,
                 'admin_workflowmethodsdocument')
+router.register(r'admin/email-messages', api.AdminEmailMessageViewSet, 'admin_emailmessage')
 
 urlpatterns = [
     url(r'^', include(router.urls)),
