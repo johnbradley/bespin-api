@@ -41,3 +41,4 @@ CORS_ORIGIN_WHITELIST = (
 
 DEFAULT_FROM_EMAIL = 'gcb-bespin@duke.edu'
 BESPIN_MAILER_ADMIN_BCC = []
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
