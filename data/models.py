@@ -360,7 +360,7 @@ class EmailTemplate(models.Model):
     def __str__(self):
         return 'Email Template <{}>, subject: {}'.format(
             self.name,
-            self.subject,
+            self.subject_template,
         )
 
 
@@ -384,6 +384,13 @@ class EmailMessage(models.Model):
     bcc_email = models.EmailField(null=True, blank=True, help_text='Email address to bcc')
     state = models.TextField(choices=MESSAGE_STATES, default=MESSAGE_STATE_NEW)
     errors = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return 'Email Message <{}>, state {}, subject: {}'.format(
+            self.id,
+            self.state,
+            self.subject
+        )
 
     def mark_sent(self):
         self.state = self.MESSAGE_STATE_SENT
