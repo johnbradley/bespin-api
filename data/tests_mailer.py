@@ -125,7 +125,7 @@ class JobMailerTestCase(TestCase):
         user = MagicMock(email=expected_to_email)
         job = MagicMock(state=Job.JOB_STATE_RUNNING, id=56, user=user)
         job.name = 'TEST'
-        mailer = JobMailer(job)
+        mailer = JobMailer(job, queue_messages=False)
         mailer.mail_current_state()
         self.assertTrue(MockSender.called)
         self.assertEqual(mock_send.call_count, 1)
@@ -147,7 +147,7 @@ class JobMailerTestCase(TestCase):
         user = MagicMock(email=expected_to_email)
         job = MagicMock(state=Job.JOB_STATE_CANCEL, id=33, user=user)
         job.name = 'TEST'
-        mailer = JobMailer(job)
+        mailer = JobMailer(job, queue_messages=False)
         mailer.mail_current_state()
         self.assertTrue(MockSender.called)
         self.assertEqual(mock_send.call_count, 1)
@@ -173,7 +173,7 @@ class JobMailerTestCase(TestCase):
         sharegroup = MagicMock(email=expected_sharegroup_email)
         job = MagicMock(state=Job.JOB_STATE_FINISHED, id=66, user=user, share_group=sharegroup)
         job.name = 'TEST'
-        mailer = JobMailer(job)
+        mailer = JobMailer(job, queue_messages=False)
         mailer.mail_current_state()
         self.assertTrue(MockSender.called)
         self.assertEqual(mock_send.call_count, 2)
@@ -197,7 +197,7 @@ class JobMailerTestCase(TestCase):
         user = MagicMock(email=expected_to_email)
         job = MagicMock(state=Job.JOB_STATE_ERROR, id=61, user=user)
         job.name = 'TEST'
-        mailer = JobMailer(job)
+        mailer = JobMailer(job, queue_messages=False)
         mailer.mail_current_state()
         self.assertTrue(MockSender.called)
         self.assertEqual(mock_send.call_count, 1)
