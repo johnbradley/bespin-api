@@ -1,7 +1,7 @@
 from django.test import TestCase
-from mailer import EmailMessageFactory, EmailMessageSender
-from models import EmailMessage, EmailTemplate
-from mock import MagicMock, patch
+from mailer import EmailMessageFactory, EmailMessageSender, JobMailer
+from models import EmailMessage, EmailTemplate, Job
+from mock import MagicMock, patch, call
 from exceptions import EmailException
 
 class EmailMessageFactoryTestCase(TestCase):
@@ -71,3 +71,122 @@ class EmailMessageSenderTestCase(TestCase):
         self.assertEqual(self.email_message.errors, 'Email error')
         self.assertEqual(mock_send.call_count, 1)
         self.assertTrue(mock_send.call_args(self.subject, self.body, self.sender_email, [self.to_email],))
+
+
+class JobMailerTestCase(TestCase):
+    def setUp(self):
+        EmailTemplate.objects.create(
+            name='job-running-user',
+            body_template='Started {{ name }}',
+            subject_template ='Job {{ id }} has started'
+        )
+        EmailTemplate.objects.create(
+            name='job-cancel-user',
+            body_template='Canceled {{ name }}',
+            subject_template ='Job {{ id }} has been canceled'
+        )
+        EmailTemplate.objects.create(
+            name='job-finished-user',
+            body_template='Finished {{ name }}',
+            subject_template ='Job {{ id }} has completed'
+        )
+        EmailTemplate.objects.create(
+            name='job-finished-sharegroup',
+            body_template='Share Group: Finished {{ name }}',
+            subject_template ='Share Group: Job {{ id }} has completed'
+        )
+        EmailTemplate.objects.create(
+            name='job-error-user',
+            body_template='Errored {{ name }}',
+            subject_template ='Job {{ id }} has failed'
+        )
+
+    @patch('data.mailer.DjangoEmailMessage')
+    def test_mails_running_job(self, MockSender):
+        mock_send = MagicMock()
+        MockSender.return_value.send = mock_send
+        expected_body = 'Started TEST'
+        expected_subject = 'Job 56 has started'
+        expected_to_email = 'user@domain.com'
+        expected_sender_email = 'sender@otherdomain.com'
+        user = MagicMock(email=expected_to_email)
+        job = MagicMock(state=Job.JOB_STATE_RUNNING, id=56, user=user)
+        job.name = 'TEST'
+        mailer = JobMailer(job,sender_email=expected_sender_email)
+        mailer.mail_current_state()
+        self.assertTrue(MockSender.called)
+        self.assertEqual(mock_send.call_count, 1)
+        expected_calls = [
+            call(expected_subject, expected_body, expected_sender_email, [expected_to_email]),
+            call().send()
+        ]
+        self.assertEqual(MockSender.mock_calls, expected_calls)
+
+    @patch('data.mailer.DjangoEmailMessage')
+    def test_mails_canceled_job(self, MockSender):
+        mock_send = MagicMock()
+        MockSender.return_value.send = mock_send
+        expected_body = 'Canceled TEST'
+        expected_subject = 'Job 33 has been canceled'
+        expected_to_email = 'user@domain.com'
+        expected_sender_email = 'sender@otherdomain.com'
+        user = MagicMock(email=expected_to_email)
+        job = MagicMock(state=Job.JOB_STATE_CANCEL, id=33, user=user)
+        job.name = 'TEST'
+        mailer = JobMailer(job,sender_email=expected_sender_email)
+        mailer.mail_current_state()
+        self.assertTrue(MockSender.called)
+        self.assertEqual(mock_send.call_count, 1)
+        expected_calls = [
+            call(expected_subject, expected_body, expected_sender_email, [expected_to_email]),
+            call().send()
+        ]
+        self.assertEqual(MockSender.mock_calls, expected_calls)
+
+    @patch('data.mailer.DjangoEmailMessage')
+    def test_mails_finished_job(self, MockSender):
+        mock_send = MagicMock()
+        MockSender.return_value.send = mock_send
+        expected_user_body = 'Finished TEST'
+        expected_user_subject = 'Job 66 has completed'
+        expected_sharegroup_body = 'Share Group: Finished TEST'
+        expected_sharegroup_subject = 'Share Group: Job 66 has completed'
+        expected_user_email = 'user@domain.com'
+        expected_sharegroup_email = 'sharegroup@domain.com'
+        expected_sender_email = 'sender@otherdomain.com'
+        user = MagicMock(email=expected_user_email)
+        sharegroup = MagicMock(email=expected_sharegroup_email)
+        job = MagicMock(state=Job.JOB_STATE_FINISHED, id=66, user=user, share_group=sharegroup)
+        job.name = 'TEST'
+        mailer = JobMailer(job,sender_email=expected_sender_email)
+        mailer.mail_current_state()
+        self.assertTrue(MockSender.called)
+        self.assertEqual(mock_send.call_count, 2)
+        expected_calls = [
+            call(expected_user_subject, expected_user_body, expected_sender_email, [expected_user_email]),
+            call().send(),
+            call(expected_sharegroup_subject, expected_sharegroup_body, expected_sender_email, [expected_sharegroup_email]),
+            call().send(),
+        ]
+        self.assertEqual(MockSender.mock_calls, expected_calls)
+
+    @patch('data.mailer.DjangoEmailMessage')
+    def test_mails_errored_job(self, MockSender):
+        mock_send = MagicMock()
+        MockSender.return_value.send = mock_send
+        expected_body = 'Errored TEST'
+        expected_subject = 'Job 61 has failed'
+        expected_to_email = 'user@domain.com'
+        expected_sender_email = 'sender@otherdomain.com'
+        user = MagicMock(email=expected_to_email)
+        job = MagicMock(state=Job.JOB_STATE_ERROR, id=61, user=user)
+        job.name = 'TEST'
+        mailer = JobMailer(job,sender_email=expected_sender_email)
+        mailer.mail_current_state()
+        self.assertTrue(MockSender.called)
+        self.assertEqual(mock_send.call_count, 1)
+        expected_calls = [
+            call(expected_subject, expected_body, expected_sender_email, [expected_to_email]),
+            call().send()
+        ]
+        self.assertEqual(MockSender.mock_calls, expected_calls)
