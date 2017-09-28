@@ -3,7 +3,7 @@ from django.template import Template, Context
 from django.utils.safestring import mark_safe
 from django.conf import settings
 from models import Job, EmailMessage, EmailTemplate, LandoConnection
-from exceptions import EmailException
+from exceptions import EmailServiceException, EmailAlreadySentException
 import pickle
 from lando_messaging.workqueue import WorkQueueConnection
 
@@ -49,6 +49,9 @@ class EmailMessageSender(object):
         self.email_message = email_message
 
     def send(self):
+        if self.email_message.state == EmailMessage.MESSAGE_STATE_SENT:
+            raise EmailAlreadySentException()
+
         django_message = DjangoEmailMessage(
             self.email_message.subject,
             self.email_message.body,
@@ -61,7 +64,7 @@ class EmailMessageSender(object):
             self.email_message.mark_sent()
         except Exception as e:
             self.email_message.mark_error(str(e))
-            raise EmailException(e)
+            raise EmailServiceException(e)
 
 
 class JobMailer(object):

@@ -2,7 +2,7 @@ from django.test import TestCase
 from mailer import EmailMessageFactory, EmailMessageSender, JobMailer
 from models import EmailMessage, EmailTemplate, Job
 from mock import MagicMock, patch, call
-from exceptions import EmailException
+from exceptions import EmailServiceException, EmailAlreadySentException
 from django.test.utils import override_settings
 
 class EmailMessageFactoryTestCase(TestCase):
@@ -66,12 +66,19 @@ class EmailMessageSenderTestCase(TestCase):
         mock_send.side_effect = Exception('Email error')
         MockDjangoEmailMessage.return_value.send = mock_send
         sender = EmailMessageSender(self.email_message)
-        with self.assertRaises(EmailException):
+        with self.assertRaises(EmailServiceException):
             sender.send()
         self.assertEqual(self.email_message.state, EmailMessage.MESSAGE_STATE_ERROR)
         self.assertEqual(self.email_message.errors, 'Email error')
         self.assertEqual(mock_send.call_count, 1)
         self.assertTrue(mock_send.call_args(self.subject, self.body, self.sender_email, [self.to_email],))
+
+    def test_raises_if_already_sent(self):
+        self.email_message.mark_sent()
+        sender = EmailMessageSender(self.email_message)
+        with self.assertRaises(EmailAlreadySentException):
+            sender.send()
+
 
 FROM_EMAIL = 'sender@otherdomain.com'
 ADMIN_BCC = ['admin-bcc@domain.com']

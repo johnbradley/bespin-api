@@ -38,6 +38,12 @@ class JobTokenException(APIException):
         self.detail = detail
 
 
-class EmailException(APIException):
+class EmailServiceException(APIException):
     status_code = 503
     default_detail = 'Unable to send email, try again later'
+
+
+class EmailAlreadySentException(APIException):
+    status_code = 400
+    default_detail = 'Email message has already been sent'
+
