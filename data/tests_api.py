@@ -1530,3 +1530,76 @@ class EmailMessageTestCase(APITestCase):
         message = EmailMessage.objects.get(id=message.id)
         self.assertEqual(message.state, 'E')
 
+
+class EmailTemplateTestCase(APITestCase):
+
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+
+    def test_admin_only_allow_admin_users(self):
+        url = reverse('admin_emailtemplate-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.user_login.become_normal_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.user_login.become_admin_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_admin_list(self):
+        EmailTemplate.objects.create(
+            name='template1',
+            body_template='body_template1',
+            subject_template='subject_template1',
+        )
+        EmailTemplate.objects.create(
+            name='template2',
+            body_template='body_template2',
+            subject_template='subject_template2',
+        )
+        EmailTemplate.objects.create(
+            name='template3',
+            body_template='body_template3',
+            subject_template='subject_template3',
+        )
+
+        url = reverse('admin_emailtemplate-list')
+        self.user_login.become_admin_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(3, len(response.data))
+        messages = response.data
+
+        self.assertEqual('body_template1', messages[0]['body_template'])
+        self.assertEqual('body_template2', messages[1]['body_template'])
+        self.assertEqual('body_template3', messages[2]['body_template'])
+
+    def test_admin_read_single_template(self):
+        template = EmailTemplate.objects.create(
+            name='template1',
+            body_template='body1',
+            subject_template='subject1',
+        )
+
+        url = reverse('admin_emailtemplate-detail', args=[template.id])
+        self.user_login.become_admin_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual('template1', response.data['name'])
+        self.assertEqual('body1', response.data['body_template'])
+        self.assertEqual('subject1', response.data['subject_template'])
+
+    def test_admin_create_temlpate(self):
+        template_dict = {
+            'name': 'error-template',
+            'body_template': 'The following error occurred {{ error }}',
+            'subject_template': 'Error for job {{ job.name }}',
+        }
+        url = reverse('admin_emailtemplate-list')
+        self.user_login.become_admin_user()
+        response = self.client.post(url, format='json', data=template_dict)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created = EmailTemplate.objects.first()
+        self.assertEqual('error-template', created.name)
+

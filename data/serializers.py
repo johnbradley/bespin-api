@@ -274,6 +274,13 @@ class AdminShareGroupSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class AdminEmailTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailTemplate
+        resource_name = 'email-templates'
+        fields = '__all__'
+
+
 class AdminEmailMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmailMessage

@@ -299,3 +299,9 @@ class AdminEmailMessageViewSet(viewsets.ModelViewSet):
         sender.send()
         serializer = self.get_serializer(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class AdminEmailTemplateViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAdminUser,)
+    serializer_class = AdminEmailTemplateSerializer
+    queryset = EmailTemplate.objects.all()
