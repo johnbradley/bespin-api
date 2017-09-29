@@ -381,7 +381,7 @@ class EmailMessage(models.Model):
     subject = models.TextField(help_text='Text of the message subject')
     sender_email = models.EmailField(help_text='Email address of the sender')
     to_email = models.EmailField(help_text='Email address of the recipient')
-    bcc_email = models.EmailField(null=True, blank=True, help_text='Email address to bcc')
+    bcc_email = models.TextField(null=True, blank=True, help_text='space-separated Email addresses to bcc')
     state = models.TextField(choices=MESSAGE_STATES, default=MESSAGE_STATE_NEW)
     errors = models.TextField(blank=True, null=True)
 
