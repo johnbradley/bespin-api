@@ -52,12 +52,17 @@ class EmailMessageSender(object):
         if self.email_message.state == EmailMessage.MESSAGE_STATE_SENT:
             raise EmailAlreadySentException()
 
+        if self.email_message.bcc_email is not None:
+            bcc = self.email_message.bcc_email.split()
+        else:
+            bcc = None
+
         django_message = DjangoEmailMessage(
             self.email_message.subject,
             self.email_message.body,
             self.email_message.sender_email,
             [self.email_message.to_email],
-            bcc=[self.email_message.bcc_email],
+            bcc=bcc
         )
         try:
             django_message.send()

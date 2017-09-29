@@ -79,6 +79,18 @@ class EmailMessageSenderTestCase(TestCase):
         with self.assertRaises(EmailAlreadySentException):
             sender.send()
 
+    @patch('data.mailer.DjangoEmailMessage')
+    def test_splits_admin_bcc(self, MockDjangoEmailMessage):
+        bcc_emails = ['bcc1@domain.com','bcc2@domain.com']
+        self.email_message.bcc_email = ' '.join(bcc_emails)
+        mock_send = MagicMock()
+        MockDjangoEmailMessage.return_value.send = mock_send
+        sender = EmailMessageSender(self.email_message)
+        sender.send()
+        self.assertEqual(self.email_message.state, EmailMessage.MESSAGE_STATE_SENT)
+        self.assertEqual(mock_send.call_count, 1)
+        self.assertTrue(mock_send.call_args(self.subject, self.body, self.sender_email, [self.to_email], bcc=[bcc_emails]))
+
 
 FROM_EMAIL = 'sender@otherdomain.com'
 ADMIN_BCC = ['admin-bcc@domain.com']
