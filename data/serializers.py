@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError, JobAnswerSet, \
-    JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, WorkflowMethodsDocument
+    JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, WorkflowMethodsDocument, \
+    EmailTemplate, EmailMessage
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -270,4 +271,18 @@ class AdminShareGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShareGroup
         resource_name = 'share-groups'
+        fields = '__all__'
+
+
+class AdminEmailTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailTemplate
+        resource_name = 'email-templates'
+        fields = '__all__'
+
+
+class AdminEmailMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailMessage
+        resource_name = 'email-messages'
         fields = '__all__'

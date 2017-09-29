@@ -346,3 +346,57 @@ class URLJobInputFile(models.Model):
 
     def __unicode__(self):
         return 'URL Job Input File "{}"'.format(self.url)
+
+
+class EmailTemplate(models.Model):
+    """
+    Represents a base email message that can be sent
+    """
+    name = models.CharField(unique=True, max_length=255,
+                            help_text='Short name of the template')
+    body_template = models.TextField(help_text='Template text for the message body')
+    subject_template = models.TextField(help_text='Template text for the message subject')
+
+    def __str__(self):
+        return 'Email Template <{}>, subject: {}'.format(
+            self.name,
+            self.subject_template,
+        )
+
+
+class EmailMessage(models.Model):
+    """
+    Emails messages to send
+    """
+    MESSAGE_STATE_NEW = 'N'
+    MESSAGE_STATE_SENT = 'S'
+    MESSAGE_STATE_ERROR = 'E'
+    MESSAGE_STATES = (
+        (MESSAGE_STATE_NEW, 'New'),
+        (MESSAGE_STATE_SENT, 'Sent'),
+        (MESSAGE_STATE_ERROR, 'Error'),
+    )
+
+    body = models.TextField(help_text='Text of the message body')
+    subject = models.TextField(help_text='Text of the message subject')
+    sender_email = models.EmailField(help_text='Email address of the sender')
+    to_email = models.EmailField(help_text='Email address of the recipient')
+    bcc_email = models.EmailField(null=True, blank=True, help_text='Email address to bcc')
+    state = models.TextField(choices=MESSAGE_STATES, default=MESSAGE_STATE_NEW)
+    errors = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return 'Email Message <{}>, state {}, subject: {}'.format(
+            self.id,
+            self.state,
+            self.subject
+        )
+
+    def mark_sent(self):
+        self.state = self.MESSAGE_STATE_SENT
+        self.save()
+
+    def mark_error(self, errors):
+        self.state = self.MESSAGE_STATE_ERROR
+        self.errors = errors
+        self.save()

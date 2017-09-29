@@ -6,6 +6,8 @@ from models import LandoConnection
 from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject
 from models import JobToken
 from models import DDSUser, ShareGroup, WorkflowMethodsDocument
+from models import EmailTemplate, EmailMessage
+
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
@@ -550,3 +552,55 @@ class WorkflowMethodsDocumentTests(TestCase):
         methods_document = WorkflowMethodsDocument.objects.create(workflow_version=self.workflow_version,
                                                                   content='#Good Stuff\nSome text.')
         self.assertEqual('#Good Stuff\nSome text.', self.workflow_version.methods_document.content)
+
+
+class EmailTemplateTests(TestCase):
+
+    def test_requires_unique_names(self):
+        EmailTemplate.objects.create(name='template1', body_template='Body1', subject_template='Subject1')
+        with self.assertRaises(IntegrityError):
+            EmailTemplate.objects.create(name='template1', body_template='Body2', subject_template='Subject1')
+
+    def test_validates_required_fields(self):
+        template = EmailTemplate.objects.create()
+        with self.assertRaises(ValidationError) as val:
+            template.clean_fields()
+        self.assertIn('name', val.exception.error_dict)
+        self.assertIn('body_template', val.exception.error_dict)
+        self.assertIn('subject_template', val.exception.error_dict)
+
+
+class EmailMessageTests(TestCase):
+
+    def test_default_state_new(self):
+        message = EmailMessage.objects.create()
+        self.assertEqual(message.state, EmailMessage.MESSAGE_STATE_NEW)
+
+    def test_validates_required_fields(self):
+        message = EmailMessage.objects.create()
+        with self.assertRaises(ValidationError) as val:
+            message.clean_fields()
+        error_dict = val.exception.error_dict
+        self.assertIn('body', error_dict)
+        self.assertIn('subject', error_dict)
+        self.assertIn('sender_email', error_dict)
+        self.assertIn('to_email', error_dict)
+        self.assertNotIn('state', error_dict)
+        self.assertNotIn('errors', error_dict)
+
+    def test_validates_email_fields(self):
+        message = EmailMessage.objects.create(subject='s', body='b', sender_email='f', to_email='t')
+        with self.assertRaises(ValidationError) as val:
+            message.clean_fields()
+        error_dict = val.exception.error_dict
+        self.assertIn('Enter a valid email address.', error_dict.get('to_email')[0].message)
+        self.assertIn('Enter a valid email address.', error_dict.get('sender_email')[0].message)
+
+    def test_marks_states(self):
+        message = EmailMessage.objects.create()
+        self.assertEqual(message.state, EmailMessage.MESSAGE_STATE_NEW)
+        message.mark_sent()
+        self.assertEqual(message.state, EmailMessage.MESSAGE_STATE_SENT)
+        message.mark_error('SMTP Error')
+        self.assertEqual(message.state, EmailMessage.MESSAGE_STATE_ERROR)
+        self.assertEqual(message.errors, 'SMTP Error')

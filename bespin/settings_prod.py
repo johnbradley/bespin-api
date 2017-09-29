@@ -49,3 +49,11 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 #CSRF_COOKIE_HTTPONLY = True
 X_FRAME_OPTIONS = 'DENY'
+
+DEFAULT_FROM_EMAIL = os.getenv('BESPIN_MAILER_EMAIL')
+BESPIN_MAILER_ADMIN_BCC = os.getenv('BESPIN_MAILER_ADMIN_BCC').split()
+
+# To enable SMTP email, set BESPIN_SMTP_HOST
+if os.getenv('BESPIN_SMTP_HOST') is not None:
+  EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+  EMAIL_HOST = os.getenv('BESPIN_SMTP_HOST')

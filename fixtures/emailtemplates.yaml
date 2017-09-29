@@ -1,0 +1,42 @@
+- model: data.emailtemplate
+  pk: 1
+  fields: {name: job-running-user, body_template: "Hello,\r\n\r\nYour Bespin job,
+      '{{ name }}', has started executing. You will receive another email if the job
+      fails or in the event of an error.\r\n\r\nTo view status of this job, please
+      visit https://bespin-dev.gcb.duke.edu/jobs/{{ id }}\r\n\r\nRegards,\r\n\r\nComputational
+      Solutions\r\nDuke Center for Genomic and Computational Biology\r\ngcb-help@duke.edu\r\nhttp://www.genome.duke.edu/cores-and-services/computational-solutions",
+    subject_template: 'Bespin Job {{ id }} started'}
+- model: data.emailtemplate
+  pk: 2
+  fields: {name: job-cancel-user, body_template: "Hello,\r\n\r\nYour Bespin job, '{{
+      name }}', has been canceled.\r\n\r\nTo view status of this job or restart it,
+      please visit https://bespin-dev.gcb.duke.edu/jobs/{{ id }}\r\n\r\nRegards,\r\n\r\nComputational
+      Solutions\r\nDuke Center for Genomic and Computational Biology\r\ngcb-help@duke.edu\r\nhttp://www.genome.duke.edu/cores-and-services/computational-solutions",
+    subject_template: 'Bespin Job {{ id }} canceled'}
+- model: data.emailtemplate
+  pk: 3
+  fields: {name: job-finished-user, body_template: "Hello,\r\n\r\nYour Bespin job,
+      '{{ name }}', has completed executing. Data has been uploaded to Duke Data Service
+      for review. \r\n\r\nYou will receive another email after the data has been reviewed.\r\n\r\nTo
+      view status of this job, please visit https://bespin-dev.gcb.duke.edu/jobs/{{
+      id }}\r\n\r\nRegards,\r\n\r\nComputational Solutions\r\nDuke Center for Genomic
+      and Computational Biology\r\ngcb-help@duke.edu\r\nhttp://www.genome.duke.edu/cores-and-services/computational-solutions",
+    subject_template: 'Bespin Job {{ id }} completed'}
+- model: data.emailtemplate
+  pk: 4
+  fields: {name: job-finished-sharegroup, body_template: "Hello,\r\n\r\nA Bespin job,
+      '{{ name }}', has completed executing. Data has been uploaded to Duke Data Service
+      for your review. \r\n\r\nYou will receive another email granting access to the
+      Duke Data Service project. Please review the data and deliver it to the customer
+      if satisfactory.\r\n\r\nRegards,\r\n\r\nComputational Solutions\r\nDuke Center
+      for Genomic and Computational Biology\r\ngcb-help@duke.edu\r\nhttp://www.genome.duke.edu/cores-and-services/computational-solutions",
+    subject_template: 'Bespin Job {{ id }} completed - Data for review'}
+- model: data.emailtemplate
+  pk: 5
+  fields: {name: job-error-user, body_template: "Hello,\r\n\r\nYour Bespin job, '{{
+      name }}', has encountered an error while executing. The GCB Informatics team
+      has been notified and will be contacting you about the failed job.\r\n\r\nTo
+      view status of this job, please visit https://bespin-dev.gcb.duke.edu/jobs/{{
+      id }}\r\n\r\nRegards,\r\n\r\nComputational Solutions\r\nDuke Center for Genomic
+      and Computational Biology\r\ngcb-help@duke.edu\r\nhttp://www.genome.duke.edu/cores-and-services/computational-solutions",
+    subject_template: 'Bespin Job {{ id }} error'}

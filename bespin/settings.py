@@ -38,3 +38,7 @@ CORS_ORIGIN_WHITELIST = (
     'localhost:4200',
     '127.0.0.1:4200',
 )
+
+DEFAULT_FROM_EMAIL = 'gcb-bespin@duke.edu'
+BESPIN_MAILER_ADMIN_BCC = []
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
