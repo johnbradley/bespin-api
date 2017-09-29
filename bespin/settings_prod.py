@@ -51,7 +51,10 @@ SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
 DEFAULT_FROM_EMAIL = os.getenv('BESPIN_MAILER_EMAIL')
-BESPIN_MAILER_ADMIN_BCC = os.getenv('BESPIN_MAILER_ADMIN_BCC').split()
+if os.getenv('BESPIN_MAILER_ADMIN_BCC') is not None:
+   BESPIN_MAILER_ADMIN_BCC = os.getenv('BESPIN_MAILER_ADMIN_BCC').split()
+else:
+   BESPIN_MAILER_ADMIN_BCC = []
 
 # To enable SMTP email, set BESPIN_SMTP_HOST
 if os.getenv('BESPIN_SMTP_HOST') is not None:
