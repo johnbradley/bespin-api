@@ -9,6 +9,8 @@ import sys
 import requests
 from habanero import cn
 from jinja2 import Template
+import xml.etree.ElementTree as ET
+
 SCHEMA_ORG_CITATION = 'https://schema.org/citation'
 HTTPS_DOI_URL = 'https://dx.doi.org/'
 
@@ -88,14 +90,43 @@ class MethodsDocumentContents(object):
                 if citation.startswith(HTTPS_DOI_URL):
                     doi_name = citation.replace(HTTPS_DOI_URL, '')
                     apa_citation = cn.content_negotiation(ids=doi_name, format="text", style="apa")
+                    xref_records = self.get_crossref_xml(doi_name)
+                    reference_str = self.make_reference_str(xref_records)
                 else:
                     apa_citation = citation
-                template_args[package_name] = {'version': versions[-1], 'citation': apa_citation}
+                    reference_str = package_name
+                template_args[package_name] = {
+                    'version': versions[-1],
+                    'ref': reference_str,
+                    'citation': apa_citation}
         response = requests.get(self.jinja_template_url)
         response.raise_for_status()
         template = Template(response.text)
         return template.render(**template_args)
 
+    @staticmethod
+    def get_crossref_xml(doi_name):
+        xml_str = cn.content_negotiation(ids=doi_name, format="crossref-xml")
+        return ET.fromstring(xml_str)
+
+    @staticmethod
+    def make_reference_str(xref_records):
+        articles = list(xref_records.iter('journal_article'))
+        first_article = articles[0]
+        contributor_surnames = []
+        publication_year = ''
+        for contributor in  first_article.findall('contributors/person_name'):
+            surname = contributor.find('surname').text
+            contributor_surnames.append(surname)
+        for publication_date in first_article.findall("publication_date"):
+            publication_year = publication_date.find('year').text
+            break
+        contributors = contributor_surnames[0]
+        if len(contributor_surnames) == 2:
+            contributors = ' and '.join(contributor_surnames)
+        if len(contributor_surnames) > 2:
+            contributors = '{} et al.'.format(contributor_surnames[0])
+        return '{} {}'.format(contributors, publication_year)
 
 class JobQuestionnaireImporter(BaseCreator):
     """
