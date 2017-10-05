@@ -1,5 +1,6 @@
 from rest_framework import viewsets, permissions, status, mixins
-from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content
+from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content, \
+    get_user_file, get_user_file_url
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException, JobTokenException
 from data.models import *
@@ -60,6 +61,25 @@ class DDSResourcesViewSet(DDSViewSet):
             return self._ds_operation(get_user_project_content, self.request.user, project_id)
         else:
             raise BespinAPIException(400, 'Getting dds-resources requires either a project_id or folder_id query parameter')
+
+
+class DDSFileViewSet(DDSViewSet):
+    """
+    Interfaces with DukeDSAPI to fetch details about a single file
+    """
+    def get_queryset(self):
+        raise BespinAPIException(400, 'This endpoint is only available at detail route.')
+
+    def retrieve(self, request, pk=None):
+        dds_file = self._ds_operation(get_user_file, request.user, pk)
+        serializer = DDSFileSerializer(dds_file)
+        return Response(serializer.data)
+
+    @detail_route(methods=['get'])
+    def url(self, request, pk=None):
+        dds_file_url = self._ds_operation(get_user_file_url, request.user, pk)
+        serializer = DDSFileUrlSerializer(dds_file_url)
+        return Response(serializer.data)
 
 
 class WorkflowsViewSet(viewsets.ReadOnlyModelViewSet):
