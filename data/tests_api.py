@@ -1661,6 +1661,12 @@ class UserTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
 
+    def test_requires_login(self):
+        self.user_login.become_unauthorized()
+        url = reverse('user-current-user')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_cannot_list(self):
         with self.assertRaises(NoReverseMatch):
             reverse('user-list')
