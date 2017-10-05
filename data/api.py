@@ -67,6 +67,8 @@ class DDSFileViewSet(DDSViewSet):
     """
     Interfaces with DukeDSAPI to fetch details about a single file
     """
+    serializer_class = DDSFileSerializer
+    
     def get_queryset(self):
         raise BespinAPIException(400, 'This endpoint is only available at detail route.')
 
