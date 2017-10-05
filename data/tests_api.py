@@ -10,7 +10,7 @@ from data.models import Workflow, WorkflowVersion, Job, JobFileStageGroup, JobEr
     JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, \
     WorkflowMethodsDocument, EmailMessage, EmailTemplate
 from exceptions import WrappedDataServiceException
-from util import DDSResource
+from util import DDSResource, DDSFile, DDSFileUrl
 
 
 class UserLogin(object):
@@ -1642,7 +1642,7 @@ class EmailTemplateTestCase(APITestCase):
         self.assertEqual('body1', response.data['body_template'])
         self.assertEqual('subject1', response.data['subject_template'])
 
-    def test_admin_create_temlpate(self):
+    def test_admin_create_template(self):
         template_dict = {
             'name': 'error-template',
             'body_template': 'The following error occurred {{ error }}',
@@ -1655,3 +1655,43 @@ class EmailTemplateTestCase(APITestCase):
         created = EmailTemplate.objects.first()
         self.assertEqual('error-template', created.name)
 
+
+class DDSFileViewSetTestCase(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+
+    def test_listing_always_fails(self):
+        url = reverse('ddsfile-list')
+        self.user_login.become_normal_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('data.api.get_user_file')
+    def test_detail_endpoint(self, mock_get_user_file):
+        file_data = {'id': '1', 'name': 'data.txt', 'kind': 'dds-file'}
+        mock_get_user_file.return_value = DDSFile(file_data)
+        url = reverse('ddsfile-list') + "123/"
+        self.user_login.become_normal_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, file_data)
+
+class DDSFileViewSetTestCase(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+
+    def test_listing_always_fails(self):
+        url = reverse('ddsfile-list')
+        self.user_login.become_normal_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('data.api.get_user_file_url')
+    def test_get_file_url(self, mock_get_user_file_url):
+        file_url_data = {'http_verb': 'GET', 'host': 'somehost', 'url': 'file_get_contents/123/', 'http_headers': ''}
+        mock_get_user_file_url.return_value = DDSFileUrl(file_url_data)
+        url = reverse('ddsfile-list') + "123/url/"
+        self.user_login.become_normal_user()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, file_url_data)
