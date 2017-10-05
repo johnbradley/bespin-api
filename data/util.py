@@ -54,21 +54,12 @@ class DDSResource(DDSBase):
             self.size = 0
 
 
-class DDSFile(object):
-    """
-    Represents a DukeDS file
-    """
-    def __init__(self, file_dict):
-        self.id = file_dict.get('id')
-        self.kind = file_dict.get('kind')
-        self.name = file_dict.get('name')
-
-
 class DDSFileUrl(object):
     """
     Represents a DukeDS file url
     """
-    def __init__(self, file_url_dict):
+    def __init__(self, dds_file_id, file_url_dict):
+        self.id = dds_file_id
         self.http_verb = file_url_dict.get('http_verb')
         self.host = file_url_dict.get('host')
         self.url = file_url_dict.get('url')
@@ -194,21 +185,6 @@ def get_user_folder_content(user, dds_folder_id, search_str=None):
         raise WrappedDataServiceException(dse)
 
 
-def get_user_file(user, dds_file_id):
-    """
-    Get details about a single file for dds_file_id
-    :param user: User who has DukeDS credentials
-    :param dds_file_id: str: duke data service file id
-    :return: DDSFile
-    """
-    try:
-        remote_store = get_remote_store(user)
-        resources = remote_store.data_service.get_file(dds_file_id).json()
-        return DDSFile(resources)
-    except DataServiceError as dse:
-        raise WrappedDataServiceException(dse)
-
-
 def get_user_file_url(user, dds_file_id):
     """
     Get details about a single file's url for dds_file_id
@@ -219,7 +195,7 @@ def get_user_file_url(user, dds_file_id):
     try:
         remote_store = get_remote_store(user)
         resources = remote_store.data_service.get_file_url(dds_file_id).json()
-        return DDSFileUrl(resources)
+        return DDSFileUrl(dds_file_id, resources)
     except DataServiceError as dse:
         raise WrappedDataServiceException(dse)
 

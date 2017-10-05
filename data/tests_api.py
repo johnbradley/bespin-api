@@ -1656,53 +1656,24 @@ class EmailTemplateTestCase(APITestCase):
         self.assertEqual('error-template', created.name)
 
 
-class DDSFileViewSetTestCase(APITestCase):
+class DDSFileUrlViewSetTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
 
     def test_listing_always_fails(self):
-        url = reverse('ddsfile-list')
+        url = reverse('ddsfileurl-list')
         self.user_login.become_normal_user()
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    @patch('data.api.get_user_file')
-    def test_detail_endpoint(self, mock_get_user_file):
-        file_data = {'id': '1', 'name': 'data.txt', 'kind': 'dds-file'}
-        mock_get_user_file.return_value = DDSFile(file_data)
-        url = reverse('ddsfile-list') + "123/"
-        self.user_login.become_normal_user()
-        response = self.client.get(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, file_data)
-
-
-class DDSFileViewSetTestCase(APITestCase):
-    def setUp(self):
-        self.user_login = UserLogin(self.client)
-
-    def test_listing_always_fails(self):
-        url = reverse('ddsfile-list')
-        self.user_login.become_normal_user()
-        response = self.client.get(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    @patch('data.util.get_remote_store')
-    def test_get_file(self, mock_get_remote_store):
-        file_url_data = {'id': '123', 'name': 'somefile', 'kind': 'dds-file'}
-        mock_get_remote_store.return_value.data_service.get_file.return_value.json.return_value = file_url_data
-        url = reverse('ddsfile-list') + "123/"
-        self.user_login.become_normal_user()
-        response = self.client.get(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, file_url_data)
 
     @patch('data.util.get_remote_store')
     def test_get_file_url(self, mock_get_remote_store):
         file_url_data = {'http_verb': 'GET', 'host': 'somehost', 'url': 'file_get_contents/123/', 'http_headers': ''}
+        output_file_url_data = dict(file_url_data)
+        output_file_url_data['id'] = '123'
         mock_get_remote_store.return_value.data_service.get_file_url.return_value.json.return_value = file_url_data
-        url = reverse('ddsfile-list') + "123/url/"
+        url = reverse('ddsfileurl-list') + "123/"
         self.user_login.become_normal_user()
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, file_url_data)
+        self.assertEqual(response.data, output_file_url_data)
