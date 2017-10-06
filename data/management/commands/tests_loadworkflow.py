@@ -70,13 +70,14 @@ class MethodsDocumentContentsTestCase(TestCase):
                 ]
             }
         ]
-        jinja_template = """sometool version:{{sometool.version}} citation: {{sometool.citation}}
+        jinja_template = """desc: {{description}} sometool version:{{sometool.version}} citation: {{sometool.citation}}
 othertool version: {{othertool.version}} citation: {{othertool.citation}}"""
-        expected_content = """sometool version:1 citation: someurl
+        expected_content = """desc: A good workflow sometool version:1 citation: someurl
 othertool version: 3 citation: Dr Man 2017"""
         mock_requests.get.return_value = Mock(text=jinja_template)
         mock_cn.content_negotiation.return_value = 'Dr Man 2017'
         method_document_contents = MethodsDocumentContents(
+            workflow_version_description='A good workflow',
             software_requirement_hints=software_requirement_hints,
             jinja_template_url='fakeurl')
         self.assertEqual(expected_content, method_document_contents.get_content())
