@@ -1058,7 +1058,8 @@ class JobOutputDirTestCase(APITestCase):
             'job': self.my_job.id,
             'dir_name': 'results',
             'project_id': '123',
-            'dds_user_credentials': self.cred.id
+            'dds_user_credentials': self.cred.id,
+            'readme_file_id': '456',
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job_output_dir = JobOutputDir.objects.first()
@@ -1066,7 +1067,7 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual('results', job_output_dir.dir_name)
         self.assertEqual('123', job_output_dir.project_id)
         self.assertEqual(self.cred, job_output_dir.dds_user_credentials)
-
+        self.assertEqual('456', job_output_dir.readme_file_id)
 
     def test_readme_url_endpoint_get(self):
         job_output_dir = JobOutputDir.objects.create(job=self.my_job, dir_name='results', project_id='1',
