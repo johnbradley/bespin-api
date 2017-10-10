@@ -1025,6 +1025,19 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual('123', job_output_dir.project_id)
         self.assertEqual(self.cred, job_output_dir.dds_user_credentials)
 
+    def test_user_cant_change_remote_file_id(self):
+        url = reverse('joboutputdir-list')
+        response = self.client.post(url, format='json', data={
+            'job': self.my_job.id,
+            'dir_name': 'results',
+            'project_id': '123',
+            'dds_user_credentials': self.cred.id,
+            'readme_file_id': '123',
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_output_dir = JobOutputDir.objects.first()
+        self.assertEqual(None, job_output_dir.readme_file_id)
+
     def test_can_use_others_creds(self):
         url = reverse('joboutputdir-list')
         response = self.client.post(url, format='json', data={
