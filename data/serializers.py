@@ -45,7 +45,7 @@ class JobOutputDirSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobOutputDir
         resource_name = 'job-output-dirs'
-        fields = ('job', 'dir_name', 'project_id', 'dds_user_credentials')
+        fields = ('id', 'job', 'dir_name', 'project_id', 'dds_user_credentials')
 
 
 class AdminJobOutputDirSerializer(serializers.ModelSerializer):
