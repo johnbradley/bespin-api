@@ -203,15 +203,6 @@ class DDSResourceSerializer(serializers.Serializer):
         resource_name = 'dds-resources'
 
 
-class DDSFileSerializer(serializers.Serializer):
-    id = serializers.UUIDField()
-    name = serializers.CharField()
-    kind = serializers.CharField()
-
-    class Meta:
-        resource_name = 'dds-file'
-
-
 class DDSFileUrlSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     http_verb = serializers.CharField()
