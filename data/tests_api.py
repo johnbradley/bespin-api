@@ -1068,6 +1068,33 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual(self.cred, job_output_dir.dds_user_credentials)
 
 
+    def test_readme_url_endpoint_get(self):
+        job_output_dir = JobOutputDir.objects.create(job=self.my_job, dir_name='results', project_id='1',
+                                    dds_user_credentials=self.cred)
+        url = '{}{}/readme-url/'.format(reverse('joboutputdir-list'), job_output_dir.id)
+        response = self.client.get(url, format='json', data={})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @patch('data.util.RemoteStore')
+    def test_readme_url_endpoint_post(self, mock_remote_store):
+        mock_remote_store.return_value.data_service.get_file_url.return_value.json.return_value = {
+            'http_verb': 'GET',
+            'url': 'someurl',
+            'host': 'somehost',
+            'http_headers': '',
+        }
+        job_output_dir = JobOutputDir.objects.create(job=self.my_job, dir_name='results', project_id='1',
+                                    dds_user_credentials=self.cred)
+        url = '{}{}/readme-url/'.format(reverse('joboutputdir-list'), job_output_dir.id)
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get('http_verb'), 'GET')
+        self.assertEqual(response.data.get('url'), 'someurl')
+        self.assertEqual(response.data.get('host'), 'somehost')
+        self.assertEqual(response.data.get('http_headers'), '')
+
+
+
 class JobQuestionnaireTestCase(APITestCase):
     def setUp(self):
         """
@@ -1654,29 +1681,6 @@ class EmailTemplateTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         created = EmailTemplate.objects.first()
         self.assertEqual('error-template', created.name)
-
-
-class DDSFileUrlViewSetTestCase(APITestCase):
-    def setUp(self):
-        self.user_login = UserLogin(self.client)
-
-    def test_listing_always_fails(self):
-        url = reverse('ddsfileurl-list')
-        self.user_login.become_normal_user()
-        response = self.client.get(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    @patch('data.util.get_remote_store')
-    def test_get_file_url(self, mock_get_remote_store):
-        file_url_data = {'http_verb': 'GET', 'host': 'somehost', 'url': 'file_get_contents/123/', 'http_headers': ''}
-        output_file_url_data = dict(file_url_data)
-        output_file_url_data['id'] = '123'
-        mock_get_remote_store.return_value.data_service.get_file_url.return_value.json.return_value = file_url_data
-        url = reverse('ddsfileurl-list') + "123/"
-        self.user_login.become_normal_user()
-        response = self.client.get(url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, output_file_url_data)
 
 
 class UserTestCase(APITestCase):

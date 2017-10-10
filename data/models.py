@@ -211,6 +211,7 @@ class JobOutputDir(models.Model):
     dir_name = models.CharField(max_length=255, blank=False, null=True)
     project_id = models.CharField(max_length=255, blank=False, null=True)
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE, null=True)
+    readme_file_id = models.CharField(max_length=255, blank=False, null=True)
 
     def __unicode__(self):
         return 'Directory name: {} Project: {}'.format(self.dir_name, self.project_id)

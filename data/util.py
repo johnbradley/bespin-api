@@ -86,21 +86,40 @@ def get_dds_config(user):
     :param user: A Django model user object
     :return: ddsc.config.Config: settings to use with ddsclient
     """
-    config = Config()
-
-    # Get our agent key
-    app_cred = DDSEndpoint.objects.first()
-    config.update_properties({'agent_key': app_cred.agent_key})
-    config.update_properties({'url': app_cred.api_root})
-
-    # Setup user key if exists, otherwise setup dds temporary auth token
     try:
         user_cred = DDSUserCredential.objects.get(user=user)
+        return get_dds_config_for_credentials(user_cred)
         config.update_properties({'user_key': user_cred.token})
     except ObjectDoesNotExist:
+        endpoint_cred = DDSEndpoint.objects.first()
+        config = create_config_for_endpoint(endpoint_cred)
         oauth_token = get_oauth_token(user)
         user_auth_token = _get_dds_auth_token(app_cred, oauth_token)
         config.update_properties({'auth': user_auth_token})
+    return config
+
+
+def get_dds_config_for_credentials(user_cred):
+    """
+    Given a DukeDS user credential object create complete Config for use with ddsc
+    :param user_cred: DDSUserCredential: user credential to create config based upon
+    :return: ddsc.config.Config: settings to use with ddsclient
+    """
+    config = create_config_for_endpoint(user_cred.endpoint)
+    config.update_properties({'user_key': user_cred.token})
+    return config
+
+
+def create_config_for_endpoint(endpoint_cred):
+    """
+    Given a dds endpoint create ddsclient Config object filling in agent key and api root.
+    The returned config still requires user_key or auth to be filled in.
+    :param endpoint_cred: DDSEndpoint: endpoint to create agent and api root config
+    :return: ddsc.config.Config: settings to use with ddsclient
+    """
+    config = Config()
+    config.update_properties({'agent_key': endpoint_cred.agent_key})
+    config.update_properties({'url': endpoint_cred.api_root})
     return config
 
 
@@ -185,15 +204,18 @@ def get_user_folder_content(user, dds_folder_id, search_str=None):
         raise WrappedDataServiceException(dse)
 
 
-def get_user_file_url(user, dds_file_id):
+def get_readme_file_url(job_output_dir):
     """
-    Get details about a single file's url for dds_file_id
-    :param user: User who has DukeDS credentials
-    :param dds_file_id: str: duke data service file id
-    :return: DDSFile
+    Get url info for the readme file associated with a job output directory.
+    Uses system credentials so we can read this file while the job results are being still being reviewed
+    and unavailable to the end user.
+    :param job_output_dir: JobOutputDir: output project that contains a readme file id
+    :return: DDSFileUrl
     """
     try:
-        remote_store = get_remote_store(user)
+        dds_file_id = job_output_dir.readme_file_id
+        user_credentials = job_output_dir.dds_user_credentials
+        remote_store = RemoteStore(get_dds_config_for_credentials(user_credentials))
         resources = remote_store.data_service.get_file_url(dds_file_id).json()
         return DDSFileUrl(dds_file_id, resources)
     except DataServiceError as dse:
