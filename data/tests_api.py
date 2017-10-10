@@ -1094,7 +1094,6 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual(response.data.get('http_headers'), '')
 
 
-
 class JobQuestionnaireTestCase(APITestCase):
     def setUp(self):
         """
