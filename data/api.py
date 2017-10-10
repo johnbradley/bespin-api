@@ -1,5 +1,6 @@
 from rest_framework import viewsets, permissions, status, mixins
-from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content
+from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content, \
+    get_readme_file_url
 from rest_framework.response import Response
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException, JobTokenException
 from data.models import *
@@ -252,6 +253,13 @@ class JobOutputDirViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = JobOutputDir.objects.all()
     serializer_class = JobOutputDirSerializer
+
+    @detail_route(methods=['post'], serializer_class=DDSFileUrlSerializer, url_path='readme-url')
+    def readme_url(self, request, pk=None):
+        job_output_dir = JobOutputDir.objects.get(pk=pk)
+        dds_file_url = get_readme_file_url(job_output_dir)
+        serializer = DDSFileUrlSerializer(dds_file_url)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class AdminJobOutputDirViewSet(viewsets.ModelViewSet):

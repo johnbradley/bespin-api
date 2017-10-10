@@ -1025,6 +1025,19 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual('123', job_output_dir.project_id)
         self.assertEqual(self.cred, job_output_dir.dds_user_credentials)
 
+    def test_user_cant_change_remote_file_id(self):
+        url = reverse('joboutputdir-list')
+        response = self.client.post(url, format='json', data={
+            'job': self.my_job.id,
+            'dir_name': 'results',
+            'project_id': '123',
+            'dds_user_credentials': self.cred.id,
+            'readme_file_id': '123',
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_output_dir = JobOutputDir.objects.first()
+        self.assertEqual(None, job_output_dir.readme_file_id)
+
     def test_can_use_others_creds(self):
         url = reverse('joboutputdir-list')
         response = self.client.post(url, format='json', data={
@@ -1058,7 +1071,8 @@ class JobOutputDirTestCase(APITestCase):
             'job': self.my_job.id,
             'dir_name': 'results',
             'project_id': '123',
-            'dds_user_credentials': self.cred.id
+            'dds_user_credentials': self.cred.id,
+            'readme_file_id': '456',
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job_output_dir = JobOutputDir.objects.first()
@@ -1066,6 +1080,32 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual('results', job_output_dir.dir_name)
         self.assertEqual('123', job_output_dir.project_id)
         self.assertEqual(self.cred, job_output_dir.dds_user_credentials)
+        self.assertEqual('456', job_output_dir.readme_file_id)
+
+    def test_readme_url_endpoint_get(self):
+        job_output_dir = JobOutputDir.objects.create(job=self.my_job, dir_name='results', project_id='1',
+                                    dds_user_credentials=self.cred)
+        url = '{}{}/readme-url/'.format(reverse('joboutputdir-list'), job_output_dir.id)
+        response = self.client.get(url, format='json', data={})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @patch('data.util.RemoteStore')
+    def test_readme_url_endpoint_post(self, mock_remote_store):
+        mock_remote_store.return_value.data_service.get_file_url.return_value.json.return_value = {
+            'http_verb': 'GET',
+            'url': 'someurl',
+            'host': 'somehost',
+            'http_headers': '',
+        }
+        job_output_dir = JobOutputDir.objects.create(job=self.my_job, dir_name='results', project_id='1',
+                                    dds_user_credentials=self.cred)
+        url = '{}{}/readme-url/'.format(reverse('joboutputdir-list'), job_output_dir.id)
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get('http_verb'), 'GET')
+        self.assertEqual(response.data.get('url'), 'someurl')
+        self.assertEqual(response.data.get('host'), 'somehost')
+        self.assertEqual(response.data.get('http_headers'), '')
 
 
 class JobQuestionnaireTestCase(APITestCase):
@@ -1642,7 +1682,7 @@ class EmailTemplateTestCase(APITestCase):
         self.assertEqual('body1', response.data['body_template'])
         self.assertEqual('subject1', response.data['subject_template'])
 
-    def test_admin_create_temlpate(self):
+    def test_admin_create_template(self):
         template_dict = {
             'name': 'error-template',
             'body_template': 'The following error occurred {{ error }}',

@@ -45,7 +45,7 @@ class JobOutputDirSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobOutputDir
         resource_name = 'job-output-dirs'
-        fields = '__all__'
+        fields = ('id', 'job', 'dir_name', 'project_id', 'dds_user_credentials')
 
 
 class AdminJobOutputDirSerializer(serializers.ModelSerializer):
@@ -205,6 +205,17 @@ class DDSResourceSerializer(serializers.Serializer):
 
     class Meta:
         resource_name = 'dds-resources'
+
+
+class DDSFileUrlSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    http_verb = serializers.CharField()
+    host = serializers.CharField()
+    url = serializers.CharField()
+    http_headers = serializers.CharField()
+
+    class Meta:
+        resource_name = 'dds-file-url'
 
 
 class VMFlavorSerializer(serializers.ModelSerializer):
