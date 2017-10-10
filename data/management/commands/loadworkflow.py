@@ -74,7 +74,8 @@ class CWLDocument(object):
 
 
 class MethodsDocumentContents(object):
-    def __init__(self, software_requirement_hints, jinja_template_url):
+    def __init__(self, workflow_version_description, software_requirement_hints, jinja_template_url):
+        self.workflow_version_description = workflow_version_description
         self.software_requirement_hints = software_requirement_hints
         self.jinja_template_url = jinja_template_url
 
@@ -91,6 +92,7 @@ class MethodsDocumentContents(object):
                 else:
                     apa_citation = citation
                 template_args[package_name] = {'version': versions[-1], 'citation': apa_citation}
+        template_args['description'] = self.workflow_version_description
         response = requests.get(self.jinja_template_url)
         response.raise_for_status()
         template = Template(response.text)
@@ -210,7 +212,7 @@ class WorkflowImporter(BaseCreator):
             version=self.version_number,
         )
         software_requirement_hints = document.extract_tool_hints(hint_class_name="SoftwareRequirement")
-        methods_document = MethodsDocumentContents(software_requirement_hints,
+        methods_document = MethodsDocumentContents(workflow_version_description, software_requirement_hints,
                                                    jinja_template_url=self.methods_jinja_template_url)
         WorkflowMethodsDocument.objects.get_or_create(
             workflow_version=workflow_version,
