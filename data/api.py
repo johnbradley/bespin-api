@@ -64,21 +64,6 @@ class DDSResourcesViewSet(DDSViewSet):
             raise BespinAPIException(400, 'Getting dds-resources requires either a project_id or folder_id query parameter')
 
 
-class DDSFileUrlViewSet(DDSViewSet):
-    """
-    Interfaces with DukeDSAPI to fetch url for a single file
-    """
-    serializer_class = DDSFileUrlSerializer
-
-    def get_queryset(self):
-        raise BespinAPIException(400, 'This endpoint is only available at detail route.')
-
-    def retrieve(self, request, pk=None):
-        dds_file_url = self._ds_operation(get_user_file_url, request.user, pk)
-        serializer = DDSFileUrlSerializer(dds_file_url)
-        return Response(serializer.data)
-
-
 class WorkflowsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = Workflow.objects.all()
