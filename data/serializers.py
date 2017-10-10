@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.auth.models import User
 from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError, JobAnswerSet, \
     JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, WorkflowMethodsDocument, \
@@ -69,6 +70,7 @@ class JobSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
     job_errors = JobErrorSerializer(required=False, read_only=True, many=True)
     run_token = serializers.CharField(required=False, read_only=True, source='run_token.token')
+
     class Meta:
         model = Job
         resource_name = 'jobs'
@@ -78,9 +80,11 @@ class JobSerializer(serializers.ModelSerializer):
                   'run_token',)
 
 
-class UserSerializer(serializers.Serializer):
-    id = serializers.IntegerField(required=False)
-    username = serializers.CharField()
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        resource_name = 'users'
+        fields = ('id', 'username', 'first_name', 'last_name', 'email',)
 
 
 class AdminJobSerializer(serializers.ModelSerializer):

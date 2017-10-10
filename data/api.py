@@ -8,12 +8,13 @@ from django.db import IntegrityError
 
 from data.serializers import *
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import detail_route, list_route
 from lando import LandoJob
 from django.db.models import Q
 from django.db import transaction
 from jobfactory import create_job_factory
 from mailer import EmailMessageSender, JobMailer
+
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -242,6 +243,17 @@ class JobErrorViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return JobError.objects.filter(job__user=self.request.user)
+
+
+class UserViewSet(viewsets.GenericViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = UserSerializer
+
+    @list_route(methods=['get'], url_path='current-user')
+    def current_user(self, request):
+        current_user = self.request.user
+        serializer = UserSerializer(self.request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class AdminJobErrorViewSet(viewsets.ModelViewSet):

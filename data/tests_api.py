@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User as django_user
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, NoReverseMatch
 from mock.mock import MagicMock, patch, Mock
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -1677,3 +1677,55 @@ class DDSFileUrlViewSetTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, output_file_url_data)
+
+
+class UserTestCase(APITestCase):
+
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+
+    def test_requires_login(self):
+        self.user_login.become_unauthorized()
+        url = reverse('user-current-user')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_cannot_list(self):
+        with self.assertRaises(NoReverseMatch):
+            reverse('user-list')
+
+    def test_get_current_user(self):
+        self.user_login.become_normal_user()
+        url = reverse('user-current-user')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], 'user')
+
+        self.user_login.become_other_normal_user()
+        url = reverse('user-current-user')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], 'user2')
+
+    def test_cannot_change(self):
+        self.user_login.become_normal_user()
+        url = reverse('user-current-user')
+        response = self.client.put(url, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        response = self.client.post(url, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        response = self.client.delete(url, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_cannot_get_by_id(self):
+        self.user_login.become_normal_user()
+        url = reverse('user-current-user')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], 'user')
+        user_id = response.data['id']
+        self.assertIsNotNone(django_user.objects.get(id=user_id))
+        detail_url = '{}/{}'.format(url, user_id)
+        response = self.client.get(detail_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
