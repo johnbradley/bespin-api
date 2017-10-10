@@ -254,7 +254,7 @@ class JobOutputDirViewSet(viewsets.ModelViewSet):
     queryset = JobOutputDir.objects.all()
     serializer_class = JobOutputDirSerializer
 
-    @detail_route(methods=['post'], url_path='readme-url')
+    @detail_route(methods=['post'], serializer_class=DDSFileUrlSerializer, url_path='readme-url')
     def readme_url(self, request, pk=None):
         job_output_dir = JobOutputDir.objects.get(pk=pk)
         dds_file_url = get_readme_file_url(job_output_dir)
