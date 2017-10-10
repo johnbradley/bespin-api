@@ -88,13 +88,12 @@ def get_dds_config(user):
     """
     try:
         user_cred = DDSUserCredential.objects.get(user=user)
-        return get_dds_config_for_credentials(user_cred)
-        config.update_properties({'user_key': user_cred.token})
+        config = get_dds_config_for_credentials(user_cred)
     except ObjectDoesNotExist:
         endpoint_cred = DDSEndpoint.objects.first()
         config = create_config_for_endpoint(endpoint_cred)
         oauth_token = get_oauth_token(user)
-        user_auth_token = _get_dds_auth_token(app_cred, oauth_token)
+        user_auth_token = _get_dds_auth_token(endpoint_cred, oauth_token)
         config.update_properties({'auth': user_auth_token})
     return config
 
