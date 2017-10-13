@@ -63,7 +63,7 @@ class JobErrorSerializer(serializers.ModelSerializer):
 
 
 class JobSerializer(serializers.ModelSerializer):
-    output_dir = JobDDSOutputProjectSerializer(required=False, read_only=True)
+    output_project = JobDDSOutputProjectSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
     state = serializers.CharField(read_only=True)
     step = serializers.CharField(read_only=True)
@@ -76,7 +76,7 @@ class JobSerializer(serializers.ModelSerializer):
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_volume_name', 'vm_project_name', 'job_order',
-                  'output_dir', 'job_errors', 'stage_group', 'volume_size', 'fund_code', 'share_group',
+                  'output_project', 'job_errors', 'stage_group', 'volume_size', 'fund_code', 'share_group',
                   'run_token',)
 
 
@@ -89,7 +89,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class AdminJobSerializer(serializers.ModelSerializer):
     workflow_version = WorkflowVersionSerializer(required=False)
-    output_dir = JobDDSOutputProjectSerializer(required=False, read_only=True)
+    output_project = JobDDSOutputProjectSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
     name = serializers.CharField(required=False)
     user = UserSerializer(read_only=True)
@@ -98,7 +98,7 @@ class AdminJobSerializer(serializers.ModelSerializer):
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_flavor', 'vm_instance_name', 'vm_volume_name', 'vm_project_name', 'job_order',
-                  'output_dir', 'stage_group', 'volume_size', 'share_group', 'cleanup_vm', 'fund_code')
+                  'output_project', 'stage_group', 'volume_size', 'share_group', 'cleanup_vm', 'fund_code')
         read_only_fields = ('share_group',)
 
 
