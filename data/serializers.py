@@ -37,7 +37,7 @@ class WorkflowMethodsDocumentSerializer(serializers.ModelSerializer):
 class JobDDSOutputProjectSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
-        # You must own the job you are attaching this output directory onto
+        # You must own the job you are attaching this output project onto
         if data['job'].user != request.user:
             raise serializers.ValidationError("This job belongs to another user.")
         return data

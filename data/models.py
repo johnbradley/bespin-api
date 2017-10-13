@@ -205,7 +205,7 @@ class Job(models.Model):
 
 class JobDDSOutputProject(models.Model):
     """
-    Output directory where results of workflow will be uploaded to.
+    Output project where results of workflow will be uploaded to.
     """
     job = models.OneToOneField(Job, on_delete=models.CASCADE, null=False, related_name='output_project')
     project_id = models.CharField(max_length=255, blank=False, null=True)

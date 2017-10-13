@@ -126,7 +126,7 @@ def _get_dds_auth_token(app_cred, oauth_token):
     """
     Exchange oauth token for dds token.
     :param app_cred: DDSEndpoint: endpoint we will communicate with
-    :param oauth_token: OAuthToken: contains 'access_token' to be exchanged 
+    :param oauth_token: OAuthToken: contains 'access_token' to be exchanged
     :return: str: dds temporary auth token value
     """
     headers = {
@@ -203,17 +203,17 @@ def get_user_folder_content(user, dds_folder_id, search_str=None):
         raise WrappedDataServiceException(dse)
 
 
-def get_readme_file_url(job_output_dir):
+def get_readme_file_url(job_output_project):
     """
-    Get url info for the readme file associated with a job output directory.
+    Get url info for the readme file associated with a job output project.
     Uses system credentials so we can read this file while the job results are being still being reviewed
     and unavailable to the end user.
-    :param job_output_dir: JobDDSOutputProject: output project that contains a readme file id
+    :param job_output_project: JobDDSOutputProject: output project that contains a readme file id
     :return: DDSFileUrl
     """
     try:
-        dds_file_id = job_output_dir.readme_file_id
-        user_credentials = job_output_dir.dds_user_credentials
+        dds_file_id = job_output_project.readme_file_id
+        user_credentials = job_output_project.dds_user_credentials
         remote_store = RemoteStore(get_dds_config_for_credentials(user_credentials))
         resources = remote_store.data_service.get_file_url(dds_file_id).json()
         return DDSFileUrl(dds_file_id, resources)

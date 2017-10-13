@@ -28,7 +28,7 @@ class JobFactoryTests(TestCase):
     # Checks that orders are not none
     # merges dictionaries
     # Creates a job
-    # Creates a job output dir
+    # Creates a job output project
 
     def test_requires_user_order(self):
         user_job_order = None

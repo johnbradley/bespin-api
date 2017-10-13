@@ -341,10 +341,10 @@ class JobOutputDirTests(TestCase):
     def test_basic_functionality(self):
         JobDDSOutputProject.objects.create(job=self.job, project_id='1234',
                                            dds_user_credentials=self.user_credentials)
-        job_output_dir = JobDDSOutputProject.objects.first()
-        self.assertEqual(self.job, job_output_dir.job)
-        self.assertEqual('1234', job_output_dir.project_id)
-        self.assertEqual(self.user_credentials, job_output_dir.dds_user_credentials)
+        job_output_project = JobDDSOutputProject.objects.first()
+        self.assertEqual(self.job, job_output_project.job)
+        self.assertEqual('1234', job_output_project.project_id)
+        self.assertEqual(self.user_credentials, job_output_project.dds_user_credentials)
 
 
 class LandoConnectionTests(TestCase):
