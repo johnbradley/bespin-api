@@ -371,7 +371,6 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(0, len(response.data))
 
-
     def testAdminSeeAllData(self):
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(name='my job',
@@ -407,6 +406,30 @@ class JobsTestCase(APITestCase):
         self.assertEqual(['RnaSeq', 'RnaSeq'], [item['workflow_version']['name'] for item in response.data])
         self.assertIn(self.share_group.id, [item['share_group'] for item in response.data])
         self.assertEqual([None, None], [item['user'].get('cleanup_job_vm') for item in response.data])
+
+    def testAdminCanSeeDeletedJob(self):
+        url = reverse('admin_job-list')
+        normal_user = self.user_login.become_normal_user()
+        admin_user = self.user_login.become_admin_user()
+        job = Job.objects.create(name='my job',
+                                 state=Job.JOB_STATE_NEW,
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 share_group=self.share_group,
+                                 )
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(1, len(response.data))
+
+        # Now mark as deleted
+        job.state = Job.JOB_STATE_DELETED
+        job.save()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['state'], 'D')
 
     def test_settings_effect_job_cleanup_vm(self):
         admin_user = self.user_login.become_admin_user()
