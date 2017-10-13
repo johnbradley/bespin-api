@@ -998,7 +998,7 @@ class JobOutputDirTestCase(APITestCase):
                                                             token='secret3', dds_id='2')
 
     def test_list_dirs(self):
-        JobDDSOutputProject.objects.create(job=self.my_job, dir_name='results', project_id='1',
+        JobDDSOutputProject.objects.create(job=self.my_job, project_id='1',
                                            dds_user_credentials=self.cred)
         url = reverse('joboutputdir-list')
         response = self.client.get(url, format='json')
@@ -1006,7 +1006,6 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual(1, len(response.data))
         job_output_dir = response.data[0]
         self.assertEqual(self.my_job.id, job_output_dir['job'])
-        self.assertEqual('results', job_output_dir['dir_name'])
         self.assertEqual('1', job_output_dir['project_id'])
         self.assertEqual(self.cred.id, job_output_dir['dds_user_credentials'])
 
@@ -1014,14 +1013,12 @@ class JobOutputDirTestCase(APITestCase):
         url = reverse('joboutputdir-list')
         response = self.client.post(url, format='json', data={
             'job': self.my_job.id,
-            'dir_name': 'results',
             'project_id': '123',
             'dds_user_credentials': self.cred.id
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job_output_dir = JobDDSOutputProject.objects.first()
         self.assertEqual(self.my_job, job_output_dir.job)
-        self.assertEqual('results', job_output_dir.dir_name)
         self.assertEqual('123', job_output_dir.project_id)
         self.assertEqual(self.cred, job_output_dir.dds_user_credentials)
 
@@ -1029,7 +1026,6 @@ class JobOutputDirTestCase(APITestCase):
         url = reverse('joboutputdir-list')
         response = self.client.post(url, format='json', data={
             'job': self.my_job.id,
-            'dir_name': 'results',
             'project_id': '123',
             'dds_user_credentials': self.cred.id,
             'readme_file_id': '123',
@@ -1042,7 +1038,6 @@ class JobOutputDirTestCase(APITestCase):
         url = reverse('joboutputdir-list')
         response = self.client.post(url, format='json', data={
             'job': self.my_job.id,
-            'dir_name': 'results',
             'project_id': '123',
             'dds_user_credentials': self.others_cred.id
         })
@@ -1050,7 +1045,7 @@ class JobOutputDirTestCase(APITestCase):
 
     def test_list_dirs_admin(self):
         # Admin can list other users job-output-directories
-        JobDDSOutputProject.objects.create(job=self.my_job, dir_name='results', project_id='1',
+        JobDDSOutputProject.objects.create(job=self.my_job, project_id='1',
                                            dds_user_credentials=self.cred)
         self.user_login.become_admin_user()
         url = reverse('admin_joboutputdir-list')
@@ -1059,7 +1054,6 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual(1, len(response.data))
         job_output_dir = response.data[0]
         self.assertEqual(self.my_job.id, job_output_dir['job'])
-        self.assertEqual('results', job_output_dir['dir_name'])
         self.assertEqual('1', job_output_dir['project_id'])
         self.assertEqual(self.cred.id, job_output_dir['dds_user_credentials'])
 
@@ -1069,7 +1063,6 @@ class JobOutputDirTestCase(APITestCase):
         url = reverse('admin_joboutputdir-list')
         response = self.client.post(url, format='json', data={
             'job': self.my_job.id,
-            'dir_name': 'results',
             'project_id': '123',
             'dds_user_credentials': self.cred.id,
             'readme_file_id': '456',
@@ -1077,13 +1070,12 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job_output_dir = JobDDSOutputProject.objects.first()
         self.assertEqual(self.my_job, job_output_dir.job)
-        self.assertEqual('results', job_output_dir.dir_name)
         self.assertEqual('123', job_output_dir.project_id)
         self.assertEqual(self.cred, job_output_dir.dds_user_credentials)
         self.assertEqual('456', job_output_dir.readme_file_id)
 
     def test_readme_url_endpoint_get(self):
-        job_output_dir = JobDDSOutputProject.objects.create(job=self.my_job, dir_name='results', project_id='1',
+        job_output_dir = JobDDSOutputProject.objects.create(job=self.my_job, project_id='1',
                                                             dds_user_credentials=self.cred)
         url = '{}{}/readme-url/'.format(reverse('joboutputdir-list'), job_output_dir.id)
         response = self.client.get(url, format='json', data={})
@@ -1097,7 +1089,7 @@ class JobOutputDirTestCase(APITestCase):
             'host': 'somehost',
             'http_headers': '',
         }
-        job_output_dir = JobDDSOutputProject.objects.create(job=self.my_job, dir_name='results', project_id='1',
+        job_output_dir = JobDDSOutputProject.objects.create(job=self.my_job, project_id='1',
                                                             dds_user_credentials=self.cred)
         url = '{}{}/readme-url/'.format(reverse('joboutputdir-list'), job_output_dir.id)
         response = self.client.post(url, format='json', data={})

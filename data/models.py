@@ -213,7 +213,7 @@ class JobDDSOutputProject(models.Model):
     readme_file_id = models.CharField(max_length=255, blank=False, null=True)
 
     def __unicode__(self):
-        return 'Directory name: {} Project: {}'.format(self.dir_name, self.project_id)
+        return 'Project: {}'.format(self.project_id)
 
 
 class JobError(models.Model):

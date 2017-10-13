@@ -33,7 +33,7 @@ JOB_ID=$(curl -s -H "$AUTH_HEADER" -H "$JSON_CONTENT_HEADER" -H "$ACCEPT_HEADER"
 echo "Create job $JOB_ID"
 
 echo "Create job output directory"
-PAYLOAD="{\"job\":$JOB_ID, \"dir_name\":\"Results-Dec-22\", \"project_id\":\"123\", \"dds_user_credentials\":$USER_CRED_ID}"
+PAYLOAD="{\"job\":$JOB_ID, \"project_id\":\"123\", \"dds_user_credentials\":$USER_CRED_ID}"
 curl -s -H "$AUTH_HEADER" -H "$JSON_CONTENT_HEADER" -H "$ACCEPT_HEADER" -X POST -d "$PAYLOAD" $BASE_URL/job-output-dirs/
 
 echo "Create job input file"

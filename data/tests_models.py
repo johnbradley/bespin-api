@@ -339,11 +339,10 @@ class JobOutputDirTests(TestCase):
         JobTests.add_job_fields(self)
 
     def test_basic_functionality(self):
-        JobDDSOutputProject.objects.create(job=self.job, dir_name='results', project_id='1234',
+        JobDDSOutputProject.objects.create(job=self.job, project_id='1234',
                                            dds_user_credentials=self.user_credentials)
         job_output_dir = JobDDSOutputProject.objects.first()
         self.assertEqual(self.job, job_output_dir.job)
-        self.assertEqual('results', job_output_dir.dir_name)
         self.assertEqual('1234', job_output_dir.project_id)
         self.assertEqual(self.user_credentials, job_output_dir.dds_user_credentials)
 

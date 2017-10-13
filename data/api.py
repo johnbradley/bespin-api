@@ -252,7 +252,7 @@ class AdminJobErrorViewSet(viewsets.ModelViewSet):
 class JobOutputDirViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = JobDDSOutputProject.objects.all()
-    serializer_class = JobOutputDirSerializer
+    serializer_class = JobDDSOutputProjectSerializer
 
     @detail_route(methods=['post'], serializer_class=DDSFileUrlSerializer, url_path='readme-url')
     def readme_url(self, request, pk=None):
@@ -265,7 +265,7 @@ class JobOutputDirViewSet(viewsets.ModelViewSet):
 class AdminJobOutputDirViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
     queryset = JobDDSOutputProject.objects.all()
-    serializer_class = AdminJobOutputDirSerializer
+    serializer_class = AdminJobDDSOutputProjectSerializer
 
 
 class JobQuestionnaireViewSet(viewsets.ReadOnlyModelViewSet):

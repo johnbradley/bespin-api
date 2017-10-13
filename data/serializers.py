@@ -34,7 +34,7 @@ class WorkflowMethodsDocumentSerializer(serializers.ModelSerializer):
         fields = ('id', 'workflow_version', 'content')
 
 
-class JobOutputDirSerializer(serializers.ModelSerializer):
+class JobDDSOutputProjectSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context['request']
         # You must own the job you are attaching this output directory onto
@@ -44,14 +44,14 @@ class JobOutputDirSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JobDDSOutputProject
-        resource_name = 'job-output-dirs'
-        fields = ('id', 'job', 'dir_name', 'project_id', 'dds_user_credentials')
+        resource_name = 'job-dds-output-projects'
+        fields = ('id', 'job', 'project_id', 'dds_user_credentials')
 
 
-class AdminJobOutputDirSerializer(serializers.ModelSerializer):
+class AdminJobDDSOutputProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobDDSOutputProject
-        resource_name = 'job-output-dirs'
+        resource_name = 'job-dds-output-projects'
         fields = '__all__'
 
 
@@ -63,7 +63,7 @@ class JobErrorSerializer(serializers.ModelSerializer):
 
 
 class JobSerializer(serializers.ModelSerializer):
-    output_dir = JobOutputDirSerializer(required=False, read_only=True)
+    output_dir = JobDDSOutputProjectSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
     state = serializers.CharField(read_only=True)
     step = serializers.CharField(read_only=True)
@@ -89,7 +89,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class AdminJobSerializer(serializers.ModelSerializer):
     workflow_version = WorkflowVersionSerializer(required=False)
-    output_dir = JobOutputDirSerializer(required=False, read_only=True)
+    output_dir = JobDDSOutputProjectSerializer(required=False, read_only=True)
     vm_project_name = serializers.CharField(required=False)
     name = serializers.CharField(required=False)
     user = UserSerializer(read_only=True)
