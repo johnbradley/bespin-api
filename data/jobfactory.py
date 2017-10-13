@@ -1,4 +1,4 @@
-from data.models import Job, JobOutputDir, DDSJobInputFile, DDSUserCredential
+from data.models import Job, JobDDSOutputProject, DDSJobInputFile, DDSUserCredential
 from rest_framework.exceptions import ValidationError
 from util import get_file_name
 from exceptions import JobFactoryException
@@ -107,6 +107,6 @@ class JobFactory(object):
         # Create output directory that will contain resulting project
         # just taking the first worker user credential for now(there is only one production DukeDS instance)
         worker_user_credentials = DDSUserCredential.objects.first()
-        JobOutputDir.objects.create(job=job, dds_user_credentials=worker_user_credentials)
+        JobDDSOutputProject.objects.create(job=job, dds_user_credentials=worker_user_credentials)
         return job
 

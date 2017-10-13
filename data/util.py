@@ -208,7 +208,7 @@ def get_readme_file_url(job_output_dir):
     Get url info for the readme file associated with a job output directory.
     Uses system credentials so we can read this file while the job results are being still being reviewed
     and unavailable to the end user.
-    :param job_output_dir: JobOutputDir: output project that contains a readme file id
+    :param job_output_dir: JobDDSOutputProject: output project that contains a readme file id
     :return: DDSFileUrl
     """
     try:

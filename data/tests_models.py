@@ -1,7 +1,7 @@
 from django.test import TestCase
 from models import DDSEndpoint, DDSUserCredential
 from models import Workflow, WorkflowVersion
-from models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, JobOutputDir, JobError
+from models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, JobDDSOutputProject, JobError
 from models import LandoConnection
 from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject
 from models import JobToken
@@ -339,9 +339,9 @@ class JobOutputDirTests(TestCase):
         JobTests.add_job_fields(self)
 
     def test_basic_functionality(self):
-        JobOutputDir.objects.create(job=self.job, dir_name='results', project_id='1234',
-                                    dds_user_credentials=self.user_credentials)
-        job_output_dir = JobOutputDir.objects.first()
+        JobDDSOutputProject.objects.create(job=self.job, dir_name='results', project_id='1234',
+                                           dds_user_credentials=self.user_credentials)
+        job_output_dir = JobDDSOutputProject.objects.first()
         self.assertEqual(self.job, job_output_dir.job)
         self.assertEqual('results', job_output_dir.dir_name)
         self.assertEqual('1234', job_output_dir.project_id)

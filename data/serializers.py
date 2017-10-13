@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
-    DDSEndpoint, DDSUserCredential, JobOutputDir, URLJobInputFile, JobError, JobAnswerSet, \
+    DDSEndpoint, DDSUserCredential, JobDDSOutputProject, URLJobInputFile, JobError, JobAnswerSet, \
     JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, WorkflowMethodsDocument, \
     EmailTemplate, EmailMessage
 
@@ -43,14 +43,14 @@ class JobOutputDirSerializer(serializers.ModelSerializer):
         return data
 
     class Meta:
-        model = JobOutputDir
+        model = JobDDSOutputProject
         resource_name = 'job-output-dirs'
         fields = ('id', 'job', 'dir_name', 'project_id', 'dds_user_credentials')
 
 
 class AdminJobOutputDirSerializer(serializers.ModelSerializer):
     class Meta:
-        model = JobOutputDir
+        model = JobDDSOutputProject
         resource_name = 'job-output-dirs'
         fields = '__all__'
 
