@@ -349,6 +349,29 @@ class JobsTestCase(APITestCase):
         self.assertEqual(other_user.id, response.data[0]['user'])
         self.assertEqual(self.workflow_version.id, response.data[0]['workflow_version'])
 
+    def testUserCannotSeeDeletedJob(self):
+        url = reverse('job-list')
+        normal_user = self.user_login.become_normal_user()
+        job = Job.objects.create(name='my job',
+                                 state=Job.JOB_STATE_NEW,
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 share_group=self.share_group,
+                                 )
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(1, len(response.data))
+
+        # Now mark as deleted
+        job.state = Job.JOB_STATE_DELETED
+        job.save()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(0, len(response.data))
+
+
     def testAdminSeeAllData(self):
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(name='my job',

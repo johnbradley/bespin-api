@@ -92,7 +92,7 @@ class JobsViewSet(mixins.RetrieveModelMixin,
     serializer_class = JobSerializer
 
     def get_queryset(self):
-        return Job.objects.filter(user=self.request.user)
+        return Job.objects.filter(user=self.request.user).exclude(state=Job.JOB_STATE_DELETED)
 
     @detail_route(methods=['post'])
     def start(self, request, pk=None):

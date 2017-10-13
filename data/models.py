@@ -130,6 +130,7 @@ class Job(models.Model):
     JOB_STATE_CANCELING = 'c'
     JOB_STATE_CANCEL = 'C'
     JOB_STATE_RESTARTING = 'r'
+    JOB_STATE_DELETED = 'D'
     JOB_STATES = (
         (JOB_STATE_NEW, 'New'),
         (JOB_STATE_AUTHORIZED, 'Authorized'),
@@ -140,6 +141,7 @@ class Job(models.Model):
         (JOB_STATE_CANCELING, 'Canceling'),
         (JOB_STATE_CANCEL, 'Canceled'),
         (JOB_STATE_RESTARTING, 'Restarting'),
+        (JOB_STATE_DELETED, 'Deleted'),
     )
 
     JOB_STEP_CREATE_VM = 'V'
