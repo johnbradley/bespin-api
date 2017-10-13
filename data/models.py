@@ -195,6 +195,10 @@ class Job(models.Model):
             raise ValidationError('stage group user does not match job user')
         super(Job, self).save(*args, **kwargs)
 
+    def mark_deleted(self):
+        self.state = Job.JOB_STATE_DELETED
+        self.save()
+
     class Meta:
         ordering = ['created']
 

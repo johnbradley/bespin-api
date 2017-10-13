@@ -91,6 +91,11 @@ class JobsViewSet(mixins.RetrieveModelMixin,
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobSerializer
 
+    # If job is in NEW or AUTHORIZED states it can be truly deleted
+    DESTROY_ALLOWED_STATES = (Job.JOB_STATE_NEW, Job.JOB_STATE_AUTHORIZED,)
+    # If job is in another not-running state, user can mark it deleted
+    USER_DELETE_ALLOWED_STATES = (Job.JOB_STATE_CANCEL, Job.JOB_STATE_ERROR, Job.JOB_STATE_FINISHED,)
+
     def get_queryset(self):
         return Job.objects.filter(user=self.request.user).exclude(state=Job.JOB_STATE_DELETED)
 
@@ -141,13 +146,17 @@ class JobsViewSet(mixins.RetrieveModelMixin,
         serializer = JobSerializer(job)
         return Response(serializer.data, status=job_status)
 
+
     def destroy(self, request, *args, **kwargs):
         job = self.get_object()
-        # Only delete job if it hasn't been started yet
-        if job.state not in [Job.JOB_STATE_NEW, Job.JOB_STATE_AUTHORIZED]:
-            raise BespinAPIException(400, 'You may only delete jobs in NEW and AUTHORIZED states.')
-        self.perform_destroy(job)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if job.state in JobsViewSet.DESTROY_ALLOWED_STATES:
+            self.perform_destroy(job)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        elif job.state in JobsViewSet.USER_DELETE_ALLOWED_STATES:
+            job.mark_deleted()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            raise BespinAPIException(400, 'You may only delete jobs in NEW, AUTHORIZED , CANCEL, ERROR, or FINISHED states.')
 
 
 class AdminJobsViewSet(viewsets.ModelViewSet):

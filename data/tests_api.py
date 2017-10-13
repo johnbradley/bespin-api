@@ -746,18 +746,18 @@ class JobsTestCase(APITestCase):
     def test_delete_job(self):
         normal_user = self.user_login.become_normal_user()
         values = [
-            # job state         expected response status code
-            (Job.JOB_STATE_NEW, status.HTTP_204_NO_CONTENT),
-            (Job.JOB_STATE_AUTHORIZED, status.HTTP_204_NO_CONTENT),
-            (Job.JOB_STATE_STARTING, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_RUNNING, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_FINISHED, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_ERROR, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_CANCELING, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_CANCEL, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_RESTARTING, status.HTTP_400_BAD_REQUEST),
+            # job state         expected response status code       0=pretend, 1=really delete
+            (Job.JOB_STATE_NEW, status.HTTP_204_NO_CONTENT, 0),
+            (Job.JOB_STATE_AUTHORIZED, status.HTTP_204_NO_CONTENT, 0),
+            (Job.JOB_STATE_STARTING, status.HTTP_400_BAD_REQUEST, 1),
+            (Job.JOB_STATE_RUNNING, status.HTTP_400_BAD_REQUEST, 1),
+            (Job.JOB_STATE_FINISHED, status.HTTP_204_NO_CONTENT, 1),
+            (Job.JOB_STATE_ERROR, status.HTTP_204_NO_CONTENT, 1),
+            (Job.JOB_STATE_CANCELING, status.HTTP_400_BAD_REQUEST, 1),
+            (Job.JOB_STATE_CANCEL, status.HTTP_204_NO_CONTENT, 1),
+            (Job.JOB_STATE_RESTARTING, status.HTTP_400_BAD_REQUEST, 1),
         ]
-        for job_state, expected_response_status_code in values:
+        for job_state, expected_response_status_code, expected_count in values:
             job = Job.objects.create(workflow_version=self.workflow_version,
                                      vm_project_name='jpb67',
                                      job_order={},
@@ -765,11 +765,13 @@ class JobsTestCase(APITestCase):
                                      stage_group=JobFileStageGroup.objects.create(user=normal_user),
                                      share_group=self.share_group,
                                      )
+            job_id = job.id
             job.state = job_state
             job.save()
-            url = reverse('job-list') + str(job.id) + '/'
+            url = reverse('job-list') + str(job_id) + '/'
             response = self.client.delete(url)
             self.assertEqual(response.status_code, expected_response_status_code)
+            self.assertEqual(Job.objects.filter(id=job_id).count(), expected_count)
 
     def test_job_includes_run_token(self):
         normal_user = self.user_login.become_normal_user()
