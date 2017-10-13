@@ -249,7 +249,7 @@ class AdminJobErrorViewSet(viewsets.ModelViewSet):
     filter_fields = ('job',)
 
 
-class JobOutputDirViewSet(viewsets.ModelViewSet):
+class JobDDSOutputProjectViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = JobDDSOutputProject.objects.all()
     serializer_class = JobDDSOutputProjectSerializer
@@ -262,7 +262,7 @@ class JobOutputDirViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class AdminJobOutputDirViewSet(viewsets.ModelViewSet):
+class AdminJobDDSOutputProjectViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
     queryset = JobDDSOutputProject.objects.all()
     serializer_class = AdminJobDDSOutputProjectSerializer

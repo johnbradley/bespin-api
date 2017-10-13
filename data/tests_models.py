@@ -334,7 +334,7 @@ class JobFileStageGroupTests(TestCase):
         self.assertEqual(20000, url_file.size)
 
 
-class JobOutputDirTests(TestCase):
+class JobDDSOutputProjectTests(TestCase):
     def setUp(self):
         JobTests.add_job_fields(self)
 

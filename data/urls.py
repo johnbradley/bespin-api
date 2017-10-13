@@ -14,7 +14,7 @@ router.register(r'url-job-input-files', api.URLJobInputFileViewSet, 'urljobinput
 router.register(r'dds-endpoints', api.DDSEndpointViewSet, 'ddsendpoint')
 router.register(r'dds-user-credentials', api.DDSUserCredViewSet, 'ddsusercredential')
 router.register(r'job-errors', api.JobErrorViewSet, 'joberror')
-router.register(r'job-output-dirs', api.JobOutputDirViewSet, 'joboutputdir')
+router.register(r'job-dds-output-projects', api.JobDDSOutputProjectViewSet, 'jobddsoutputproject')
 router.register(r'job-questionnaires', api.JobQuestionnaireViewSet, 'jobquestionnaire')
 router.register(r'job-answer-sets', api.JobAnswerSetViewSet, 'jobanswerset')
 router.register(r'share-groups', api.ShareGroupViewSet, 'sharegroup')
@@ -27,7 +27,7 @@ router.register(r'admin/job-tokens', api.AdminJobTokensViewSet, 'admin_jobtoken'
 router.register(r'admin/job-file-stage-groups', api.AdminJobFileStageGroupViewSet, 'admin_jobfilestagegroup')
 router.register(r'admin/dds-user-credentials', api.AdminDDSUserCredentialsViewSet, 'admin_ddsusercredentials')
 router.register(r'admin/job-errors', api.AdminJobErrorViewSet, 'admin_joberror')
-router.register(r'admin/job-output-dirs', api.AdminJobOutputDirViewSet, 'admin_joboutputdir')
+router.register(r'admin/job-dds-output-projects', api.AdminJobDDSOutputProjectViewSet, 'admin_jobddsoutputproject')
 router.register(r'admin/share-groups', api.AdminShareGroupViewSet, 'admin_sharegroup')
 router.register(r'admin/workflow-methods-documents', api.WorkflowMethodsDocumentViewSet,
                 'admin_workflowmethodsdocument')

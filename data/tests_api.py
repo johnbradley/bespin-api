@@ -974,7 +974,8 @@ class URLJobInputFileTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
-class JobOutputDirTestCase(APITestCase):
+class JobDDSOutputProjectTestCase(APITestCase):
+
     def setUp(self):
         self.user_login = UserLogin(self.client)
         workflow = Workflow.objects.create(name='RnaSeq')
@@ -1000,7 +1001,7 @@ class JobOutputDirTestCase(APITestCase):
     def test_list_dirs(self):
         JobDDSOutputProject.objects.create(job=self.my_job, project_id='1',
                                            dds_user_credentials=self.cred)
-        url = reverse('joboutputdir-list')
+        url = reverse('jobddsoutputproject-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
@@ -1010,7 +1011,7 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual(self.cred.id, job_output_project['dds_user_credentials'])
 
     def test_create(self):
-        url = reverse('joboutputdir-list')
+        url = reverse('jobddsoutputproject-list')
         response = self.client.post(url, format='json', data={
             'job': self.my_job.id,
             'project_id': '123',
@@ -1023,7 +1024,7 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual(self.cred, job_output_project.dds_user_credentials)
 
     def test_user_cant_change_remote_file_id(self):
-        url = reverse('joboutputdir-list')
+        url = reverse('jobddsoutputproject-list')
         response = self.client.post(url, format='json', data={
             'job': self.my_job.id,
             'project_id': '123',
@@ -1035,7 +1036,7 @@ class JobOutputDirTestCase(APITestCase):
         self.assertEqual(None, job_output_project.readme_file_id)
 
     def test_can_use_others_creds(self):
-        url = reverse('joboutputdir-list')
+        url = reverse('jobddsoutputproject-list')
         response = self.client.post(url, format='json', data={
             'job': self.my_job.id,
             'project_id': '123',
@@ -1048,7 +1049,7 @@ class JobOutputDirTestCase(APITestCase):
         JobDDSOutputProject.objects.create(job=self.my_job, project_id='1',
                                            dds_user_credentials=self.cred)
         self.user_login.become_admin_user()
-        url = reverse('admin_joboutputdir-list')
+        url = reverse('admin_jobddsoutputproject-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(1, len(response.data))
@@ -1060,7 +1061,7 @@ class JobOutputDirTestCase(APITestCase):
     def test_create_admin(self):
         # Admin can create other users job-output-directories
         self.user_login.become_admin_user()
-        url = reverse('admin_joboutputdir-list')
+        url = reverse('admin_jobddsoutputproject-list')
         response = self.client.post(url, format='json', data={
             'job': self.my_job.id,
             'project_id': '123',
@@ -1077,7 +1078,7 @@ class JobOutputDirTestCase(APITestCase):
     def test_readme_url_endpoint_get(self):
         job_output_project = JobDDSOutputProject.objects.create(job=self.my_job, project_id='1',
                                                             dds_user_credentials=self.cred)
-        url = '{}{}/readme-url/'.format(reverse('joboutputdir-list'), job_output_project.id)
+        url = '{}{}/readme-url/'.format(reverse('jobddsoutputproject-list'), job_output_project.id)
         response = self.client.get(url, format='json', data={})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -1091,7 +1092,7 @@ class JobOutputDirTestCase(APITestCase):
         }
         job_output_project = JobDDSOutputProject.objects.create(job=self.my_job, project_id='1',
                                                             dds_user_credentials=self.cred)
-        url = '{}{}/readme-url/'.format(reverse('joboutputdir-list'), job_output_project.id)
+        url = '{}{}/readme-url/'.format(reverse('jobddsoutputproject-list'), job_output_project.id)
         response = self.client.post(url, format='json', data={})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data.get('http_verb'), 'GET')
@@ -1283,8 +1284,8 @@ class JobAnswerSetTests(APITestCase):
         self.assertEqual(1, len(JobDDSOutputProject.objects.all()))
 
     @patch('data.jobfactory.JobDDSOutputProject')
-    def test_create_job_with_exception_rolls_back(self, MockJobOutputDir):
-        MockJobOutputDir.objects.create.side_effect = ValueError("oops")
+    def test_create_job_with_exception_rolls_back(self, MockJobDDSOutputProject):
+        MockJobDDSOutputProject.objects.create.side_effect = ValueError("oops")
         questionnaire = self.setup_minimal_questionnaire()
         url = reverse('jobanswerset-list')
         response = self.client.post(url, format='json', data={
