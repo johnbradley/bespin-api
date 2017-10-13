@@ -28,7 +28,7 @@ class JobFactoryTests(TestCase):
     # Checks that orders are not none
     # merges dictionaries
     # Creates a job
-    # Creates a job output dir
+    # Creates a job output project
 
     def test_requires_user_order(self):
         user_job_order = None
@@ -59,7 +59,7 @@ class JobFactoryTests(TestCase):
         self.assertEqual(job.name, 'Test Job')
         self.assertEqual(job.vm_project_name, 'bespin-project')
         self.assertEqual(job.vm_flavor,'flavor1')
-        self.assertEqual(self.worker_cred.id, job.output_dir.dds_user_credentials.id)
+        self.assertEqual(self.worker_cred.id, job.output_project.dds_user_credentials.id)
         self.assertEqual(job.volume_size, 110)
         self.assertEqual(job.share_group, self.share_group)
         self.assertEqual(job.fund_code, '123-4')

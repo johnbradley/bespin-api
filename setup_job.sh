@@ -32,9 +32,9 @@ PAYLOAD='{"workflow_version":1,"name":"Predictions for chr1", "job_order":"{}", 
 JOB_ID=$(curl -s -H "$AUTH_HEADER" -H "$JSON_CONTENT_HEADER" -H "$ACCEPT_HEADER" -X POST -d "$PAYLOAD" $BASE_URL/jobs/ | sed -e 's/..id..//' -e 's/,.*//')
 echo "Create job $JOB_ID"
 
-echo "Create job output directory"
-PAYLOAD="{\"job\":$JOB_ID, \"dir_name\":\"Results-Dec-22\", \"project_id\":\"123\", \"dds_user_credentials\":$USER_CRED_ID}"
-curl -s -H "$AUTH_HEADER" -H "$JSON_CONTENT_HEADER" -H "$ACCEPT_HEADER" -X POST -d "$PAYLOAD" $BASE_URL/job-output-dirs/
+echo "Create job output project"
+PAYLOAD="{\"job\":$JOB_ID, \"project_id\":\"123\", \"dds_user_credentials\":$USER_CRED_ID}"
+curl -s -H "$AUTH_HEADER" -H "$JSON_CONTENT_HEADER" -H "$ACCEPT_HEADER" -X POST -d "$PAYLOAD" $BASE_URL/job-dds-output-projects/
 
 echo "Create job input file"
 PAYLOAD="{\"job\":$JOB_ID, \"file_type\":\"dds_file\", \"workflow_name\":\"model\"}"

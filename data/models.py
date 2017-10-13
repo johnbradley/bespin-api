@@ -203,18 +203,17 @@ class Job(models.Model):
         return '{} ({}) for user {}'.format(workflow_name, self.get_state_display(), self.user)
 
 
-class JobOutputDir(models.Model):
+class JobDDSOutputProject(models.Model):
     """
-    Output directory where results of workflow will be uploaded to.
+    Output project where results of workflow will be uploaded to.
     """
-    job = models.OneToOneField(Job, on_delete=models.CASCADE, null=False, related_name='output_dir')
-    dir_name = models.CharField(max_length=255, blank=False, null=True)
+    job = models.OneToOneField(Job, on_delete=models.CASCADE, null=False, related_name='output_project')
     project_id = models.CharField(max_length=255, blank=False, null=True)
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE, null=True)
     readme_file_id = models.CharField(max_length=255, blank=False, null=True)
 
     def __unicode__(self):
-        return 'Directory name: {} Project: {}'.format(self.dir_name, self.project_id)
+        return 'Project: {}'.format(self.project_id)
 
 
 class JobError(models.Model):

@@ -1,4 +1,4 @@
-from data.models import Job, JobOutputDir, DDSJobInputFile, DDSUserCredential
+from data.models import Job, JobDDSOutputProject, DDSJobInputFile, DDSUserCredential
 from rest_framework.exceptions import ValidationError
 from util import get_file_name
 from exceptions import JobFactoryException
@@ -84,7 +84,7 @@ class JobFactory(object):
     def create_job(self):
         """
         Create a job based on the workflow_version, system job order and user job order
-        :return: Job: job that was inserted into the database along with it's output directory and input files.
+        :return: Job: job that was inserted into the database along with it's output project and input files.
         """
 
         if self.system_job_order is None or self.user_job_order is None:
@@ -104,9 +104,9 @@ class JobFactory(object):
                                  share_group=self.share_group,
                                  fund_code=self.fund_code
         )
-        # Create output directory that will contain resulting project
+        # Create output project
         # just taking the first worker user credential for now(there is only one production DukeDS instance)
         worker_user_credentials = DDSUserCredential.objects.first()
-        JobOutputDir.objects.create(job=job, dds_user_credentials=worker_user_credentials)
+        JobDDSOutputProject.objects.create(job=job, dds_user_credentials=worker_user_credentials)
         return job
 

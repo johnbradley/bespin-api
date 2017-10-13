@@ -1,7 +1,7 @@
 from django.test import TestCase
 from models import DDSEndpoint, DDSUserCredential
 from models import Workflow, WorkflowVersion
-from models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, JobOutputDir, JobError
+from models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, JobDDSOutputProject, JobError
 from models import LandoConnection
 from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject
 from models import JobToken
@@ -334,18 +334,17 @@ class JobFileStageGroupTests(TestCase):
         self.assertEqual(20000, url_file.size)
 
 
-class JobOutputDirTests(TestCase):
+class JobDDSOutputProjectTests(TestCase):
     def setUp(self):
         JobTests.add_job_fields(self)
 
     def test_basic_functionality(self):
-        JobOutputDir.objects.create(job=self.job, dir_name='results', project_id='1234',
-                                    dds_user_credentials=self.user_credentials)
-        job_output_dir = JobOutputDir.objects.first()
-        self.assertEqual(self.job, job_output_dir.job)
-        self.assertEqual('results', job_output_dir.dir_name)
-        self.assertEqual('1234', job_output_dir.project_id)
-        self.assertEqual(self.user_credentials, job_output_dir.dds_user_credentials)
+        JobDDSOutputProject.objects.create(job=self.job, project_id='1234',
+                                           dds_user_credentials=self.user_credentials)
+        job_output_project = JobDDSOutputProject.objects.first()
+        self.assertEqual(self.job, job_output_project.job)
+        self.assertEqual('1234', job_output_project.project_id)
+        self.assertEqual(self.user_credentials, job_output_project.dds_user_credentials)
 
 
 class LandoConnectionTests(TestCase):
