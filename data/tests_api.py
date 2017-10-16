@@ -349,6 +349,28 @@ class JobsTestCase(APITestCase):
         self.assertEqual(other_user.id, response.data[0]['user'])
         self.assertEqual(self.workflow_version.id, response.data[0]['workflow_version'])
 
+    def testUserCannotSeeDeletedJob(self):
+        url = reverse('job-list')
+        normal_user = self.user_login.become_normal_user()
+        job = Job.objects.create(name='my job',
+                                 state=Job.JOB_STATE_NEW,
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 share_group=self.share_group,
+                                 )
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(1, len(response.data))
+
+        # Now mark as deleted
+        job.state = Job.JOB_STATE_DELETED
+        job.save()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(0, len(response.data))
+
     def testAdminSeeAllData(self):
         normal_user = self.user_login.become_normal_user()
         job = Job.objects.create(name='my job',
@@ -384,6 +406,30 @@ class JobsTestCase(APITestCase):
         self.assertEqual(['RnaSeq', 'RnaSeq'], [item['workflow_version']['name'] for item in response.data])
         self.assertIn(self.share_group.id, [item['share_group'] for item in response.data])
         self.assertEqual([None, None], [item['user'].get('cleanup_job_vm') for item in response.data])
+
+    def testAdminCanSeeDeletedJob(self):
+        url = reverse('admin_job-list')
+        normal_user = self.user_login.become_normal_user()
+        admin_user = self.user_login.become_admin_user()
+        job = Job.objects.create(name='my job',
+                                 state=Job.JOB_STATE_NEW,
+                                 workflow_version=self.workflow_version,
+                                 vm_project_name='jpb67',
+                                 job_order={},
+                                 user=normal_user,
+                                 share_group=self.share_group,
+                                 )
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(1, len(response.data))
+
+        # Now mark as deleted
+        job.state = Job.JOB_STATE_DELETED
+        job.save()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual(response.data[0]['state'], 'D')
 
     def test_settings_effect_job_cleanup_vm(self):
         admin_user = self.user_login.become_admin_user()
@@ -700,18 +746,18 @@ class JobsTestCase(APITestCase):
     def test_delete_job(self):
         normal_user = self.user_login.become_normal_user()
         values = [
-            # job state         expected response status code
-            (Job.JOB_STATE_NEW, status.HTTP_204_NO_CONTENT),
-            (Job.JOB_STATE_AUTHORIZED, status.HTTP_204_NO_CONTENT),
-            (Job.JOB_STATE_STARTING, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_RUNNING, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_FINISHED, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_ERROR, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_CANCELING, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_CANCEL, status.HTTP_400_BAD_REQUEST),
-            (Job.JOB_STATE_RESTARTING, status.HTTP_400_BAD_REQUEST),
+            # job state         expected response status code       0=pretend, 1=really delete
+            (Job.JOB_STATE_NEW, status.HTTP_204_NO_CONTENT, 0),
+            (Job.JOB_STATE_AUTHORIZED, status.HTTP_204_NO_CONTENT, 0),
+            (Job.JOB_STATE_STARTING, status.HTTP_400_BAD_REQUEST, 1),
+            (Job.JOB_STATE_RUNNING, status.HTTP_400_BAD_REQUEST, 1),
+            (Job.JOB_STATE_FINISHED, status.HTTP_204_NO_CONTENT, 1),
+            (Job.JOB_STATE_ERROR, status.HTTP_204_NO_CONTENT, 1),
+            (Job.JOB_STATE_CANCELING, status.HTTP_400_BAD_REQUEST, 1),
+            (Job.JOB_STATE_CANCEL, status.HTTP_204_NO_CONTENT, 1),
+            (Job.JOB_STATE_RESTARTING, status.HTTP_400_BAD_REQUEST, 1),
         ]
-        for job_state, expected_response_status_code in values:
+        for job_state, expected_response_status_code, expected_count in values:
             job = Job.objects.create(workflow_version=self.workflow_version,
                                      vm_project_name='jpb67',
                                      job_order={},
@@ -719,11 +765,13 @@ class JobsTestCase(APITestCase):
                                      stage_group=JobFileStageGroup.objects.create(user=normal_user),
                                      share_group=self.share_group,
                                      )
+            job_id = job.id
             job.state = job_state
             job.save()
-            url = reverse('job-list') + str(job.id) + '/'
+            url = reverse('job-list') + str(job_id) + '/'
             response = self.client.delete(url)
             self.assertEqual(response.status_code, expected_response_status_code)
+            self.assertEqual(Job.objects.filter(id=job_id).count(), expected_count)
 
     def test_job_includes_run_token(self):
         normal_user = self.user_login.become_normal_user()
