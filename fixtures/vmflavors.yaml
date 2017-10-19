@@ -1,15 +1,15 @@
 - model: data.vmflavor
   pk: 1
-  fields: {vm_flavor: m1.xlarge}
+  fields: {name: m1.xlarge}
 - model: data.vmflavor
   pk: 2
-  fields: {vm_flavor: m1.tiny}
+  fields: {name: m1.tiny}
 - model: data.vmflavor
   pk: 3
-  fields: {vm_flavor: m1.small}
+  fields: {name: m1.small}
 - model: data.vmflavor
   pk: 4
-  fields: {vm_flavor: m1.large}
+  fields: {name: m1.large}
 - model: data.vmflavor
   pk: 5
-  fields: {vm_flavor: m1.medium}
+  fields: {name: m1.medium}
