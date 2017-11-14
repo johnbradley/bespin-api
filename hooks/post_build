@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# After building bespin-api, now build the production
+
+docker build --build-arg BESPIN_API_VERSION=${CACHE_TAG} -t ${DOCKER_REPO}:${CACHE_TAG}-production
