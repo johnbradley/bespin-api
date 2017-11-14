@@ -1,5 +1,5 @@
-ARG BESPIN_API_VERSION=latest
-FROM dleehr/bespin-api-versioned:$BESPIN_API_VERSION
+ARG BASE_IMAGE=dleehr/bespin-api-versioned:latest
+FROM ${BASE_IMAGE}
 MAINTAINER dan.leehr@duke.edu
 
 RUN apt-get update && apt-get install -y \
