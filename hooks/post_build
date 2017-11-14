@@ -1,5 +1,6 @@
 #!/bin/bash
 
-# After building bespin-api, now build the production
+# After building bespin-api, now build the production image based on it
+echo "Building ${IMAGE_NAME}-production from production context"
 
-docker build --build-arg BESPIN_API_VERSION=${CACHE_TAG} -t ${DOCKER_REPO}:${CACHE_TAG}-production production
+docker build --build-arg BASE_IMAGE=${IMAGE_NAME} -t ${IMAGE_NAME}-production production

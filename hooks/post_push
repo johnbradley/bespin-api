@@ -1,5 +1,6 @@
 #!/bin/bash
 
-# After pushing bespin-api, now push the production version
+# After pushing bespin-api, push the production version
+echo "Pushing ${IMAGE_NAME}-production"
 
-docker push ${DOCKER_REPO}:${CACHE_TAG}-production
+docker push ${IMAGE_NAME}-production
