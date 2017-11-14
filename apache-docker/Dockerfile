@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=dleehr/bespin-api-versioned:latest
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 MAINTAINER dan.leehr@duke.edu
 
