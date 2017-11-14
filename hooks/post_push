@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# After pushing bespin-api, push the apache version
+echo "Pushing ${IMAGE_NAME}-apache"
+
+docker push ${IMAGE_NAME}-apache
