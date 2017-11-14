@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# After pushing bespin-api, now push the production version
+
+docker push ${DOCKER_REPO}:${CACHE_TAG}-production

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Custom build script.
+# Passes along the BESPIN_API_VERSION as a build arg, then overrides the tag to be the repo name plus the api version being built.
+
+docker build --build-arg BESPIN_API_VERSION=$BESPIN_API_VERSION -t $DOCKER_REPO:$BESPIN_API_VERSION
