@@ -7,7 +7,7 @@ Dockerfile for building bespin-api with apache2 and mod_wsgi
 
 The Dockerfile contained is used to build an image containing the bespin-api Django application, hosted by Apache httpd using wsgi.
 
-The Ember frontend application, [bespin-ui](https://github.com/Duke-GCB/bespin-ui) is not included in the image, but should be downloaded from its release and mounted at runtime in the container at `/srv/ui/`.
+The Ember frontend application, [bespin-ui](https://github.com/Duke-GCB/bespin-ui) is not included in the image, but should be downloaded from its release and mounted at runtime in the container at `/srv/ui/`. The [bespin-web](https://github.com/Duke-GCB/gcb-ansible-roles/blob/master/bespin_web/tasks/run-server.yml) ansible role documents how bespin-ui is installed.
 
 # Docker Build Details
 
