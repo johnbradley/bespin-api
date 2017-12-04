@@ -163,6 +163,8 @@ class AdminJobsViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
     serializer_class = AdminJobSerializer
     queryset = Job.objects.all()
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('vm_instance_name',)
 
     def perform_update(self, serializer):
         # Overrides perform update to notify about state changes

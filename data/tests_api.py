@@ -431,6 +431,30 @@ class JobsTestCase(APITestCase):
         self.assertEqual(1, len(response.data))
         self.assertEqual(response.data[0]['state'], 'D')
 
+    def testAdminFilterJobsVmInstanceName(self):
+        admin_user = self.user_login.become_admin_user()
+        Job.objects.create(name='somejob',
+                           workflow_version=self.workflow_version,
+                           vm_project_name='jpb67',
+                           vm_instance_name='vm_job_1',
+                           job_order={},
+                           user=admin_user,
+                           share_group=self.share_group,
+                           )
+        Job.objects.create(name='somejob2',
+                           workflow_version=self.workflow_version,
+                           vm_project_name='jpb67',
+                           vm_instance_name='vm_job_2',
+                           job_order={},
+                           user=admin_user,
+                           share_group=self.share_group,
+                           )
+        url = reverse('admin_job-list') + '?vm_instance_name=vm_job_1'
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual('somejob', response.data[0]['name'])
+
     def test_settings_effect_job_cleanup_vm(self):
         admin_user = self.user_login.become_admin_user()
         job = Job.objects.create(name='somejob',
