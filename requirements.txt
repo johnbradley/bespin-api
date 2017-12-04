@@ -14,7 +14,7 @@ lando-messaging==0.7.2
 mock==2.0.0
 pbr==1.10.0
 pika==0.10.0
-psycopg2==2.6.2
+psycopg2==2.7.3.2
 PyYAML==3.12
 requests==2.11.1
 six==1.10.0
