@@ -3,7 +3,7 @@ from models import DDSEndpoint, DDSUserCredential
 from models import Workflow, WorkflowVersion
 from models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, JobDDSOutputProject, JobError
 from models import LandoConnection
-from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject
+from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, VMSettings
 from models import JobToken
 from models import DDSUser, ShareGroup, WorkflowMethodsDocument
 from models import EmailTemplate, EmailMessage
@@ -603,3 +603,24 @@ class EmailMessageTests(TestCase):
         message.mark_error('SMTP Error')
         self.assertEqual(message.state, EmailMessage.MESSAGE_STATE_ERROR)
         self.assertEqual(message.errors, 'SMTP Error')
+
+
+class VMSettingsTests(TestCase):
+
+    def test_validates_reqiured_fields(self):
+        settings = VMSettings.objects.create()
+        with self.assertRaises(ValidationError) as val:
+            settings.clean_fields()
+        error_dict = val.exception.error_dict
+        self.assertIn('vm_flavor', error_dict)
+        self.assertIn('vm_project', error_dict)
+        self.assertNotIn('volume_size_base', error_dict)
+        self.assertNotIn('volume_size_factor', error_dict)
+        self.assertIn('image_name', error_dict)
+        self.assertIn('ssh_key_name', error_dict)
+        self.assertIn('network_name', error_dict)
+        self.assertNotIn('allocate_floating_ips', error_dict)
+        self.assertNotIn('floating_ip_pool_name', error_dict)
+        self.assertIn('cwl_base_command', error_dict)
+        self.assertNotIn('cwl_post_process_command', error_dict)
+        self.assertNotIn('volume_mounts', error_dict)
