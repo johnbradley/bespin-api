@@ -391,43 +391,45 @@ class JobQuestionnaireTests(TestCase):
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
 
     def test_two_questionnaires(self):
+        settings1 = VMSettings.objects.create(vm_flavor=self.flavor1,
+                                              vm_project=self.project,
+                                              volume_size_base=10,
+                                              volume_size_factor=5)
+        settings2 = VMSettings.objects.create(vm_flavor=self.flavor2,
+                                              vm_project=self.project,
+                                              volume_size_base=3,
+                                              volume_size_factor=2)
         questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
                                                         description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=self.workflow_version,
                                                         system_job_order_json='{"system_input": "foo"}',
-                                                        vm_flavor=self.flavor1,
-                                                        vm_project=self.project,
                                                         share_group=self.share_group,
-                                                        volume_size_base=10,
-                                                        volume_size_factor=5)
+                                                        vm_settings=settings1)
         questionnaire = JobQuestionnaire.objects.create(name='Human RnaSeq',
                                                         description='Uses reference genome zew and gene index def',
                                                         workflow_version=self.workflow_version,
                                                         system_job_order_json='{"system_input":"bar"}',
-                                                        vm_flavor=self.flavor2,
-                                                        vm_project=self.project,
                                                         share_group=self.share_group,
-                                                        volume_size_base=3,
-                                                        volume_size_factor=2)
+                                                        vm_settings=settings2)
         ant_questionnaire = JobQuestionnaire.objects.filter(name='Ant RnaSeq').first()
         self.assertEqual('Ant RnaSeq', ant_questionnaire.name)
         self.assertEqual('Uses reference genome xyz and gene index abc', ant_questionnaire.description)
         self.assertEqual('foo',json.loads(ant_questionnaire.system_job_order_json)['system_input'])
-        self.assertEqual('flavor1', ant_questionnaire.vm_flavor.name)
-        self.assertEqual('bespin-project', ant_questionnaire.vm_project.name)
+        self.assertEqual('flavor1', ant_questionnaire.vm_settings.vm_flavor.name)
+        self.assertEqual('bespin-project', ant_questionnaire.vm_settings.vm_project.name)
         self.assertEqual(self.share_group, ant_questionnaire.share_group)
-        self.assertEqual(10, ant_questionnaire.volume_size_base)
-        self.assertEqual(5, ant_questionnaire.volume_size_factor)
+        self.assertEqual(10, ant_questionnaire.vm_settings.volume_size_base)
+        self.assertEqual(5, ant_questionnaire.vm_settings.volume_size_factor)
 
         human_questionnaire = JobQuestionnaire.objects.filter(name='Human RnaSeq').first()
         self.assertEqual('Human RnaSeq', human_questionnaire.name)
         self.assertEqual('Uses reference genome zew and gene index def', human_questionnaire.description)
         self.assertEqual('bar',json.loads(human_questionnaire.system_job_order_json)['system_input'])
-        self.assertEqual('flavor2', human_questionnaire.vm_flavor.name)
-        self.assertEqual('bespin-project', human_questionnaire.vm_project.name)
+        self.assertEqual('flavor2', human_questionnaire.vm_settings.vm_flavor.name)
+        self.assertEqual('bespin-project', human_questionnaire.vm_settings.vm_project.name)
         self.assertEqual(self.share_group, human_questionnaire.share_group)
-        self.assertEqual(3, human_questionnaire.volume_size_base)
-        self.assertEqual(2, human_questionnaire.volume_size_factor)
+        self.assertEqual(3, human_questionnaire.vm_settings.volume_size_base)
+        self.assertEqual(2, human_questionnaire.vm_settings.volume_size_factor)
 
 
 class JobAnswerSetTests(TestCase):
@@ -435,12 +437,13 @@ class JobAnswerSetTests(TestCase):
     def setUp(self):
         JobQuestionnaireTests.add_workflowversion_fields(self)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
+        self.vm_settings = VMSettings.objects.create(vm_flavor=self.flavor1,
+                                                     vm_project=self.project)
         self.questionnaire = JobQuestionnaire.objects.create(name='Exome Seq Q',
                                                         description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=self.workflow_version,
                                                         system_job_order_json='{"system_input": "foo"}',
-                                                        vm_flavor=self.flavor1,
-                                                        vm_project=self.project,
+                                                        vm_settings=self.vm_settings,
                                                         share_group=self.share_group)
     def test_basic_functionality(self):
         JobAnswerSet.objects.create(user=self.user,
@@ -606,21 +609,41 @@ class EmailMessageTests(TestCase):
 
 
 class VMSettingsTests(TestCase):
+    def setUp(self):
+        self.foreign_keys = {
+            'vm_project': VMProject.objects.create(name='project'),
+            'vm_flavor': VMFlavor.objects.create(name='flavor')
+        }
 
-    def test_validates_reqiured_fields(self):
-        settings = VMSettings.objects.create()
+    def test_creates_with_required_fks(self):
+        VMSettings.objects.create(**self.foreign_keys)
+
+    def test_requires_vm_flavor(self):
+        del self.foreign_keys['vm_flavor']
+        with self.assertRaises(IntegrityError) as val:
+            VMSettings.objects.create(**self.foreign_keys)
+
+    def test_requires_vm_project(self):
+        del self.foreign_keys['vm_project']
+        with self.assertRaises(IntegrityError) as val:
+            VMSettings.objects.create(**self.foreign_keys)
+
+    def test_validates_fields(self):
+        vm_settings = VMSettings.objects.create(**self.foreign_keys)
         with self.assertRaises(ValidationError) as val:
-            settings.clean_fields()
+            vm_settings.clean_fields()
         error_dict = val.exception.error_dict
-        self.assertIn('vm_flavor', error_dict)
-        self.assertIn('vm_project', error_dict)
+        error_keys = set(error_dict.keys())
+        expected_error_keys ={'image_name',
+                              'ssh_key_name',
+                              'network_name',
+                              'cwl_base_command'}
+        self.assertEqual(error_keys, expected_error_keys)
+
+        # other keys not required, should not fail validation
         self.assertNotIn('volume_size_base', error_dict)
         self.assertNotIn('volume_size_factor', error_dict)
-        self.assertIn('image_name', error_dict)
-        self.assertIn('ssh_key_name', error_dict)
-        self.assertIn('network_name', error_dict)
         self.assertNotIn('allocate_floating_ips', error_dict)
         self.assertNotIn('floating_ip_pool_name', error_dict)
-        self.assertIn('cwl_base_command', error_dict)
         self.assertNotIn('cwl_post_process_command', error_dict)
         self.assertNotIn('volume_mounts', error_dict)
