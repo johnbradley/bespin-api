@@ -285,9 +285,11 @@ class VMSettings(models.Model):
                                                 help_text='Allocate floating IPs to launched VMs')
     floating_ip_pool_name = models.CharField(max_length=255, blank=True, null=True,
                                              help_text='Name of floating IP pool to allocate from')
-    cwl_base_command = models.TextField(help_text='JSON-encoded base command to run the  image\'s installed CWL')
+    cwl_base_command = models.TextField(help_text='JSON-encoded command array to run the  image\'s installed CWL engine')
     cwl_post_process_command = models.TextField(null=True, blank=True,
-                                                help_text='JSON-encoded base command to run after workflow completes')
+                                                help_text='JSON-encoded command arrayto run after workflow completes')
+    cwl_pre_process_command = models.TextField(null=True, blank=True,
+                                                help_text='JSON-encoded command array to run before cwl_base_command')
     volume_mounts = models.TextField(null=True, blank=True, help_text='JSON-encoded list of volume mounts')
 
     def __unicode__(self):

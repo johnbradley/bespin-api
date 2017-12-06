@@ -645,5 +645,6 @@ class VMSettingsTests(TestCase):
         self.assertNotIn('volume_size_factor', error_dict)
         self.assertNotIn('allocate_floating_ips', error_dict)
         self.assertNotIn('floating_ip_pool_name', error_dict)
+        self.assertNotIn('cwl_pre_process_command', error_dict)
         self.assertNotIn('cwl_post_process_command', error_dict)
         self.assertNotIn('volume_mounts', error_dict)
