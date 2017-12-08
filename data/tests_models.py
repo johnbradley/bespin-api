@@ -404,11 +404,13 @@ class JobQuestionnaireTests(TestCase):
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
 
     def test_two_questionnaires(self):
-        settings1 = VMSettings.objects.create(vm_flavor=self.flavor1,
+        settings1 = VMSettings.objects.create(name='settings1',
+                                              vm_flavor=self.flavor1,
                                               vm_project=self.project,
                                               volume_size_base=10,
                                               volume_size_factor=5)
-        settings2 = VMSettings.objects.create(vm_flavor=self.flavor2,
+        settings2 = VMSettings.objects.create(name='settings2',
+                                              vm_flavor=self.flavor2,
                                               vm_project=self.project,
                                               volume_size_base=3,
                                               volume_size_factor=2)
@@ -661,3 +663,9 @@ class VMSettingsTests(TestCase):
         self.assertNotIn('cwl_pre_process_command', error_dict)
         self.assertNotIn('cwl_post_process_command', error_dict)
         self.assertNotIn('volume_mounts', error_dict)
+
+    def test_unique_names(self):
+        VMSettings.objects.create(name='settings1', **self.foreign_keys)
+        VMSettings.objects.create(name='settings2', **self.foreign_keys)
+        with self.assertRaises(IntegrityError):
+            VMSettings.objects.create(name='settings2', **self.foreign_keys)
