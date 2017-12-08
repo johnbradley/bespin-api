@@ -92,7 +92,6 @@ class JobFactoryTests(TestCase):
     @patch('data.jobfactory.calculate_stage_group_size')
     def test_calculate_volume_size(self, mock_calculate_stage_group_size):
         mock_calculate_stage_group_size.return_value = 20
-        mock_vm_settings = Mock(volume_size_base=10, volume_size_factor=4)
-        mock_questionnaire = Mock(vm_settings=mock_vm_settings)
+        mock_questionnaire = Mock(volume_size_base=10, volume_size_factor=4)
         mock_job_answer_set = Mock(questionnaire=mock_questionnaire)
         self.assertEqual(4 * 20 + 10, calculate_volume_size(mock_job_answer_set))
