@@ -223,6 +223,8 @@ class Job(models.Model):
     last_updated = models.DateTimeField(auto_now=True, blank=False)
     vm_settings = models.ForeignKey(VMSettings, null=False, blank=False,
                                     help_text='Collection of settings to use when launching VM for this job')
+    vm_flavor = models.ForeignKey(VMFlavor, null=False,
+                                  help_text='VM Flavor to use when creating VM instances for this questionnaire')
     vm_instance_name = models.CharField(max_length=255, blank=True, null=True,
                                         help_text="Name of the vm this job is/was running on.")
     vm_volume_name = models.CharField(max_length=255, blank=True, null=True,
