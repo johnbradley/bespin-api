@@ -1,7 +1,7 @@
 from django.test import TestCase
 from lando import LandoJob
 from models import LandoConnection, Workflow, WorkflowVersion, Job, JobFileStageGroup, \
-    DDSJobInputFile, DDSEndpoint, DDSUserCredential, ShareGroup
+    DDSJobInputFile, DDSEndpoint, DDSUserCredential, ShareGroup, VMFlavor, VMProject, VMSettings
 from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
 from mock.mock import patch, call
@@ -21,12 +21,16 @@ class LandoJobTests(TestCase):
                                                           url='')
         self.stage_group = JobFileStageGroup.objects.create(user=self.user)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
+        vm_flavor = VMFlavor.objects.create(name='flavor1')
+        vm_project = VMProject.objects.create(name='project1')
+        self.vm_settings = VMSettings.objects.create(vm_flavor=vm_flavor, vm_project=vm_project)
         self.job = Job.objects.create(workflow_version=workflow_version,
                                       job_order={},
                                       user=self.user,
                                       stage_group=self.stage_group,
                                       share_group=self.share_group,
-                                      volume_size=100)
+                                      volume_size=100,
+                                      vm_settings=self.vm_settings)
         DDSJobInputFile.objects.create(stage_group=self.stage_group,
                                        project_id='1234',
                                        file_id='5321',
