@@ -146,11 +146,6 @@ class VMSettings(models.Model):
                                   help_text='VM Flavor to use when creating VM instances for this questionnaire')
     vm_project = models.ForeignKey(VMProject, null=False,
                                    help_text='Project name to use when creating VM instances for this questionnaire')
-    volume_size_base = models.IntegerField(null=False, blank=False, default=100,
-                                           help_text='Base size in GB of for determining job volume size')
-    volume_size_factor = models.IntegerField(null=False, blank=False, default=0,
-                                             help_text='Number multiplied by total staged data size for '
-                                                       'determining job volume size')
     image_name = models.CharField(max_length=255, help_text='Name of the VM Image to launch')
     ssh_key_name = models.CharField(max_length=255, help_text='Name of SSH key to inject into VM on launch')
     network_name = models.CharField(max_length=255, help_text='Name of network to attach VM to on launch')
@@ -318,6 +313,11 @@ class JobQuestionnaire(models.Model):
                                     help_text='Users who will have job output shared with them')
     vm_settings = models.ForeignKey(VMSettings, blank=False, null=False,
                                     help_text='Collection of settings to use when launching job VMs for this questionnaire')
+    volume_size_base = models.IntegerField(null=False, blank=False, default=100,
+                                           help_text='Base size in GB of for determining job volume size')
+    volume_size_factor = models.IntegerField(null=False, blank=False, default=0,
+                                             help_text='Number multiplied by total staged data size for '
+                                                       'determining job volume size')
 
     def __unicode__(self):
         return '{} desc:{}'.format(self.id, self.description)
