@@ -20,11 +20,12 @@ def create_job_factory(job_answer_set):
     user_job_order_dict = json.loads(job_answer_set.user_job_order_json)
     system_job_order_dict = json.loads(job_answer_set.questionnaire.system_job_order_json)
     job_name = job_answer_set.job_name
+    vm_flavor = job_answer_set.questionnaire.vm_flavor
     volume_size = calculate_volume_size(job_answer_set)
     share_group = job_answer_set.questionnaire.share_group
     fund_code = job_answer_set.fund_code
     factory = JobFactory(user, workflow_version, stage_group, user_job_order_dict, system_job_order_dict, job_name,
-                         vm_settings, volume_size, share_group, fund_code)
+                         vm_settings, vm_flavor, volume_size, share_group, fund_code)
 
     return factory
 
@@ -35,8 +36,8 @@ def calculate_volume_size(job_answer_set):
     :param job_answer_set: JobAnswerSet: contains questionnaire and stage_group used in calculation
     :return: int: size in GB: volume_size_factor * data_size_in_gb + volume_size_base
     """
-    base_in_gb = job_answer_set.questionnaire.vm_settings.volume_size_base
-    factor = job_answer_set.questionnaire.vm_settings.volume_size_factor
+    base_in_gb = job_answer_set.questionnaire.volume_size_base
+    factor = job_answer_set.questionnaire.volume_size_factor
     data_size_in_gb = calculate_stage_group_size(job_answer_set.stage_group)
     return int(math.ceil(base_in_gb + float(factor) * data_size_in_gb))
 
@@ -60,7 +61,7 @@ class JobFactory(object):
     Creates Job record in the database based on questions their answers.
     """
     def __init__(self, user, workflow_version, stage_group, user_job_order, system_job_order, job_name, vm_settings,
-                 volume_size, share_group, fund_code):
+                 vm_flavor, volume_size, share_group, fund_code):
         """
         Setup factory
         :param user: User: user we are creating this job for and who's credentials we will use
@@ -73,6 +74,7 @@ class JobFactory(object):
         self.system_job_order = system_job_order
         self.job_name = job_name
         self.vm_settings = vm_settings
+        self.vm_flavor = vm_flavor
         self.volume_size = volume_size
         self.share_group = share_group
         self.fund_code = fund_code
@@ -97,6 +99,7 @@ class JobFactory(object):
                                  vm_settings=self.vm_settings,
                                  job_order=json.dumps(job_order),
                                  volume_size=self.volume_size,
+                                 vm_flavor=self.vm_flavor,
                                  share_group=self.share_group,
                                  fund_code=self.fund_code
         )
