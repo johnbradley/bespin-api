@@ -148,6 +148,10 @@ class CloudSettings(models.Model):
     floating_ip_pool_name = models.CharField(max_length=255, blank=True, null=True,
                                              help_text='Name of floating IP pool to allocate from')
 
+    def __unicode__(self):
+        return '{}: id {}, Proj: {}'.format(self.name, self.pk, self.vm_project.name)
+
+
 class VMSettings(models.Model):
     """
     A collection of settings that specify details for VMs launched
@@ -162,8 +166,7 @@ class VMSettings(models.Model):
                                                 help_text='JSON-encoded command array to run before cwl_base_command')
 
     def __unicode__(self):
-        return '{}: {}, Flavor: {}, Proj:{}, Img: {}'.format(self.name, self.pk, self.vm_flavor.name,
-                                                             self.vm_project.name, self.image_name)
+        return '{}: id {}, Cloud: {}, Img: {}'.format(self.name, self.pk, self.cloud_settings.name, self.image_name)
 
     class Meta:
         verbose_name_plural = "VM Settings Collections"
