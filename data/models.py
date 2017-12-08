@@ -141,6 +141,7 @@ class VMSettings(models.Model):
     """
     A collection of settings that specify details for VMs launched
     """
+    name = models.CharField(max_length=255, help_text='Short name of these settings', default='default_settings', unique=True)
     vm_flavor = models.ForeignKey(VMFlavor, null=False,
                                   help_text='VM Flavor to use when creating VM instances for this questionnaire')
     vm_project = models.ForeignKey(VMProject, null=False,
@@ -165,7 +166,8 @@ class VMSettings(models.Model):
     volume_mounts = models.TextField(null=True, blank=True, help_text='JSON-encoded list of volume mounts')
 
     def __unicode__(self):
-        return 'VM Settings: {}, Flavor: {}, Proj:{}, Img: {}'.format(self.pk, self.vm_flavor.name, self.vm_project.name, self.image_name)
+        return '{}: {}, Flavor: {}, Proj:{}, Img: {}'.format(self.name, self.pk, self.vm_flavor.name,
+                                                             self.vm_project.name, self.image_name)
 
     class Meta:
         verbose_name_plural = "VM Settings Collections"
