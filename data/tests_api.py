@@ -1340,7 +1340,7 @@ class JobAnswerSetTests(APITestCase):
         #                                              dds_id='1')
         vm_flavor = VMFlavor.objects.create(name='flavor2')
         vm_project = VMProject.objects.create(name='bespin-project2')
-        self.vm_settings = VMSettings.objects.create(vm_flavor=vm_flavor, vm_project=vm_project)
+        self.vm_settings = VMSettings.objects.create(name='settings2', vm_flavor=vm_flavor, vm_project=vm_project)
         questionnaire = JobQuestionnaire.objects.create(description='Workflow1',
                                                         workflow_version=self.workflow_version,
                                                         system_job_order_json=self.system_job_order_json1,
