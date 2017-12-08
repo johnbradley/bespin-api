@@ -137,28 +137,29 @@ class VMProject(models.Model):
         return 'VM Project: {}'.format(self.name)
 
 
-class VMSettings(models.Model):
-    """
-    A collection of settings that specify details for VMs launched
-    """
-    name = models.CharField(max_length=255, help_text='Short name of these settings', default='default_settings', unique=True)
-    vm_flavor = models.ForeignKey(VMFlavor, null=False,
-                                  help_text='VM Flavor to use when creating VM instances for this questionnaire')
+class CloudSettings(models.Model):
+    name = models.CharField(max_length=255, help_text='Short name of this cloudsettings', default='default_settings', unique=True)
     vm_project = models.ForeignKey(VMProject, null=False,
                                    help_text='Project name to use when creating VM instances for this questionnaire')
-    image_name = models.CharField(max_length=255, help_text='Name of the VM Image to launch')
     ssh_key_name = models.CharField(max_length=255, help_text='Name of SSH key to inject into VM on launch')
     network_name = models.CharField(max_length=255, help_text='Name of network to attach VM to on launch')
     allocate_floating_ips = models.BooleanField(blank=False, default=False,
                                                 help_text='Allocate floating IPs to launched VMs')
     floating_ip_pool_name = models.CharField(max_length=255, blank=True, null=True,
                                              help_text='Name of floating IP pool to allocate from')
+
+class VMSettings(models.Model):
+    """
+    A collection of settings that specify details for VMs launched
+    """
+    name = models.CharField(max_length=255, help_text='Short name of these settings', default='default_settings', unique=True)
+    cloud_settings = models.ForeignKey(CloudSettings, help_text='Cloud settings ')
+    image_name = models.CharField(max_length=255, help_text='Name of the VM Image to launch')
     cwl_base_command = models.TextField(help_text='JSON-encoded command array to run the  image\'s installed CWL engine')
     cwl_post_process_command = models.TextField(null=True, blank=True,
                                                 help_text='JSON-encoded command array to run after workflow completes')
     cwl_pre_process_command = models.TextField(null=True, blank=True,
                                                 help_text='JSON-encoded command array to run before cwl_base_command')
-    volume_mounts = models.TextField(null=True, blank=True, help_text='JSON-encoded list of volume mounts')
 
     def __unicode__(self):
         return '{}: {}, Flavor: {}, Proj:{}, Img: {}'.format(self.name, self.pk, self.vm_flavor.name,
@@ -313,11 +314,15 @@ class JobQuestionnaire(models.Model):
                                     help_text='Users who will have job output shared with them')
     vm_settings = models.ForeignKey(VMSettings, blank=False, null=False,
                                     help_text='Collection of settings to use when launching job VMs for this questionnaire')
+    vm_flavor = models.ForeignKey(VMFlavor, null=False,
+                                  help_text='VM Flavor to use when creating VM instances for this questionnaire')
     volume_size_base = models.IntegerField(null=False, blank=False, default=100,
                                            help_text='Base size in GB of for determining job volume size')
     volume_size_factor = models.IntegerField(null=False, blank=False, default=0,
                                              help_text='Number multiplied by total staged data size for '
                                                        'determining job volume size')
+    volume_mounts = models.TextField(null=False, blank=False, default=json.dumps({'/dev/vdb1': '/work'}),
+                                     help_text='JSON-encoded list of volume mounts, e.g. {"/dev/vdb1": "/work"}')
 
     def __unicode__(self):
         return '{} desc:{}'.format(self.id, self.description)
