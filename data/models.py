@@ -334,7 +334,8 @@ class DDSJobInputFile(models.Model):
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE)
     destination_path = models.CharField(max_length=255, blank=False, null=True)
     size = models.BigIntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
-
+    sequence = models.IntegerField(null=True, blank=False,
+                                   help_text='Determines order within the job')
     def __unicode__(self):
         return 'DDS Job Input File "{}" id:{}'.format(self.destination_path, self.file_id)
 
@@ -349,6 +350,8 @@ class URLJobInputFile(models.Model):
     url = models.URLField(null=True)
     destination_path = models.CharField(max_length=255, blank=False, null=True)
     size = models.BigIntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
+    sequence = models.IntegerField(null=True, blank=False,
+                                   help_text='Determines order within the job')
 
     def __unicode__(self):
         return 'URL Job Input File "{}"'.format(self.url)

@@ -182,7 +182,7 @@ class DDSJobInputFileViewSet(viewsets.ModelViewSet):
     serializer_class = DDSJobInputFileSerializer
 
     def get_queryset(self):
-        return DDSJobInputFile.objects.filter(stage_group__user=self.request.user)
+        return DDSJobInputFile.objects.filter(stage_group__user=self.request.user).order_by('sequence')
 
 
 class JobFileStageGroupViewSet(viewsets.ModelViewSet):
@@ -208,7 +208,7 @@ class URLJobInputFileViewSet(viewsets.ModelViewSet):
     serializer_class = URLJobInputFileSerializer
 
     def get_queryset(self):
-        return URLJobInputFile.objects.filter(stage_group__user=self.request.user)
+        return URLJobInputFile.objects.filter(stage_group__user=self.request.user).order_by('sequence')
 
 
 class DDSEndpointViewSet(viewsets.ModelViewSet):
