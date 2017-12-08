@@ -3,7 +3,7 @@ from models import DDSEndpoint, DDSUserCredential
 from models import Workflow, WorkflowVersion
 from models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, JobDDSOutputProject, JobError
 from models import LandoConnection
-from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, VMSettings
+from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, VMSettings, CloudSettings
 from models import JobToken
 from models import DDSUser, ShareGroup, WorkflowMethodsDocument
 from models import EmailTemplate, EmailMessage
@@ -623,49 +623,74 @@ class EmailMessageTests(TestCase):
         self.assertEqual(message.errors, 'SMTP Error')
 
 
-class VMSettingsTests(TestCase):
+class CloudSettingsTests(TestCase):
+
     def setUp(self):
-        self.foreign_keys = {
-            'vm_project': VMProject.objects.create(name='project'),
-            'vm_flavor': VMFlavor.objects.create(name='flavor')
+        self.create_args = {
+            'vm_project': VMProject.objects.create(name='project1')
+        }
+
+    def test_unique_names(self):
+        self.create_args['name'] = 'cloud1'
+        CloudSettings.objects.create(**self.create_args)
+        with self.assertRaises(IntegrityError):
+            CloudSettings.objects.create(**self.create_args)
+
+    def test_requires_vm_project(self):
+        del self.create_args['vm_project']
+        with self.assertRaises(IntegrityError) as val:
+            CloudSettings.objects.create(**self.create_args)
+
+    def test_validates_fields(self):
+        cloud_settings = CloudSettings.objects.create(**self.create_args)
+        with self.assertRaises(ValidationError) as val:
+            cloud_settings.clean_fields()
+        error_dict = val.exception.error_dict
+        error_keys = set(error_dict.keys())
+        expected_error_keys ={'ssh_key_name',
+                              'network_name',}
+        self.assertEqual(error_keys, expected_error_keys)
+
+        # name has a default, should not fail validation
+        self.assertNotIn('name', error_dict)
+        # other keys not required, should not fail validation
+        self.assertNotIn('allocate_floating_ips', error_dict)
+        self.assertNotIn('floating_ip_pool_name', error_dict)
+
+
+class VMSettingsTests(TestCase):
+
+    def setUp(self):
+        self.create_args = {
+            'cloud_settings': CloudSettings.objects.create(name='cloud1', vm_project=VMProject.objects.create(name='project1')),
         }
 
     def test_creates_with_required_fks(self):
-        VMSettings.objects.create(**self.foreign_keys)
+        VMSettings.objects.create(**self.create_args)
 
-    def test_requires_vm_flavor(self):
-        del self.foreign_keys['vm_flavor']
+    def test_requires_cloud_settings(self):
+        del self.create_args['cloud_settings']
         with self.assertRaises(IntegrityError) as val:
-            VMSettings.objects.create(**self.foreign_keys)
-
-    def test_requires_vm_project(self):
-        del self.foreign_keys['vm_project']
-        with self.assertRaises(IntegrityError) as val:
-            VMSettings.objects.create(**self.foreign_keys)
+            VMSettings.objects.create(**self.create_args)
 
     def test_validates_fields(self):
-        vm_settings = VMSettings.objects.create(**self.foreign_keys)
+        vm_settings = VMSettings.objects.create(**self.create_args)
         with self.assertRaises(ValidationError) as val:
             vm_settings.clean_fields()
         error_dict = val.exception.error_dict
         error_keys = set(error_dict.keys())
         expected_error_keys ={'image_name',
-                              'ssh_key_name',
-                              'network_name',
                               'cwl_base_command'}
         self.assertEqual(error_keys, expected_error_keys)
 
+        # name has a default, should not fail validation
+        self.assertNotIn('name', error_dict)
         # other keys not required, should not fail validation
-        self.assertNotIn('volume_size_base', error_dict)
-        self.assertNotIn('volume_size_factor', error_dict)
-        self.assertNotIn('allocate_floating_ips', error_dict)
-        self.assertNotIn('floating_ip_pool_name', error_dict)
         self.assertNotIn('cwl_pre_process_command', error_dict)
         self.assertNotIn('cwl_post_process_command', error_dict)
-        self.assertNotIn('volume_mounts', error_dict)
 
     def test_unique_names(self):
-        VMSettings.objects.create(name='settings1', **self.foreign_keys)
-        VMSettings.objects.create(name='settings2', **self.foreign_keys)
+        self.create_args['name'] = 'settings1'
+        VMSettings.objects.create(**self.create_args)
         with self.assertRaises(IntegrityError):
-            VMSettings.objects.create(name='settings2', **self.foreign_keys)
+            VMSettings.objects.create(**self.create_args)
