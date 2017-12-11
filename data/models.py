@@ -336,6 +336,10 @@ class DDSJobInputFile(models.Model):
     size = models.BigIntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
     sequence = models.IntegerField(null=True, blank=False,
                                    help_text='Determines order within the job')
+
+    class Meta:
+        unique_together = ('stage_group', 'sequence',)
+
     def __unicode__(self):
         return 'DDS Job Input File "{}" id:{}'.format(self.destination_path, self.file_id)
 
@@ -352,6 +356,9 @@ class URLJobInputFile(models.Model):
     size = models.BigIntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
     sequence = models.IntegerField(null=True, blank=False,
                                    help_text='Determines order within the job')
+
+    class Meta:
+        unique_together = ('stage_group', 'sequence',)
 
     def __unicode__(self):
         return 'URL Job Input File "{}"'.format(self.url)
