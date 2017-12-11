@@ -244,6 +244,8 @@ class Job(models.Model):
                                     help_text='Users who will have job output shared with them')
     cleanup_vm = models.BooleanField(default=True, blank=False, null=False,
                                      help_text='Should the VM and Volume be deleted upon job completion')
+    volume_mounts = models.TextField(null=False, blank=False, default=json.dumps({'/dev/vdb1': '/work'}),
+                                     help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
 
     def save(self, *args, **kwargs):
         if self.stage_group is not None and self.stage_group.user != self.user:
@@ -327,7 +329,7 @@ class JobQuestionnaire(models.Model):
                                              help_text='Number multiplied by total staged data size for '
                                                        'determining job volume size')
     volume_mounts = models.TextField(null=False, blank=False, default=json.dumps({'/dev/vdb1': '/work'}),
-                                     help_text='JSON-encoded list of volume mounts, e.g. {"/dev/vdb1": "/work"}')
+                                     help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
 
     def __unicode__(self):
         return '{} desc:{}'.format(self.id, self.description)
