@@ -22,10 +22,11 @@ def create_job_factory(job_answer_set):
     job_name = job_answer_set.job_name
     vm_flavor = job_answer_set.questionnaire.vm_flavor
     volume_size = calculate_volume_size(job_answer_set)
+    volume_mounts = job_answer_set.questionnaire.volume_mounts
     share_group = job_answer_set.questionnaire.share_group
     fund_code = job_answer_set.fund_code
     factory = JobFactory(user, workflow_version, stage_group, user_job_order_dict, system_job_order_dict, job_name,
-                         vm_settings, vm_flavor, volume_size, share_group, fund_code)
+                         vm_settings, vm_flavor, volume_size, volume_mounts, share_group, fund_code)
 
     return factory
 
@@ -61,7 +62,7 @@ class JobFactory(object):
     Creates Job record in the database based on questions their answers.
     """
     def __init__(self, user, workflow_version, stage_group, user_job_order, system_job_order, job_name, vm_settings,
-                 vm_flavor, volume_size, share_group, fund_code):
+                 vm_flavor, volume_size, volume_mounts, share_group, fund_code):
         """
         Setup factory
         :param user: User: user we are creating this job for and who's credentials we will use
@@ -76,6 +77,7 @@ class JobFactory(object):
         self.vm_settings = vm_settings
         self.vm_flavor = vm_flavor
         self.volume_size = volume_size
+        self.volume_mounts = volume_mounts
         self.share_group = share_group
         self.fund_code = fund_code
 
@@ -99,6 +101,7 @@ class JobFactory(object):
                                  vm_settings=self.vm_settings,
                                  job_order=json.dumps(job_order),
                                  volume_size=self.volume_size,
+                                 volume_mounts=self.volume_mounts,
                                  vm_flavor=self.vm_flavor,
                                  share_group=self.share_group,
                                  fund_code=self.fund_code
