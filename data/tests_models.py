@@ -322,6 +322,7 @@ class JobFileStageGroupTests(TestCase):
                                        dds_user_credentials=self.user_credentials,
                                        destination_path='sample.fasta',
                                        size=10000,
+                                       sequence_group=1,
                                        sequence=1)
         DDSJobInputFile.objects.create(stage_group=stage_group,
                                        project_id='1234',
@@ -329,6 +330,7 @@ class JobFileStageGroupTests(TestCase):
                                        dds_user_credentials=self.user_credentials,
                                        destination_path='sample.fasta',
                                        size=10000,
+                                       sequence_group=1,
                                        sequence=2)
         with self.assertRaises(IntegrityError):
             DDSJobInputFile.objects.create(stage_group=stage_group,
@@ -337,6 +339,7 @@ class JobFileStageGroupTests(TestCase):
                                            dds_user_credentials=self.user_credentials,
                                            destination_path='sample.fasta',
                                            size=10000,
+                                           sequence_group=1,
                                            sequence=1)
 
     def test_url_file(self):
@@ -372,17 +375,20 @@ class JobFileStageGroupTests(TestCase):
                                        url='https://data.org/sample.fasta',
                                        destination_path='sample.fasta',
                                        size=20000,
+                                       sequence_group=1,
                                        sequence=1)
         URLJobInputFile.objects.create(stage_group=stage_group,
                                        url='https://data.org/sample.fasta',
                                        destination_path='sample.fasta',
                                        size=20000,
+                                       sequence_group=1,
                                        sequence=2)
         with self.assertRaises(IntegrityError):
             URLJobInputFile.objects.create(stage_group=stage_group,
                                            url='https://data.org/sample.fasta',
                                            destination_path='sample.fasta',
                                            size=20000,
+                                           sequence_group=1,
                                            sequence=1)
 
 
