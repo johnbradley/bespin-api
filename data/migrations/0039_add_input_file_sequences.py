@@ -12,8 +12,8 @@ def populate_sequence_fields(apps, schema_editor):
 def populate_sequence_for_model(model):
     # Fill in sequence_group and sequence with numbers so we can get a baseline of sorting.
     for input_file in model.objects.all():
-        input_file.sequence_group = input_file.id
-        input_file.sequence = 0  # first item in this sequence group
+        input_file.sequence_group = 0
+        input_file.sequence = input_file.id
         input_file.save()
 
 
