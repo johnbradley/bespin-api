@@ -128,7 +128,7 @@ class AdminJobSerializer(serializers.ModelSerializer):
         model = Job
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
-                  'vm_settings', 'vm_flavor', 'vm_instance_name', 'vm_volume_name', 'job_order',
+                  'vm_settings', 'vm_flavor', 'vm_instance_name', 'vm_volume_name', 'vm_volume_mounts', 'job_order',
                   'output_project', 'stage_group', 'volume_size', 'share_group', 'cleanup_vm', 'fund_code')
         read_only_fields = ('share_group', 'vm_settings',)
 
