@@ -1019,6 +1019,8 @@ class DDSJobInputFileTestCase(APITestCase):
             'file_id': '345987',
             'dds_user_credentials': self.cred.id,
             'destination_path': 'data.txt',
+            'sequence_group': 1,
+            'sequence': 1,
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(1, len(DDSJobInputFile.objects.all()))
@@ -1035,6 +1037,8 @@ class DDSJobInputFileTestCase(APITestCase):
             'file_id': '345987',
             'dds_user_credentials': self.other_cred.id,
             'destination_path': 'data.txt',
+            'sequence_group': 1,
+            'sequence': 1,
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -1046,7 +1050,9 @@ class DDSJobInputFileTestCase(APITestCase):
             'file_id': '212121',
             'dds_user_credentials': self.other_cred.id,
             'destination_path': 'data.txt',
-            'size': 8 * 1024 * 1024 * 1024
+            'size': 8 * 1024 * 1024 * 1024,
+            'sequence_group': 1,
+            'sequence': 1,
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -1079,6 +1085,8 @@ class URLJobInputFileTestCase(APITestCase):
             'stage_group': self.stage_group.id,
             'url': 'http://stuff.com/data.txt',
             'destination_path': 'data.txt',
+            'sequence_group': 1,
+            'sequence': 1,
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(1, len(URLJobInputFile.objects.all()))
@@ -1093,7 +1101,9 @@ class URLJobInputFileTestCase(APITestCase):
             'stage_group': self.stage_group.id,
             'url': 'http://stuff.com/data.txt',
             'destination_path': 'data.txt',
-            'size': 8 * 1024 * 1024 * 1024
+            'size': 8 * 1024 * 1024 * 1024,
+            'sequence_group': 1,
+            'sequence': 1,
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
