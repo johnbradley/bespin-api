@@ -101,7 +101,7 @@ class JobFactory(object):
                                  vm_settings=self.vm_settings,
                                  job_order=json.dumps(job_order),
                                  volume_size=self.volume_size,
-                                 volume_mounts=self.volume_mounts,
+                                 vm_volume_mounts=self.volume_mounts,
                                  vm_flavor=self.vm_flavor,
                                  share_group=self.share_group,
                                  fund_code=self.fund_code

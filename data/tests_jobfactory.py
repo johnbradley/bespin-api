@@ -66,7 +66,7 @@ class JobFactoryTests(TestCase):
         self.assertEqual(job.vm_flavor, self.vm_flavor)
         self.assertEqual(self.worker_cred.id, job.output_project.dds_user_credentials.id)
         self.assertEqual(job.volume_size, 110)
-        self.assertEqual(job.volume_mounts, self.volume_mounts)
+        self.assertEqual(job.vm_volume_mounts, self.volume_mounts)
         self.assertEqual(job.share_group, self.share_group)
         self.assertEqual(job.fund_code, '123-4')
 
