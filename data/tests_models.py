@@ -294,7 +294,8 @@ class JobFileStageGroupTests(TestCase):
                                        file_id='5321',
                                        dds_user_credentials=self.user_credentials,
                                        destination_path='sample.fasta',
-                                       size=10000)
+                                       size=10000,
+                                       sequence=1)
         # Test job fields
         stage_group = JobFileStageGroup.objects.first()
         self.assertEqual(self.job, stage_group.job)
@@ -309,6 +310,37 @@ class JobFileStageGroupTests(TestCase):
         self.assertEqual(self.user_credentials, dds_file.dds_user_credentials)
         self.assertEqual('sample.fasta', dds_file.destination_path)
         self.assertEqual(10000, dds_file.size)
+        self.assertEqual(1, dds_file.sequence)
+
+    def test_dds_file_sequence_stage_group_unique(self):
+        stage_group = JobFileStageGroup.objects.create(user=self.user)
+        self.job.stage_group = stage_group
+        self.job.save()
+        DDSJobInputFile.objects.create(stage_group=stage_group,
+                                       project_id='1234',
+                                       file_id='5321',
+                                       dds_user_credentials=self.user_credentials,
+                                       destination_path='sample.fasta',
+                                       size=10000,
+                                       sequence_group=1,
+                                       sequence=1)
+        DDSJobInputFile.objects.create(stage_group=stage_group,
+                                       project_id='1234',
+                                       file_id='5321',
+                                       dds_user_credentials=self.user_credentials,
+                                       destination_path='sample.fasta',
+                                       size=10000,
+                                       sequence_group=1,
+                                       sequence=2)
+        with self.assertRaises(IntegrityError):
+            DDSJobInputFile.objects.create(stage_group=stage_group,
+                                           project_id='1234',
+                                           file_id='5321',
+                                           dds_user_credentials=self.user_credentials,
+                                           destination_path='sample.fasta',
+                                           size=10000,
+                                           sequence_group=1,
+                                           sequence=1)
 
     def test_url_file(self):
         stage_group = JobFileStageGroup.objects.create(user=self.user)
@@ -317,7 +349,8 @@ class JobFileStageGroupTests(TestCase):
         URLJobInputFile.objects.create(stage_group=stage_group,
                                        url='https://data.org/sample.fasta',
                                        destination_path='sample.fasta',
-                                       size=20000)
+                                       size=20000,
+                                       sequence=1)
 
         # Test job fields
         stage_group = JobFileStageGroup.objects.first()
@@ -332,6 +365,31 @@ class JobFileStageGroupTests(TestCase):
         self.assertEqual('https://data.org/sample.fasta', url_file.url)
         self.assertEqual('sample.fasta', url_file.destination_path)
         self.assertEqual(20000, url_file.size)
+        self.assertEqual(1, url_file.sequence)
+
+    def test_url_file_sequence_stage_group_unique(self):
+        stage_group = JobFileStageGroup.objects.create(user=self.user)
+        self.job.stage_group = stage_group
+        self.job.save()
+        URLJobInputFile.objects.create(stage_group=stage_group,
+                                       url='https://data.org/sample.fasta',
+                                       destination_path='sample.fasta',
+                                       size=20000,
+                                       sequence_group=1,
+                                       sequence=1)
+        URLJobInputFile.objects.create(stage_group=stage_group,
+                                       url='https://data.org/sample.fasta',
+                                       destination_path='sample.fasta',
+                                       size=20000,
+                                       sequence_group=1,
+                                       sequence=2)
+        with self.assertRaises(IntegrityError):
+            URLJobInputFile.objects.create(stage_group=stage_group,
+                                           url='https://data.org/sample.fasta',
+                                           destination_path='sample.fasta',
+                                           size=20000,
+                                           sequence_group=1,
+                                           sequence=1)
 
 
 class JobDDSOutputProjectTests(TestCase):
