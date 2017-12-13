@@ -6,7 +6,6 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
-
 def update_questionnaires(apps, schema_editor):
     """
     Forward migration function to normalize settings into VMSettings and CloudSettings models
@@ -30,7 +29,7 @@ def update_questionnaires(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('data', '0039_auto_20171208_1842_1'),
+        ('data', '0039_1_schema_add_questionnare_vmsettings'),
     ]
 
     operations = [

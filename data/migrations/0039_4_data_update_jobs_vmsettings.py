@@ -34,7 +34,7 @@ def update_jobs(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('data', '0039_auto_20171208_1842_3'),
+        ('data', '0039_3_schema_add_job_vmsettings_fields'),
     ]
 
     operations = [
