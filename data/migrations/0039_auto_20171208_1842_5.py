@@ -13,13 +13,22 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-
-        # Remove the default value
+        # Remove the nullable value
         migrations.AlterField(
             model_name='job',
             name='vm_settings',
             field=models.ForeignKey(help_text='Collection of settings to use when launching VM for this job',
+                                    null=False,
                                     on_delete=django.db.models.deletion.CASCADE, to='data.VMSettings'),
+        ),
+
+        # Remove the nullable value
+        migrations.AlterField(
+            model_name='job',
+            name='vm_flavor',
+            field=models.ForeignKey(help_text='VM Flavor to use when creating VM instances for this questionnaire',
+                                    null=False,
+                                    on_delete=django.db.models.deletion.CASCADE, to='data.VMFlavor'),
         ),
 
         # Remove the renamed vm_flavor_name field

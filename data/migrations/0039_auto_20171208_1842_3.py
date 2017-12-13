@@ -24,11 +24,12 @@ class Migration(migrations.Migration):
                                    help_text='JSON-encoded list of volume mounts, e.g. {"/dev/vdb1": "/work"}'),
         ),
 
-        # Remove the default value
+        # Remove the nullable option
         migrations.AlterField(
             model_name='jobquestionnaire',
             name='vm_settings',
             field=models.ForeignKey(
+                null=False,
                 help_text='Collection of settings to use when launching job VMs for this questionnaire',
                 on_delete=django.db.models.deletion.CASCADE, to='data.VMSettings'),
         ),
@@ -41,16 +42,20 @@ class Migration(migrations.Migration):
             old_name='vm_flavor',
             new_name='vm_flavor_name'
         ),
+        # Initially allow null. We will fill it in with a data migration and then make non-nullable
         migrations.AddField(
             model_name='job',
             name='vm_flavor',
             field=models.ForeignKey(help_text='VM Flavor to use when creating VM instances for this questionnaire',
+                                    null=True,
                                     on_delete=django.db.models.deletion.CASCADE, to='data.VMFlavor'),
         ),
+        # Initially allow null. We will fill it in with a data migration and then make non-nullable
         migrations.AddField(
             model_name='job',
             name='vm_settings',
-            field=models.ForeignKey(default=0, help_text='Collection of settings to use when launching VM for this job',
+            field=models.ForeignKey(help_text='Collection of settings to use when launching VM for this job',
+                                    null=True,
                                     on_delete=django.db.models.deletion.CASCADE, to='data.VMSettings'),
             preserve_default=False,
         ),

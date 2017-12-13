@@ -25,7 +25,7 @@ def update_jobs(apps, schema_editor):
 
         # 2. Handle vm_project
         vm_project, _ = VMProject.objects.get_or_create(name=j.vm_project_name)
-        cloud_settings, _ = CloudSettings.objects.get_or_create(name=j.vm_project.name, vm_project=vm_project)
+        cloud_settings, _ = CloudSettings.objects.get_or_create(name=j.vm_project_name, vm_project=vm_project)
         vm_settings, _ = VMSettings.objects.get_or_create(name=vm_project.name, cloud_settings=cloud_settings)
         j.vm_settings = vm_settings
         j.save()

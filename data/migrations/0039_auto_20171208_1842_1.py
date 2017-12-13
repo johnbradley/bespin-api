@@ -44,11 +44,11 @@ class Migration(migrations.Migration):
         #############################
         # Update JobQuestionnaires
         #############################
-        # Add JobQuestionnaire.vm_settings with a temporary default
+        # Add JobQuestionnaire.vm_settings, initially allowing nulls
         migrations.AddField(
             model_name='jobquestionnaire',
             name='vm_settings',
-            field=models.ForeignKey(default=0, help_text='Collection of settings to use when launching job VMs for this questionnaire', on_delete=django.db.models.deletion.CASCADE, to='data.VMSettings'),
+            field=models.ForeignKey(null=True, help_text='Collection of settings to use when launching job VMs for this questionnaire', on_delete=django.db.models.deletion.CASCADE, to='data.VMSettings'),
             preserve_default=False,
         ),
     ]
