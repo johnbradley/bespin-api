@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, JobDDSOutputProject, URLJobInputFile, JobError, JobAnswerSet, \
     JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, WorkflowMethodsDocument, \
-    EmailTemplate, EmailMessage
+    EmailTemplate, EmailMessage, VMSettings, CloudSettings
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -64,7 +64,6 @@ class JobErrorSerializer(serializers.ModelSerializer):
 
 class JobSerializer(serializers.ModelSerializer):
     output_project = JobDDSOutputProjectSerializer(required=False, read_only=True)
-    vm_project_name = serializers.CharField(required=False)
     state = serializers.CharField(read_only=True)
     step = serializers.CharField(read_only=True)
     user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
@@ -75,7 +74,7 @@ class JobSerializer(serializers.ModelSerializer):
         model = Job
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
-                  'vm_flavor', 'vm_instance_name', 'vm_volume_name', 'vm_project_name', 'job_order',
+                  'vm_settings', 'vm_instance_name', 'vm_volume_name', 'job_order',
                   'output_project', 'job_errors', 'stage_group', 'volume_size', 'fund_code', 'share_group',
                   'run_token',)
 
@@ -87,19 +86,51 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'first_name', 'last_name', 'email',)
 
 
+class VMProjectSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = VMProject
+        resource_name = 'vm-projects'
+        fields = '__all__'
+
+
+class VMFlavorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VMFlavor
+        resource_name = 'vm-flavors'
+        fields = '__all__'
+
+
+class AdminCloudSettingsSerializer(serializers.ModelSerializer):
+    vm_project = VMProjectSerializer(read_only=True)
+    class Meta:
+        model = CloudSettings
+        resource_name = 'cloud-settings'
+        fields = '__all__'
+
+
+class AdminVMSettingsSerializer(serializers.ModelSerializer):
+    cloud_settings = AdminCloudSettingsSerializer(read_only=True)
+    class Meta:
+        model = VMSettings
+        resource_name = 'vm-settings'
+        fields = '__all__'
+
+
 class AdminJobSerializer(serializers.ModelSerializer):
     workflow_version = WorkflowVersionSerializer(required=False)
     output_project = JobDDSOutputProjectSerializer(required=False, read_only=True)
-    vm_project_name = serializers.CharField(required=False)
     name = serializers.CharField(required=False)
     user = UserSerializer(read_only=True)
+    vm_settings = AdminVMSettingsSerializer(read_only=True)
+    vm_flavor = VMFlavorSerializer(read_only=True)
     class Meta:
         model = Job
         resource_name = 'jobs'
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
-                  'vm_flavor', 'vm_instance_name', 'vm_volume_name', 'vm_project_name', 'job_order',
+                  'vm_settings', 'vm_flavor', 'vm_instance_name', 'vm_volume_name', 'vm_volume_mounts', 'job_order',
                   'output_project', 'stage_group', 'volume_size', 'share_group', 'cleanup_vm', 'fund_code')
-        read_only_fields = ('share_group',)
+        read_only_fields = ('share_group', 'vm_settings',)
 
 
 class DDSEndpointSerializer(serializers.ModelSerializer):
@@ -216,22 +247,6 @@ class DDSFileUrlSerializer(serializers.Serializer):
 
     class Meta:
         resource_name = 'dds-file-url'
-
-
-class VMFlavorSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = VMFlavor
-        resource_name = 'vm-flavors'
-        fields = '__all__'
-
-
-class VMProjectSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = VMProject
-        resource_name = 'vm-projects'
-        fields = '__all__'
 
 
 class JobAnswerSetSerializer(serializers.ModelSerializer):

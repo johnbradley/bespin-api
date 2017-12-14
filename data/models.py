@@ -117,6 +117,64 @@ class ShareGroup(models.Model):
         return 'Share Group: {}'.format(self.name)
 
 
+class VMFlavor(models.Model):
+    """
+    Specifies parameters for requesting cloud resources
+    """
+    name = models.CharField(max_length=255, blank=False, unique=True,
+                            help_text="The name of the flavor to use when launching instances (specifies CPU/RAM)")
+
+    def __unicode__(self):
+        return 'Flavor: {}'.format(self.name)
+
+
+class VMProject(models.Model):
+
+    name = models.CharField(max_length=255, blank=False, null=False, unique=True,
+                            help_text="The name of the project in which to launch instances")
+
+    def __unicode__(self):
+        return 'VM Project: {}'.format(self.name)
+
+
+class CloudSettings(models.Model):
+    name = models.CharField(max_length=255, help_text='Short name of this cloudsettings', default='default_settings', unique=True)
+    vm_project = models.ForeignKey(VMProject, null=False,
+                                   help_text='Project name to use when creating VM instances for this questionnaire')
+    ssh_key_name = models.CharField(max_length=255, help_text='Name of SSH key to inject into VM on launch')
+    network_name = models.CharField(max_length=255, help_text='Name of network to attach VM to on launch')
+    allocate_floating_ips = models.BooleanField(blank=False, default=False,
+                                                help_text='Allocate floating IPs to launched VMs')
+    floating_ip_pool_name = models.CharField(max_length=255, blank=True, null=True,
+                                             help_text='Name of floating IP pool to allocate from')
+
+    def __unicode__(self):
+        return '{}: id {}, Proj: {}'.format(self.name, self.pk, self.vm_project.name)
+
+    class Meta:
+        verbose_name_plural = "Cloud Settings Collections"
+
+
+class VMSettings(models.Model):
+    """
+    A collection of settings that specify details for VMs launched
+    """
+    name = models.CharField(max_length=255, help_text='Short name of these settings', default='default_settings', unique=True)
+    cloud_settings = models.ForeignKey(CloudSettings, help_text='Cloud settings ')
+    image_name = models.CharField(max_length=255, help_text='Name of the VM Image to launch')
+    cwl_base_command = models.TextField(help_text='JSON-encoded command array to run the  image\'s installed CWL engine')
+    cwl_post_process_command = models.TextField(null=True, blank=True,
+                                                help_text='JSON-encoded command array to run after workflow completes')
+    cwl_pre_process_command = models.TextField(null=True, blank=True,
+                                                help_text='JSON-encoded command array to run before cwl_base_command')
+
+    def __unicode__(self):
+        return '{}: id {}, Cloud: {}, Img: {}'.format(self.name, self.pk, self.cloud_settings.name, self.image_name)
+
+    class Meta:
+        verbose_name_plural = "VM Settings Collections"
+
+
 class Job(models.Model):
     """
     Instance of a workflow that is in some state of progress.
@@ -169,14 +227,14 @@ class Job(models.Model):
     step = models.CharField(max_length=1, choices=JOB_STEPS, null=True, blank=True,
                             help_text="Job step (progress within Running state)")
     last_updated = models.DateTimeField(auto_now=True, blank=False)
-    vm_flavor = models.CharField(max_length=255, blank=False, default='m1.small',
-                                 help_text="Determines CPUs and RAM VM allocation used to run this job.")
+    vm_settings = models.ForeignKey(VMSettings, null=False, blank=False,
+                                    help_text='Collection of settings to use when launching VM for this job')
+    vm_flavor = models.ForeignKey(VMFlavor, null=False,
+                                  help_text='VM Flavor to use when launching VM for this job')
     vm_instance_name = models.CharField(max_length=255, blank=True, null=True,
                                         help_text="Name of the vm this job is/was running on.")
     vm_volume_name = models.CharField(max_length=255, blank=True, null=True,
                                       help_text="Name of the volume attached to store data for this job.")
-    vm_project_name = models.CharField(max_length=255, blank=False, null=False,
-                                       help_text="Name of the cloud project where vm will be created.")
     job_order = models.TextField(null=True,
                                  help_text="CWL input json for use with the workflow.")
     stage_group = models.OneToOneField(JobFileStageGroup, null=True,
@@ -189,6 +247,8 @@ class Job(models.Model):
                                     help_text='Users who will have job output shared with them')
     cleanup_vm = models.BooleanField(default=True, blank=False, null=False,
                                      help_text='Should the VM and Volume be deleted upon job completion')
+    vm_volume_mounts = models.TextField(null=False, blank=False, default=json.dumps({'/dev/vdb1': '/work'}),
+                                        help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
 
     def save(self, *args, **kwargs):
         if self.stage_group is not None and self.stage_group.user != self.user:
@@ -245,26 +305,6 @@ class LandoConnection(models.Model):
         return '{} on {}'.format(self.username, self.host)
 
 
-class VMFlavor(models.Model):
-    """
-    Specifies parameters for requesting cloud resources
-    """
-    name = models.CharField(max_length=255, blank=False, unique=True,
-                            help_text="The name of the flavor to use when launching instances (specifies CPU/RAM)")
-
-    def __unicode__(self):
-        return 'Flavor: {}'.format(self.name)
-
-
-class VMProject(models.Model):
-
-    name = models.CharField(max_length=255, blank=False, null=False, unique=True,
-                            help_text="The name of the project in which to launch instances")
-
-    def __unicode__(self):
-        return 'VM Project: {}'.format(self.name)
-
-
 class JobQuestionnaire(models.Model):
     """
     Specifies a Workflow Version and a set of system-provided answers in JSON format
@@ -280,17 +320,19 @@ class JobQuestionnaire(models.Model):
     user_fields_json = models.TextField(null=True,
                                         help_text="JSON containing the array of fields required by the user when providing "
                                                   "a job answer set.")
+    share_group = models.ForeignKey(ShareGroup, blank=False, null=False,
+                                    help_text='Users who will have job output shared with them')
+    vm_settings = models.ForeignKey(VMSettings, blank=False, null=False,
+                                    help_text='Collection of settings to use when launching job VMs for this questionnaire')
     vm_flavor = models.ForeignKey(VMFlavor, null=False,
                                   help_text='VM Flavor to use when creating VM instances for this questionnaire')
-    vm_project = models.ForeignKey(VMProject, null=False,
-                                   help_text='Project name to use when creating VM instances for this questionnaire')
     volume_size_base = models.IntegerField(null=False, blank=False, default=100,
                                            help_text='Base size in GB of for determining job volume size')
     volume_size_factor = models.IntegerField(null=False, blank=False, default=0,
                                              help_text='Number multiplied by total staged data size for '
                                                        'determining job volume size')
-    share_group = models.ForeignKey(ShareGroup, blank=False, null=False,
-                                    help_text='Users who will have job output shared with them')
+    volume_mounts = models.TextField(null=False, blank=False, default=json.dumps({'/dev/vdb1': '/work'}),
+                                     help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
 
     def __unicode__(self):
         return '{} desc:{}'.format(self.id, self.description)

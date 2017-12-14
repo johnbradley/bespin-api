@@ -1,6 +1,4 @@
 from data.models import Job, JobDDSOutputProject, DDSJobInputFile, DDSUserCredential
-from rest_framework.exceptions import ValidationError
-from util import get_file_name
 from exceptions import JobFactoryException
 import json
 import math
@@ -16,18 +14,19 @@ def create_job_factory(job_answer_set):
     :return: JobFactory
     """
     user = job_answer_set.user
+    vm_settings = job_answer_set.questionnaire.vm_settings
     workflow_version = job_answer_set.questionnaire.workflow_version
     stage_group = job_answer_set.stage_group
     user_job_order_dict = json.loads(job_answer_set.user_job_order_json)
     system_job_order_dict = json.loads(job_answer_set.questionnaire.system_job_order_json)
     job_name = job_answer_set.job_name
-    vm_project_name = job_answer_set.questionnaire.vm_project.name
-    vm_flavor_name = job_answer_set.questionnaire.vm_flavor.name
+    vm_flavor = job_answer_set.questionnaire.vm_flavor
     volume_size = calculate_volume_size(job_answer_set)
+    volume_mounts = job_answer_set.questionnaire.volume_mounts
     share_group = job_answer_set.questionnaire.share_group
     fund_code = job_answer_set.fund_code
-    factory = JobFactory(user, workflow_version, stage_group, user_job_order_dict, system_job_order_dict, job_name, vm_project_name,
-                         vm_flavor_name, volume_size, share_group, fund_code)
+    factory = JobFactory(user, workflow_version, stage_group, user_job_order_dict, system_job_order_dict, job_name,
+                         vm_settings, vm_flavor, volume_size, volume_mounts, share_group, fund_code)
 
     return factory
 
@@ -62,8 +61,8 @@ class JobFactory(object):
     """
     Creates Job record in the database based on questions their answers.
     """
-    def __init__(self, user, workflow_version, stage_group, user_job_order, system_job_order, job_name, vm_project_name,
-                 vm_flavor_name, volume_size, share_group, fund_code):
+    def __init__(self, user, workflow_version, stage_group, user_job_order, system_job_order, job_name, vm_settings,
+                 vm_flavor, volume_size, volume_mounts, share_group, fund_code):
         """
         Setup factory
         :param user: User: user we are creating this job for and who's credentials we will use
@@ -75,9 +74,10 @@ class JobFactory(object):
         self.user_job_order = user_job_order
         self.system_job_order = system_job_order
         self.job_name = job_name
-        self.vm_project_name = vm_project_name
-        self.vm_flavor_name = vm_flavor_name
+        self.vm_settings = vm_settings
+        self.vm_flavor = vm_flavor
         self.volume_size = volume_size
+        self.volume_mounts = volume_mounts
         self.share_group = share_group
         self.fund_code = fund_code
 
@@ -93,14 +93,16 @@ class JobFactory(object):
         # Create the job order to be submitted. Begin with the system info and overlay the user order
         job_order = self.system_job_order.copy()
         job_order.update(self.user_job_order)
+
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  user=self.user,
                                  stage_group=self.stage_group,
                                  name=self.job_name,
-                                 vm_project_name=self.vm_project_name,
-                                 vm_flavor=self.vm_flavor_name,
+                                 vm_settings=self.vm_settings,
                                  job_order=json.dumps(job_order),
                                  volume_size=self.volume_size,
+                                 vm_volume_mounts=self.volume_mounts,
+                                 vm_flavor=self.vm_flavor,
                                  share_group=self.share_group,
                                  fund_code=self.fund_code
         )

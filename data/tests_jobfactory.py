@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
 from mock.mock import MagicMock, patch, Mock
 from models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion, JobFileStageGroup, ShareGroup, \
-    DDSJobInputFile, URLJobInputFile
+    DDSJobInputFile, URLJobInputFile, VMFlavor, VMProject, VMSettings, CloudSettings
 from jobfactory import JobFactory, JobFactoryException, calculate_stage_group_size, calculate_volume_size
 import json
 
@@ -23,6 +23,11 @@ class JobFactoryTests(TestCase):
                                                                url=FLY_RNASEQ_URL)
         self.stage_group = JobFileStageGroup.objects.create(user=self.user)
         self.share_group = ShareGroup.objects.create(name='result data checkers')
+        vm_project = VMProject.objects.create(name='project1')
+        cloud_settings = CloudSettings.objects.create(name='cloud1', vm_project=vm_project)
+        self.vm_settings = VMSettings.objects.create(name='settings1', cloud_settings=cloud_settings)
+        self.vm_flavor = VMFlavor.objects.create(name='flavor1')
+        self.volume_mounts = json.dumps({'/dev/vdb1': '/work'})
 
     # What does job factory do now?
     # Checks that orders are not none
@@ -34,7 +39,7 @@ class JobFactoryTests(TestCase):
         user_job_order = None
         system_job_order = {}
         job_factory = JobFactory(self.user, None, None, user_job_order, system_job_order, None, None, None, 150,
-                                 self.share_group, '123-4')
+                                 self.volume_mounts, self.share_group, '123-4')
         with self.assertRaises(JobFactoryException):
             job_factory.create_job()
 
@@ -42,7 +47,7 @@ class JobFactoryTests(TestCase):
         user_job_order = {}
         system_job_order = None
         job_factory = JobFactory(self.user, None, None, user_job_order, system_job_order, None, None, None, 150,
-                                 self.share_group, '123-4')
+                                 self.volume_mounts, self.share_group, '123-4')
         with self.assertRaises(JobFactoryException):
             job_factory.create_job()
 
@@ -50,17 +55,18 @@ class JobFactoryTests(TestCase):
         user_job_order = {'input1': 'user'}
         system_job_order = {'input2' : 'system'}
         job_factory = JobFactory(self.user, self.workflow_version, self.stage_group, user_job_order, system_job_order,
-                                 'Test Job', 'bespin-project', 'flavor1', 110, self.share_group, '123-4')
+                                 'Test Job', self.vm_settings, self.vm_flavor, 110, self.volume_mounts, self.share_group, '123-4')
         job = job_factory.create_job()
         self.assertEqual(job.user, self.user)
         self.assertEqual(job.workflow_version, self.workflow_version)
         expected_job_order = json.dumps({'input1':'user','input2':'system'})
         self.assertEqual(expected_job_order, job.job_order)
         self.assertEqual(job.name, 'Test Job')
-        self.assertEqual(job.vm_project_name, 'bespin-project')
-        self.assertEqual(job.vm_flavor,'flavor1')
+        self.assertEqual(job.vm_settings, self.vm_settings)
+        self.assertEqual(job.vm_flavor, self.vm_flavor)
         self.assertEqual(self.worker_cred.id, job.output_project.dds_user_credentials.id)
         self.assertEqual(job.volume_size, 110)
+        self.assertEqual(job.vm_volume_mounts, self.volume_mounts)
         self.assertEqual(job.share_group, self.share_group)
         self.assertEqual(job.fund_code, '123-4')
 
@@ -68,7 +74,8 @@ class JobFactoryTests(TestCase):
         user_job_order = {'input1': 'user'}
         system_job_order = {'input1' : 'system'}
         job_factory = JobFactory(self.user, self.workflow_version, self.stage_group, user_job_order, system_job_order,
-                                 'Test Job', 'bespin-project', 'flavor1', 120, self.share_group, '123-4')
+                                 'Test Job', self.vm_settings, self.vm_flavor, 120, self.volume_mounts,
+                                 self.share_group, '123-4')
         job = job_factory.create_job()
         expected_job_order = json.dumps({'input1':'user'})
         self.assertEqual(expected_job_order, job.job_order)

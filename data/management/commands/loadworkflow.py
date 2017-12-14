@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from argparse import FileType
-from data.models import Workflow, WorkflowVersion, JobQuestionnaire, VMFlavor, VMProject, ShareGroup, WorkflowMethodsDocument
+from data.models import Workflow, WorkflowVersion, JobQuestionnaire, VMFlavor, VMProject, \
+    VMSettings, ShareGroup, WorkflowMethodsDocument
 from cwltool.load_tool import load_tool
 from cwltool.workflow import defaultMakeTool
 from _private import BaseCreator
@@ -109,8 +110,8 @@ class JobQuestionnaireImporter(BaseCreator):
                  description,
                  workflow_version,
                  system_job_order_file,
+                 vm_settings_name,
                  vm_flavor_name,
-                 vm_project_name,
                  share_group_name,
                  volume_size_base,
                  volume_size_factor,
@@ -122,22 +123,21 @@ class JobQuestionnaireImporter(BaseCreator):
         self.workflow_version = workflow_version
         self.system_job_order_dict = json.load(system_job_order_file)
         self.vm_flavor_name = vm_flavor_name
-        self.vm_project_name = vm_project_name
+        self.vm_settings_name = vm_settings_name
         self.share_group_name = share_group_name
         self.volume_size_base = volume_size_base
         self.volume_size_factor = volume_size_factor
         # django model objects built up
         self.vm_flavor = None
-        self.vm_project = None
         self.job_questionnaire = None
 
     def _create_models(self):
+        # Fail if VMSettings not found
+        self.vm_settings = VMSettings.objects.get(name=self.vm_settings_name)
+        self.log_creation(False, 'VMSettings', self.vm_settings_name, self.vm_settings.id)
         # vm flavor
         self.vm_flavor, created = VMFlavor.objects.get_or_create(name=self.vm_flavor_name)
         self.log_creation(created, 'VMFlavor', self.vm_flavor_name, self.vm_flavor.id)
-        # vm_project
-        self.vm_project, created = VMProject.objects.get_or_create(name=self.vm_project_name)
-        self.log_creation(created, 'VMProject', self.vm_project_name, self.vm_project.id)
         # share group
         self.share_group, created = ShareGroup.objects.get_or_create(name=self.share_group_name)
         self.log_creation(created, 'ShareGroup', self.share_group_name, self.share_group.id)
@@ -156,8 +156,8 @@ class JobQuestionnaireImporter(BaseCreator):
             workflow_version=self.workflow_version,
             system_job_order_json=json.dumps(self.system_job_order_dict),
             user_fields_json=json.dumps(user_fields),
+            vm_settings=self.vm_settings,
             vm_flavor=self.vm_flavor,
-            vm_project=self.vm_project,
             share_group=self.share_group,
             volume_size_base=self.volume_size_base,
             volume_size_factor=self.volume_size_factor,
@@ -242,7 +242,7 @@ class Command(BaseCommand):
         parser.add_argument('system-job-order-file', help='JSON Job order with system answers to associate with questionnaire '
                                                    '(e.g. reference genome files)', type=FileType('r'))
         parser.add_argument('vm-flavor', help='Name of VM flavor to use when running jobs(e.g. \'m1.large\')')
-        parser.add_argument('vm-project', help='Name of Openstack to use when running jobs')
+        parser.add_argument('vm-settings', help='Name of VMSettings to use when running jobs')
         parser.add_argument('share-group', help='Name of Share group to attach to the job questionnaire')
         parser.add_argument('volume-size-base', help='Base volume size (in GB) used for this workflow.')
         parser.add_argument('volume-size-factor', help='Integer factor multiplied by input data size when running this workflow.')
@@ -261,8 +261,8 @@ class Command(BaseCommand):
             options.get('description'),
             wf_importer.workflow_version,
             options.get('system-job-order-file'),
+            options.get('vm-settings'),
             options.get('vm-flavor'),
-            options.get('vm-project'),
             options.get('share-group'),
             options.get('volume-size-base'),
             options.get('volume-size-factor'),
