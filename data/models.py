@@ -151,6 +151,9 @@ class CloudSettings(models.Model):
     def __unicode__(self):
         return '{}: id {}, Proj: {}'.format(self.name, self.pk, self.vm_project.name)
 
+    class Meta:
+        verbose_name_plural = "Cloud Settings Collections"
+
 
 class VMSettings(models.Model):
     """
@@ -227,7 +230,7 @@ class Job(models.Model):
     vm_settings = models.ForeignKey(VMSettings, null=False, blank=False,
                                     help_text='Collection of settings to use when launching VM for this job')
     vm_flavor = models.ForeignKey(VMFlavor, null=False,
-                                  help_text='VM Flavor to use when creating VM instances for this questionnaire')
+                                  help_text='VM Flavor to use when launching VM for this job')
     vm_instance_name = models.CharField(max_length=255, blank=True, null=True,
                                         help_text="Name of the vm this job is/was running on.")
     vm_volume_name = models.CharField(max_length=255, blank=True, null=True,
@@ -333,7 +336,6 @@ class JobQuestionnaire(models.Model):
 
     def __unicode__(self):
         return '{} desc:{}'.format(self.id, self.description)
-
 
 
 class JobAnswerSet(models.Model):
