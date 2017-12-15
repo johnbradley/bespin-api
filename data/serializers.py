@@ -324,7 +324,7 @@ class AdminLoadQuestionnaireSerializer(serializers.Serializer):
     name = serializers.CharField(min_length=1)
     description = serializers.CharField(min_length=1)
     methods_template_url = serializers.URLField()
-    system_json = serializers.JSONField()
+    system_json = serializers.DictField()
     vm_settings_name = serializers.CharField(min_length=1) # must relate to an existing VM Settings
     vm_flavor_name = serializers.CharField(min_length=1) # must relate to an existing VM Flavor
     share_group_name = serializers.CharField(min_length=1) # must relate to an existing Share Group

@@ -109,7 +109,7 @@ class JobQuestionnaireImporter(BaseCreator):
                  name,
                  description,
                  workflow_version,
-                 system_job_order_file,
+                 system_job_order_dict,
                  vm_settings_name,
                  vm_flavor_name,
                  share_group_name,
@@ -121,7 +121,7 @@ class JobQuestionnaireImporter(BaseCreator):
         self.name = name
         self.description = description
         self.workflow_version = workflow_version
-        self.system_job_order_dict = json.load(system_job_order_file)
+        self.system_job_order_dict = system_job_order_dict
         self.vm_flavor_name = vm_flavor_name
         self.vm_settings_name = vm_settings_name
         self.share_group_name = share_group_name
@@ -260,7 +260,7 @@ class Command(BaseCommand):
             options.get('name'),
             options.get('description'),
             wf_importer.workflow_version,
-            options.get('system-job-order-file'),
+            json.load(options.get('system-job-order-file')),
             options.get('vm-settings'),
             options.get('vm-flavor'),
             options.get('share-group'),

@@ -1873,22 +1873,32 @@ class UserTestCase(APITestCase):
         response = self.client.get(detail_url, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-class LoadQuestionnaireTestCase(APITestCase):
 
+class LoadQuestionnaireTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
+        add_vm_settings(self, settings_name='test-settings')
+        ShareGroup.objects.create(name='test-share-group')
+
         self.data = {
-            "cwl_url": "https://github.com/Duke-GCB/bespin-cwl/releases/download/v0.9.0/exomeseq.cwl",
-            "workflow_version_number": 4,
-            "name": "Whole Exome Sequence analysis using GATK best practices - Germline SNP & Indel Discovery",
-            "description" : "This is a whole-exome sequencing using the b37 human genome assembly, GATK, and a SeqCap EZ Exome v3 capture kit.",
-            "methods_template_url": "https://raw.githubusercontent.com/Duke-GCB/bespin-cwl/v0.9.0/workflows/exomeseq-methods.j2",
-            "system_json": {    # JSON to store for this workflow
+            "cwl_url": "https://example.org/exome-seq.cwl",
+            "workflow_version_number": 12,
+            "name": "Test Questionnaire Name",
+            "description" : "Test Questionnaire Description",
+            "methods_template_url": "https://example.org/exome-seq.md.j2",
+            "system_json": {
+                "threads": 4,
+                "files": [
+                    {
+                        "class": "File",
+                        "path":"/nfs/data/genome.fa"
+                    }
+                ]
             },
-            "vm_settings_name": "name of vm settings",
-            "vm_flavor_name": "m1.xlarge",
-            "share_group_name": "Informatics",
-            "volume_size_base": 1000,
+            "vm_settings_name": "test-settings",
+            "vm_flavor_name": "test-flavor",
+            "share_group_name": "test-share-group",
+            "volume_size_base": 100,
             "volume_size_factor": 10
         }
 
@@ -1910,11 +1920,42 @@ class LoadQuestionnaireTestCase(APITestCase):
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_admin_can_post(self):
+    @patch('data.api.WorkflowImporter')
+    @patch('data.api.JobQuestionnaireImporter')
+    def test_loads_questionnaire(self, mock_job_questionnaire_importer, mock_workflow_importer):
+        mock_wfi_run = Mock()
+        mock_workflow_importer.return_value.run = mock_wfi_run
+        mock_workflow_version = Mock()
+        mock_workflow_importer.return_value.workflow_version = mock_workflow_version
+        mock_jqi_run = Mock()
+        mock_job_questionnaire_importer.return_value.run = mock_jqi_run
+
         self.user_login.become_admin_user()
         url = reverse('admin_loadquestionnaire-list')
         response = self.client.post(url, self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Check that the workflow importer was called with the cwl_url, workflow_version_number, and methods_template_url
+        args, kwargs = mock_workflow_importer.call_args
+        self.assertEqual(args, (self.data['cwl_url'], self.data['workflow_version_number'], self.data['methods_template_url'],))
+        self.assertEqual(kwargs, {})
+        self.assertTrue(mock_wfi_run.called)
+
+        # Check that the Job Questionnaire Importer was called
+        args, kwargs = mock_job_questionnaire_importer.call_args
+        self.assertEqual(args, (
+            self.data['name'],
+            self.data['description'],
+            mock_workflow_version,
+            self.data['system_json'],
+            self.data['vm_settings_name'],
+            self.data['vm_flavor_name'],
+            self.data['share_group_name'],
+            self.data['volume_size_base'],
+            self.data['volume_size_factor'],
+        ))
+        self.assertEqual(kwargs, {})
+        self.assertTrue(mock_jqi_run.called)
 
     def test_unauthenticated_user_cannot_post(self):
         url = reverse('admin_loadquestionnaire-list')
@@ -1926,3 +1967,25 @@ class LoadQuestionnaireTestCase(APITestCase):
         url = reverse('admin_loadquestionnaire-list')
         response = self.client.put(url, self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_fails_missing_vm_settings(self):
+        self.user_login.become_admin_user()
+        url = reverse('admin_loadquestionnaire-list')
+        self.data['vm_settings_name'] = 'missing-settings'
+        response = self.client.post(url, self.data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_fails_missing_share_group(self):
+        self.user_login.become_admin_user()
+        url = reverse('admin_loadquestionnaire-list')
+        self.data['share_group_name'] = 'missing-share-group'
+        response = self.client.post(url, self.data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_fails_bad_system_json(self):
+        # DictField on the serializer checks this
+        self.user_login.become_admin_user()
+        url = reverse('admin_loadquestionnaire-list')
+        self.data['system_json'] = 'not-json]'
+        response = self.client.post(url, self.data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

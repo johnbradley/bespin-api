@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status, mixins
 from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content, \
     get_readme_file_url
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException, JobTokenException
 from data.models import *
 from django.db import IntegrityError
@@ -14,6 +15,7 @@ from django.db.models import Q
 from django.db import transaction
 from jobfactory import create_job_factory
 from mailer import EmailMessageSender, JobMailer
+from management.commands.loadworkflow import WorkflowImporter, JobQuestionnaireImporter
 
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
@@ -357,6 +359,36 @@ class AdminLoadQuestionnaireViewSet(mixins.CreateModelMixin,
     queryset = []
 
     def perform_create(self, serializer):
-        # The serializer has been validated.
-        # Pull out the details and create
-        pass
+        validated_data = serializer.validated_data
+
+        # Fail if VMSettings or ShareGroup does not exist
+        vm_settings_name = validated_data['vm_settings_name']
+        share_group_name = validated_data['share_group_name']
+        try:
+            VMSettings.objects.get(name=vm_settings_name)
+        except VMSettings.DoesNotExist:
+            raise NotFound('VMSettings with name \'{}\' not found'.format(vm_settings_name))
+        try:
+            ShareGroup.objects.get(name=share_group_name)
+        except ShareGroup.DoesNotExist:
+            raise NotFound('ShareGroup with name \'{}\' not found'.format(share_group_name))
+
+        wf_importer = WorkflowImporter(
+            validated_data.get('cwl_url'),
+            validated_data.get('workflow_version_number'),
+            validated_data.get('methods_template_url')
+        )
+        wf_importer.run()
+
+        jq_importer = JobQuestionnaireImporter(
+            validated_data.get('name'),
+            validated_data.get('description'),
+            wf_importer.workflow_version,
+            validated_data.get('system_json'),
+            vm_settings_name,
+            validated_data.get('vm_flavor_name'),
+            share_group_name,
+            validated_data.get('volume_size_base'),
+            validated_data.get('volume_size_factor'),
+        )
+        jq_importer.run()
