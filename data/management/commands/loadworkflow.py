@@ -237,7 +237,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('cwl-url', help='URL to packed CWL workflow file. Do not include #main')
         parser.add_argument('version-number', help='Version number to assign to imported workflow')
-        parser.add_argument('name', help='Short name to display forquestionnaire (e.g. ABC Processing on hg37)')
+        parser.add_argument('name', help='Short name to display for questionnaire (e.g. ABC Processing on hg37)')
         parser.add_argument('description', help='Detailed user facing description of questionnaire')
         parser.add_argument('system-job-order-file', help='JSON Job order with system answers to associate with questionnaire '
                                                    '(e.g. reference genome files)', type=FileType('r'))
