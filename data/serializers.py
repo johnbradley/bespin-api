@@ -316,3 +316,18 @@ class AdminEmailMessageSerializer(serializers.ModelSerializer):
         model = EmailMessage
         resource_name = 'email-messages'
         fields = '__all__'
+
+class AdminLoadQuestionnaireSerializer(serializers.Serializer):
+
+    cwl_url = serializers.URLField()
+    workflow_version_number = serializers.IntegerField()
+    name = serializers.CharField(min_length=1)
+    description = serializers.CharField(min_length=1)
+    methods_template_url = serializers.URLField()
+    system_json = serializers.JSONField()
+    vm_settings_name = serializers.CharField(min_length=1) # must relate to an existing VM Settings
+    vm_flavor_name = serializers.CharField(min_length=1) # must relate to an existing VM Flavor
+    share_group_name = serializers.CharField(min_length=1) # must relate to an existing Share Group
+    volume_size_base = serializers.IntegerField()
+    volume_size_factor = serializers.IntegerField()
+
