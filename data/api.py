@@ -348,3 +348,15 @@ class AdminEmailTemplateViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
     serializer_class = AdminEmailTemplateSerializer
     queryset = EmailTemplate.objects.all()
+
+
+class AdminLoadQuestionnaireViewSet(mixins.CreateModelMixin,
+                                    viewsets.GenericViewSet):
+    permission_classes = (permissions.IsAdminUser,)
+    serializer_class = AdminLoadQuestionnaireSerializer
+    queryset = []
+
+    def perform_create(self, serializer):
+        # The serializer has been validated.
+        # Pull out the details and create
+        pass

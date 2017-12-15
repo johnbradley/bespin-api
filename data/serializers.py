@@ -330,4 +330,3 @@ class AdminLoadQuestionnaireSerializer(serializers.Serializer):
     share_group_name = serializers.CharField(min_length=1) # must relate to an existing Share Group
     volume_size_base = serializers.IntegerField()
     volume_size_factor = serializers.IntegerField()
-
