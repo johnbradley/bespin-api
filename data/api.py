@@ -266,6 +266,7 @@ class AdminJobErrorViewSet(viewsets.ModelViewSet):
 
 class JobDDSOutputProjectViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
+    # This needs queryset tightening
     queryset = JobDDSOutputProject.objects.all()
     serializer_class = JobDDSOutputProjectSerializer
 
@@ -385,27 +386,29 @@ class AdminLoadQuestionnaireViewSet(mixins.CreateModelMixin,
                     os.write(fd, chunk)
             cwl_url = 'file://{}'.format(name)
         print('importing workflow from {}'.format(cwl_url))
-        wf_importer = WorkflowImporter(
-            cwl_url,
-            validated_data.get('workflow_version_number'),
-            validated_data.get('methods_template_url')
-        )
-        wf_importer.run()
+        try:
+            wf_importer = WorkflowImporter(
+                cwl_url,
+                validated_data.get('workflow_version_number'),
+                validated_data.get('methods_template_url')
+            )
+            wf_importer.run()
+            if fd:
+                os.close(fd)
 
-        jq_importer = JobQuestionnaireImporter(
-            validated_data.get('name'),
-            validated_data.get('description'),
-            wf_importer.workflow_version,
-            validated_data.get('system_json'),
-            vm_settings_name,
-            validated_data.get('vm_flavor_name'),
-            share_group_name,
-            validated_data.get('volume_size_base'),
-            validated_data.get('volume_size_factor'),
-        )
-        jq_importer.run()
-
-        if fd:
-            os.close(fd)
+            jq_importer = JobQuestionnaireImporter(
+                validated_data.get('name'),
+                validated_data.get('description'),
+                wf_importer.workflow_version,
+                validated_data.get('system_json'),
+                vm_settings_name,
+                validated_data.get('vm_flavor_name'),
+                share_group_name,
+                validated_data.get('volume_size_base'),
+                validated_data.get('volume_size_factor'),
+            )
+            jq_importer.run()
+        except Exception as e:
+            raise BespinAPIException(status.HTTP_400_BAD_REQUEST, e.message)
 
 
