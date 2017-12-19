@@ -254,7 +254,15 @@ class Job(models.Model):
         if self.stage_group is not None and self.stage_group.user != self.user:
             raise ValidationError('stage group user does not match job user')
         super(Job, self).save(*args, **kwargs)
-        JobActivity.objects.create(job=self, state=self.state, step=self.step)
+        if self.should_create_activity():
+            JobActivity.objects.create(job=self, state=self.state, step=self.step)
+
+    def should_create_activity(self):
+        job_activities = JobActivity.objects.filter(job=self).order_by('-created')
+        if not job_activities:
+            return True
+        latest_activity = job_activities.first()
+        return latest_activity.state != self.state or latest_activity.step != self.step
 
     def mark_deleted(self):
         self.state = Job.JOB_STATE_DELETED

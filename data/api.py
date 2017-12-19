@@ -356,4 +356,4 @@ class JobActivityViewSet(viewsets.ModelViewSet):
     filter_fields = ('job',)
 
     def get_queryset(self):
-        return JobActivity.objects.filter(job__user=self.request.user).order_by('created')
+        return JobActivity.objects.filter(job__user=self.request.user).order_by('job', 'created')

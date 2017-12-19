@@ -1873,3 +1873,92 @@ class UserTestCase(APITestCase):
         response = self.client.get(detail_url, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+
+class JobActivitiesTestCase(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+        workflow = Workflow.objects.create(name='RnaSeq')
+        cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
+        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
+                                                               version="1",
+                                                               url=cwl_url)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
+        self.vm_flavor = VMFlavor.objects.create(name='flavor1')
+        add_vm_settings(self)
+
+    @staticmethod
+    def get_job_details(response):
+        return [(item['job'], item['state'], item['step']) for item in response.data]
+
+    def test_user_only_sees_their_data(self):
+        url = reverse('jobactivity-list')
+        normal_user = self.user_login.become_normal_user()
+        job1 = Job.objects.create(name='my job',
+                                  workflow_version=self.workflow_version,
+                                  job_order={},
+                                  user=normal_user,
+                                  share_group=self.share_group,
+                                  vm_settings=self.vm_settings,
+                                  vm_flavor=self.vm_flavor,
+                                  )
+        job1.state = Job.JOB_STATE_RUNNING
+        job1.step = Job.JOB_STEP_CREATE_VM
+        job1.save()
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.get_job_details(response), [
+            (job1.id, Job.JOB_STATE_NEW, None),
+            (job1.id, Job.JOB_STATE_RUNNING, Job.JOB_STEP_CREATE_VM),
+        ])
+
+        # switch to another user and we shouldn't see job1 activities
+        other_user = self.user_login.become_other_normal_user()
+        job2 = Job.objects.create(name='other job',
+                                  workflow_version=self.workflow_version,
+                                  job_order={},
+                                  user=other_user,
+                                  share_group=self.share_group,
+                                  vm_settings=self.vm_settings,
+                                  vm_flavor=self.vm_flavor,
+                                  )
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.get_job_details(response), [
+            (job2.id, Job.JOB_STATE_NEW, None),
+        ])
+
+    def test_users_can_filter_by_job(self):
+        normal_user = self.user_login.become_normal_user()
+        job1 = Job.objects.create(name='my job',
+                                  workflow_version=self.workflow_version,
+                                  job_order={},
+                                  user=normal_user,
+                                  share_group=self.share_group,
+                                  vm_settings=self.vm_settings,
+                                  vm_flavor=self.vm_flavor,
+                                  )
+        job2 = Job.objects.create(name='my job2',
+                                  workflow_version=self.workflow_version,
+                                  job_order={},
+                                  user=normal_user,
+                                  share_group=self.share_group,
+                                  vm_settings=self.vm_settings,
+                                  vm_flavor=self.vm_flavor,
+                                  state=Job.JOB_STATE_RUNNING
+                                  )
+        url = reverse('jobactivity-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.get_job_details(response), [
+            (job1.id, Job.JOB_STATE_NEW, None),
+            (job2.id, Job.JOB_STATE_RUNNING, None),
+        ])
+        job2.step = Job.JOB_STEP_RUNNING
+        job2.save()
+
+        response = self.client.get('{}?job={}'.format(url, job2.id), format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.get_job_details(response), [
+            (job2.id, Job.JOB_STATE_RUNNING, None),
+            (job2.id, Job.JOB_STATE_RUNNING, Job.JOB_STEP_RUNNING),
+        ])
