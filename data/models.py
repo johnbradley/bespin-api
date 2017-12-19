@@ -254,6 +254,7 @@ class Job(models.Model):
         if self.stage_group is not None and self.stage_group.user != self.user:
             raise ValidationError('stage group user does not match job user')
         super(Job, self).save(*args, **kwargs)
+        JobActivity.objects.create(job=self, state=self.state, step=self.step)
 
     def mark_deleted(self):
         self.state = Job.JOB_STATE_DELETED
@@ -267,6 +268,24 @@ class Job(models.Model):
         if self.workflow_version:
             workflow_name = self.workflow_version.workflow
         return '{} ({}) for user {}'.format(workflow_name, self.get_state_display(), self.user)
+
+
+class JobActivity(models.Model):
+    """
+    Contains a record for each time a job state/step changes.
+    """
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, null=False, related_name='job_activities')
+    created = models.DateTimeField(auto_now_add=True, blank=False)
+    state = models.CharField(max_length=1, choices=Job.JOB_STATES, default='N',
+                             help_text="High level state of the project")
+    step = models.CharField(max_length=1, choices=Job.JOB_STEPS, null=True, blank=True,
+                            help_text="Job step (progress within Running state)")
+
+    class Meta:
+        verbose_name_plural = "Job Activities"
+
+    def __unicode__(self):
+        return 'JobActivity job:{} state:{} step:{} created:{}'.format(self.job, self.state, self.step, self.created)
 
 
 class JobDDSOutputProject(models.Model):
