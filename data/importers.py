@@ -4,10 +4,13 @@ from cwltool.load_tool import load_tool
 from cwltool.workflow import defaultMakeTool
 import sys
 import requests
+import json
 from habanero import cn
 from jinja2 import Template
 SCHEMA_ORG_CITATION = 'https://schema.org/citation'
 HTTPS_DOI_URL = 'https://dx.doi.org/'
+import logging
+logger = logging.getLogger(__name__)
 
 
 class BaseCreator(object):
@@ -211,7 +214,7 @@ class WorkflowImporter(BaseCreator):
         :param stderr: For writing error messages
         """
         super(WorkflowImporter, self).__init__(stdout, stderr)
-        self.cwl_document = cwl_document,
+        self.cwl_document = cwl_document
         self.version_number = version_number
         self.methods_jinja_template_url = methods_jinja_template_url
         # django model objects built up
@@ -280,11 +283,13 @@ class WorkflowQuestionnaireImporter(object):
 
     def _load(self):
         try:
+            logger.info('Loading CWL document from %s', self.data.get('cwl_url'))
             cwl_document = CWLDocument(self.data.get('cwl_url'))
         except Exception as e:
-            raise ImporterException('Unable to parse CWL Document', e)
+            raise ImporterException('Unable to load CWL Document', e)
 
         try:
+            logger.info('Importing Workflow version %s', str(self.data.get('workflow_version_number')))
             wf_importer = WorkflowImporter(
                 cwl_document,
                 self.data.get('workflow_version_number'),
@@ -292,9 +297,11 @@ class WorkflowQuestionnaireImporter(object):
             )
             wf_importer.run()
         except Exception as e:
+            logger.exception('Unable to import workflow' )
             raise ImporterException('Unable to import workflow', e)
 
         try:
+            logger.info('Importing Job Questionnaire named %s', self.data.get('name'))
             jq_importer = JobQuestionnaireImporter(
                 self.data.get('name'),
                 self.data.get('description'),
@@ -309,4 +316,5 @@ class WorkflowQuestionnaireImporter(object):
             )
             jq_importer.run()
         except Exception as e:
+            logger.exception('Unable to import questionnaire' )
             raise ImporterException('Unable to import questionnaire', e)
