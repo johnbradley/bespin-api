@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from django.test import TestCase
-from data.management.commands.loadworkflow import CWLDocument, MethodsDocumentContents, SCHEMA_ORG_CITATION, \
+from data.loaders import CWLDocument, MethodsDocumentContents, SCHEMA_ORG_CITATION, \
     HTTPS_DOI_URL
 from mock import patch, Mock
 
@@ -50,8 +50,8 @@ class CWLDocumentTestCase(TestCase):
 
 
 class MethodsDocumentContentsTestCase(TestCase):
-    @patch('data.management.commands.loadworkflow.requests')
-    @patch('data.management.commands.loadworkflow.cn')
+    @patch('data.loaders.requests')
+    @patch('data.loaders.cn')
     def test_get_content(self, mock_cn, mock_requests):
 
         software_requirement_hints = [
@@ -81,3 +81,9 @@ othertool version: 3 citation: Dr Man 2017"""
             software_requirement_hints=software_requirement_hints,
             jinja_template_url='fakeurl')
         self.assertEqual(expected_content, method_document_contents.get_content())
+
+
+class QuestionnaireLoaderTestCase(TestCase):
+
+    def test_loader(self):
+        self.fail('Not yet implemented')

@@ -15,8 +15,7 @@ from django.db.models import Q
 from django.db import transaction
 from jobfactory import create_job_factory
 from mailer import EmailMessageSender, JobMailer
-from management.commands.loadworkflow import WorkflowImporter, JobQuestionnaireImporter
-
+from loaders import QuestionnaireLoader, LoaderException
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -360,55 +359,10 @@ class AdminLoadQuestionnaireViewSet(mixins.CreateModelMixin,
     queryset = []
 
     def perform_create(self, serializer):
-        validated_data = serializer.validated_data
-        # Fail if VMSettings or ShareGroup does not exist
-        vm_settings_name = validated_data['vm_settings_name']
-        share_group_name = validated_data['share_group_name']
+        loader = QuestionnaireLoader(serializer.validated_data)
         try:
-            VMSettings.objects.get(name=vm_settings_name)
-        except VMSettings.DoesNotExist:
-            raise NotFound('VMSettings with name \'{}\' not found'.format(vm_settings_name))
-        try:
-            ShareGroup.objects.get(name=share_group_name)
-        except ShareGroup.DoesNotExist:
-            raise NotFound('ShareGroup with name \'{}\' not found'.format(share_group_name))
-
-        # Download the CWL file once and keep it
-        cwl_url = validated_data.get('cwl_url')
-        if not cwl_url.startswith('file:'):
-            import requests
-            from tempfile import mkstemp
-            import os
-            (fd, name) = mkstemp(suffix='.cwl')
-            response = requests.get(cwl_url, allow_redirects=True, stream=True)
-            for chunk in response.iter_content():
-                if chunk:
-                    os.write(fd, chunk)
-            cwl_url = 'file://{}'.format(name)
-        print('importing workflow from {}'.format(cwl_url))
-        try:
-            wf_importer = WorkflowImporter(
-                cwl_url,
-                validated_data.get('workflow_version_number'),
-                validated_data.get('methods_template_url')
-            )
-            wf_importer.run()
-            if fd:
-                os.close(fd)
-
-            jq_importer = JobQuestionnaireImporter(
-                validated_data.get('name'),
-                validated_data.get('description'),
-                wf_importer.workflow_version,
-                validated_data.get('system_json'),
-                vm_settings_name,
-                validated_data.get('vm_flavor_name'),
-                share_group_name,
-                validated_data.get('volume_size_base'),
-                validated_data.get('volume_size_factor'),
-            )
-            jq_importer.run()
-        except Exception as e:
+            loader.run()
+        except LoaderException as e:
             raise BespinAPIException(status.HTTP_400_BAD_REQUEST, e.message)
 
 
