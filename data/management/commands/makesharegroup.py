@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from data.models import ShareGroup, DDSUser
-from data.loaders import BaseCreator
+from data.importers import BaseCreator
 
 
 class ShareGroupCreator(BaseCreator):

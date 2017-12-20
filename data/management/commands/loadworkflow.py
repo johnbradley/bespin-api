@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from argparse import FileType
-from data.loaders import WorkflowImporter, JobQuestionnaireImporter
+from data.importers import WorkflowImporter, JobQuestionnaireImporter
 import json
 
 

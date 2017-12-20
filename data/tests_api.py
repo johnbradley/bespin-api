@@ -1874,7 +1874,7 @@ class UserTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class LoadQuestionnaireTestCase(APITestCase):
+class LoadJobQuestionnaireTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
         # Data needs to deserialize
@@ -1917,17 +1917,17 @@ class LoadQuestionnaireTestCase(APITestCase):
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @patch('data.api.QuestionnaireLoader')
-    def test_loads_questionnaire(self, mock_questionnaire_loader):
+    @patch('data.api.WorkflowQuestionnaireImporter')
+    def test_loads_questionnaire(self, mock_importer):
         mock_run = Mock()
-        mock_questionnaire_loader.return_value.run = mock_run
+        mock_importer.return_value.run = mock_run
         self.user_login.become_admin_user()
         url = reverse('admin_loadquestionnaire-list')
         response = self.client.post(url, self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Check that the Questionnaire importer was called with our POSTed data
-        args, kwargs = mock_questionnaire_loader.call_args
+        args, kwargs = mock_importer.call_args
         self.assertEqual(args, (self.data,))
         self.assertEqual(kwargs, {})
         self.assertTrue(mock_run.called)

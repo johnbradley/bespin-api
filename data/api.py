@@ -15,7 +15,7 @@ from django.db.models import Q
 from django.db import transaction
 from jobfactory import create_job_factory
 from mailer import EmailMessageSender, JobMailer
-from loaders import QuestionnaireLoader, LoaderException
+from importers import WorkflowQuestionnaireImporter, ImporterException
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -359,10 +359,10 @@ class AdminLoadQuestionnaireViewSet(mixins.CreateModelMixin,
     queryset = []
 
     def perform_create(self, serializer):
-        loader = QuestionnaireLoader(serializer.validated_data)
+        loader = WorkflowQuestionnaireImporter(serializer.validated_data)
         try:
             loader.run()
-        except LoaderException as e:
+        except ImporterException as e:
             raise BespinAPIException(status.HTTP_400_BAD_REQUEST, e.message)
 
 

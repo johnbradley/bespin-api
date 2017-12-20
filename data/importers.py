@@ -251,11 +251,13 @@ class WorkflowImporter(BaseCreator):
         self._create_models()
 
 
-class LoaderException(Exception):
-    pass
+class ImporterException(Exception):
+    def __init__(self, message, cause):
+        self.message = message
+        self.cause = cause
 
 
-class QuestionnaireLoader(object):
+class WorkflowQuestionnaireImporter(object):
 
     def __init__(self, data):
         self.data = data
@@ -269,15 +271,14 @@ class QuestionnaireLoader(object):
         share_group_name = self.data['share_group_name']
         try:
             VMSettings.objects.get(name=vm_settings_name)
-        except VMSettings.DoesNotExist:
-            raise LoaderException('VMSettings with name \'{}\' not found'.format(vm_settings_name))
+        except VMSettings.DoesNotExist as e:
+            raise ImporterException('VMSettings with name \'{}\' not found'.format(vm_settings_name), e)
         try:
             ShareGroup.objects.get(name=share_group_name)
-        except ShareGroup.DoesNotExist:
-            raise LoaderException('ShareGroup with name \'{}\' not found'.format(share_group_name))
+        except ShareGroup.DoesNotExist as e:
+            raise ImporterException('ShareGroup with name \'{}\' not found'.format(share_group_name), e)
 
     def _load(self):
-        # Fail if VMSettings or ShareGroup does not exist
         try:
             wf_importer = WorkflowImporter(
                 self.data.get('cwl_url'),
@@ -285,7 +286,10 @@ class QuestionnaireLoader(object):
                 self.data.get('methods_template_url')
             )
             wf_importer.run()
+        except Exception as e:
+            raise ImporterException('Unable to import workflow', e)
 
+        try:
             jq_importer = JobQuestionnaireImporter(
                 self.data.get('name'),
                 self.data.get('description'),
@@ -299,4 +303,4 @@ class QuestionnaireLoader(object):
             )
             jq_importer.run()
         except Exception as e:
-            raise BespinAPIException(status.HTTP_400_BAD_REQUEST, e.message)
+            raise ImporterException('Unable to import questionnaire', e)
