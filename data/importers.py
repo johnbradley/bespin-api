@@ -174,7 +174,7 @@ class JobQuestionnaireImporter(BaseCreator):
                 user_fields.append(input_field)
 
         # Job questionnaire
-        self.job_questionnaire, created = JobQuestionnaire.objects.get_or_create(
+        self.job_questionnaire, self.created_job_questionnaire = JobQuestionnaire.objects.get_or_create(
             name=self.name,
             description=self.description,
             workflow_version=self.workflow_version,
@@ -315,6 +315,7 @@ class WorkflowQuestionnaireImporter(object):
                 cwl_document
             )
             jq_importer.run()
+            self.created_jobquestionnaire = jq_importer.created_job_questionnaire
         except Exception as e:
             logger.exception('Unable to import questionnaire' )
             raise ImporterException('Unable to import questionnaire', e)

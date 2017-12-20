@@ -359,10 +359,20 @@ class AdminImportWorkflowQuestionnaireViewSet(mixins.CreateModelMixin,
     queryset = []
 
     def perform_create(self, serializer):
-        loader = WorkflowQuestionnaireImporter(serializer.validated_data)
+        importer = WorkflowQuestionnaireImporter(serializer.validated_data)
         try:
-            loader.run()
+            importer.run()
+            return importer.created_jobquestionnaire
         except ImporterException as e:
             raise BespinAPIException(status.HTTP_400_BAD_REQUEST, e.message)
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if self.perform_create(serializer):
+            response_status = status.HTTP_201_CREATED # created new
+        else:
+            response_status = status.HTTP_200_OK # Already imported
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=response_status, headers=headers)
 

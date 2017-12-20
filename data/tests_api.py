@@ -1921,6 +1921,7 @@ class AdminImportWorkflowQuestionnaireTestCase(APITestCase):
     def test_loads_questionnaire(self, mock_importer):
         mock_run = Mock()
         mock_importer.return_value.run = mock_run
+        mock_importer.return_value.created_jobquestionnaire = True
         self.user_login.become_admin_user()
         url = reverse('admin_importworkflowquestionnaire-list')
         response = self.client.post(url, self.data, format='json')
@@ -1950,3 +1951,13 @@ class AdminImportWorkflowQuestionnaireTestCase(APITestCase):
         self.data['system_json'] = 'not-json]'
         response = self.client.post(url, self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('data.api.WorkflowQuestionnaireImporter')
+    def test_returns_200_when_questionnaire_exists(self, mock_importer):
+        mock_run = Mock()
+        mock_importer.return_value.run = mock_run
+        mock_importer.return_value.created_jobquestionnaire = False
+        self.user_login.become_admin_user()
+        url = reverse('admin_importworkflowquestionnaire-list')
+        response = self.client.post(url, self.data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
