@@ -1874,7 +1874,7 @@ class UserTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class LoadJobQuestionnaireTestCase(APITestCase):
+class AdminImportWorkflowQuestionnaireTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
         # Data needs to deserialize
@@ -1901,19 +1901,19 @@ class LoadJobQuestionnaireTestCase(APITestCase):
 
     def test_denies_get(self):
         self.user_login.become_admin_user()
-        url = reverse('admin_loadquestionnaire-list')
+        url = reverse('admin_importworkflowquestionnaire-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_denies_put(self):
         self.user_login.become_admin_user()
-        url = reverse('admin_loadquestionnaire-list')
+        url = reverse('admin_importworkflowquestionnaire-list')
         response = self.client.put(url, self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_denies_delete(self):
         self.user_login.become_admin_user()
-        url = reverse('admin_loadquestionnaire-list')
+        url = reverse('admin_importworkflowquestionnaire-list')
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -1922,7 +1922,7 @@ class LoadJobQuestionnaireTestCase(APITestCase):
         mock_run = Mock()
         mock_importer.return_value.run = mock_run
         self.user_login.become_admin_user()
-        url = reverse('admin_loadquestionnaire-list')
+        url = reverse('admin_importworkflowquestionnaire-list')
         response = self.client.post(url, self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -1933,20 +1933,20 @@ class LoadJobQuestionnaireTestCase(APITestCase):
         self.assertTrue(mock_run.called)
 
     def test_unauthenticated_user_cannot_post(self):
-        url = reverse('admin_loadquestionnaire-list')
+        url = reverse('admin_importworkflowquestionnaire-list')
         response = self.client.put(url, self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_normal_user_cannot_post(self):
         self.user_login.become_normal_user()
-        url = reverse('admin_loadquestionnaire-list')
+        url = reverse('admin_importworkflowquestionnaire-list')
         response = self.client.put(url, self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_fails_bad_system_json(self):
         # DictField on the serializer checks this
         self.user_login.become_admin_user()
-        url = reverse('admin_loadquestionnaire-list')
+        url = reverse('admin_importworkflowquestionnaire-list')
         self.data['system_json'] = 'not-json]'
         response = self.client.post(url, self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

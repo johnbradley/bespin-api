@@ -317,7 +317,7 @@ class AdminEmailMessageSerializer(serializers.ModelSerializer):
         resource_name = 'email-messages'
         fields = '__all__'
 
-class AdminLoadQuestionnaireSerializer(serializers.Serializer):
+class AdminImportWorkflowQuestionnaireSerializer(serializers.Serializer):
 
     cwl_url = serializers.URLField()
     workflow_version_number = serializers.IntegerField()

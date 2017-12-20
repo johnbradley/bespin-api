@@ -33,7 +33,7 @@ router.register(r'admin/workflow-methods-documents', api.WorkflowMethodsDocument
                 'admin_workflowmethodsdocument')
 router.register(r'admin/email-templates', api.AdminEmailTemplateViewSet, 'admin_emailtemplate')
 router.register(r'admin/email-messages', api.AdminEmailMessageViewSet, 'admin_emailmessage')
-router.register(r'admin/load-questionnaire', api.AdminLoadQuestionnaireViewSet, 'admin_loadquestionnaire')
+router.register(r'admin/import-workflow-questionnaire', api.AdminImportWorkflowQuestionnaireViewSet, 'admin_importworkflowquestionnaire')
 
 urlpatterns = [
     url(r'^', include(router.urls)),

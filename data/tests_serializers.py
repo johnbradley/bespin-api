@@ -1,7 +1,7 @@
 from django.test import TestCase
-from serializers import AdminLoadQuestionnaireSerializer
+from serializers import AdminImportWorkflowQuestionnaireSerializer
 
-class AdminLoadQuestionnaireSerializerTest(TestCase):
+class AdminImportWorkflowQuestionnaireSerializerTest(TestCase):
 
     def setUp(self):
         self.valid_data = {
@@ -20,11 +20,11 @@ class AdminLoadQuestionnaireSerializerTest(TestCase):
         }
 
     def test_valid(self):
-        serializer = AdminLoadQuestionnaireSerializer(data=self.valid_data )
+        serializer = AdminImportWorkflowQuestionnaireSerializer(data=self.valid_data)
         self.assertTrue(serializer.is_valid())
 
     def test_required_fields(self):
-        serializer = AdminLoadQuestionnaireSerializer(data={})
+        serializer = AdminImportWorkflowQuestionnaireSerializer(data={})
         self.assertFalse(serializer.is_valid())
 
         self.assertIn('cwl_url', serializer.errors)
