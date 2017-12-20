@@ -265,7 +265,6 @@ class AdminJobErrorViewSet(viewsets.ModelViewSet):
 
 class JobDDSOutputProjectViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    # This needs queryset tightening
     queryset = JobDDSOutputProject.objects.all()
     serializer_class = JobDDSOutputProjectSerializer
 
