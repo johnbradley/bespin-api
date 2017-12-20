@@ -130,7 +130,10 @@ class JobQuestionnaireImporterTestCase(TestCase):
 
     @patch('data.importers.WorkflowImporter')
     @patch('data.importers.JobQuestionnaireImporter')
-    def test_runs_load(self, mock_job_questionnaire_importer, mock_workflow_importer):
+    @patch('data.importers.CWLDocument')
+    def test_runs_load(self, mock_cwl_document, mock_job_questionnaire_importer, mock_workflow_importer):
+        mock_doc = Mock()
+        mock_cwl_document.return_value = mock_doc
         mock_wfi_run = Mock()
         mock_workflow_importer.return_value.run = mock_wfi_run
         mock_workflow_version = Mock()
@@ -144,9 +147,15 @@ class JobQuestionnaireImporterTestCase(TestCase):
         importer = WorkflowQuestionnaireImporter(self.data)
         importer.run()
 
-        # Check that the workflow importer was called with the cwl_url, workflow_version_number, and methods_template_url
+        # Check that a CWLDocument was instantiated with the cwl_url
+        args, kwargs = mock_cwl_document.call_args
+        self.assertEqual(args, (self.data['cwl_url'],))
+        self.assertEqual(kwargs, {})
+        self.assertTrue(mock_cwl_document.called)
+
+        # Check that the workflow importer was called with the CWL Document, workflow_version_number, and methods_template_url
         args, kwargs = mock_workflow_importer.call_args
-        self.assertEqual(args, (self.data['cwl_url'], self.data['workflow_version_number'], self.data['methods_template_url'],))
+        self.assertEqual(args, (mock_doc, self.data['workflow_version_number'], self.data['methods_template_url'],))
         self.assertEqual(kwargs, {})
         self.assertTrue(mock_wfi_run.called)
 
@@ -162,13 +171,16 @@ class JobQuestionnaireImporterTestCase(TestCase):
             self.data['share_group_name'],
             self.data['volume_size_base'],
             self.data['volume_size_factor'],
+            mock_doc
         ))
         self.assertEqual(kwargs, {})
         self.assertTrue(mock_jqi_run.called)
 
+
     @patch('data.importers.WorkflowImporter')
     @patch('data.importers.JobQuestionnaireImporter')
-    def test_captures_wfimporter_exceptions(self, mock_jobquestionnaire_importer, mock_workflow_importer):
+    @patch('data.importers.CWLDocument')
+    def test_captures_wfimporter_exceptions(self, mock_cwl_document, mock_jobquestionnaire_importer, mock_workflow_importer):
         add_vm_settings(self, settings_name=self.vm_settings_name)
         self.share_group = ShareGroup.objects.create(name=self.share_group_name)
         mock_workflow_importer.side_effect = Exception()
@@ -179,7 +191,8 @@ class JobQuestionnaireImporterTestCase(TestCase):
 
     @patch('data.importers.WorkflowImporter')
     @patch('data.importers.JobQuestionnaireImporter')
-    def test_captures_jqimporter_exceptions(self, mock_jobquestionnaire_importer, mock_workflow_importer):
+    @patch('data.importers.CWLDocument')
+    def test_captures_jqimporter_exceptions(self, mock_cwl_document, mock_jobquestionnaire_importer, mock_workflow_importer):
         add_vm_settings(self, settings_name=self.vm_settings_name)
         self.share_group = ShareGroup.objects.create(name=self.share_group_name)
         mock_jobquestionnaire_importer.side_effect = Exception()

@@ -135,6 +135,7 @@ class JobQuestionnaireImporter(BaseCreator):
                  share_group_name,
                  volume_size_base,
                  volume_size_factor,
+                 cwl_document,
                  stdout=sys.stdout,
                  stderr=sys.stderr):
         super(JobQuestionnaireImporter, self).__init__(stdout, stderr)
@@ -150,6 +151,7 @@ class JobQuestionnaireImporter(BaseCreator):
         # django model objects built up
         self.vm_flavor = None
         self.job_questionnaire = None
+        self.cwl_document = cwl_document
 
     def _create_models(self):
         # Fail if VMSettings not found
@@ -164,8 +166,7 @@ class JobQuestionnaireImporter(BaseCreator):
 
         # Extract fields that are not system-provided
         user_fields = []
-        document = CWLDocument(self.workflow_version.url)
-        for input_field in document.input_fields:
+        for input_field in self.cwl_document.input_fields:
             if not input_field.get('name') in self.system_job_order_dict:
                 user_fields.append(input_field)
 
@@ -197,7 +198,7 @@ class WorkflowImporter(BaseCreator):
     """
 
     def __init__(self,
-                 cwl_url,
+                 cwl_document,
                  version_number=1,
                  methods_jinja_template_url=None,
                  stdout=sys.stdout,
@@ -210,7 +211,7 @@ class WorkflowImporter(BaseCreator):
         :param stderr: For writing error messages
         """
         super(WorkflowImporter, self).__init__(stdout, stderr)
-        self.cwl_url = cwl_url
+        self.cwl_document = cwl_document,
         self.version_number = version_number
         self.methods_jinja_template_url = methods_jinja_template_url
         # django model objects built up
@@ -218,20 +219,19 @@ class WorkflowImporter(BaseCreator):
         self.workflow_version = None
 
     def _create_models(self):
-        document = CWLDocument(self.cwl_url)
         # Short description used for the Workflow name
-        workflow_name = document.get('label')
+        workflow_name = self.cwl_document.get('label')
         # Longer description used in workflow version
-        workflow_version_description = document.get('doc')
+        workflow_version_description = self.cwl_document.get('doc')
         workflow, created = Workflow.objects.get_or_create(name=workflow_name)
         self.log_creation(created, 'Workflow', workflow_name, workflow.id)
         workflow_version, created = WorkflowVersion.objects.get_or_create(
             workflow=workflow,
-            url=self.cwl_url,
+            url=self.cwl_document.url,
             description=workflow_version_description,
             version=self.version_number,
         )
-        software_requirement_hints = document.extract_tool_hints(hint_class_name="SoftwareRequirement")
+        software_requirement_hints = self.cwl_document.extract_tool_hints(hint_class_name="SoftwareRequirement")
         methods_document = MethodsDocumentContents(workflow_version_description, software_requirement_hints,
                                                    jinja_template_url=self.methods_jinja_template_url)
         WorkflowMethodsDocument.objects.get_or_create(
@@ -280,8 +280,13 @@ class WorkflowQuestionnaireImporter(object):
 
     def _load(self):
         try:
+            cwl_document = CWLDocument(self.data.get('cwl_url'))
+        except Exception as e:
+            raise ImporterException('Unable to parse CWL Document', e)
+
+        try:
             wf_importer = WorkflowImporter(
-                self.data.get('cwl_url'),
+                cwl_document,
                 self.data.get('workflow_version_number'),
                 self.data.get('methods_template_url')
             )
@@ -300,6 +305,7 @@ class WorkflowQuestionnaireImporter(object):
                 self.data.get('share_group_name'),
                 self.data.get('volume_size_base'),
                 self.data.get('volume_size_factor'),
+                cwl_document
             )
             jq_importer.run()
         except Exception as e:

@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from argparse import FileType
-from data.importers import WorkflowImporter, JobQuestionnaireImporter
+from data.importers import WorkflowImporter, JobQuestionnaireImporter, CWLDocument
 import json
 
 
@@ -23,7 +23,8 @@ class Command(BaseCommand):
                             help='URL that references a jinja2 template used to build the methods markdown file for this workflow.')
 
     def handle(self, *args, **options):
-        wf_importer = WorkflowImporter(options.get('cwl-url'),
+        cwl_document = CWLDocument(options.get('cwl-url'))
+        wf_importer = WorkflowImporter(cwl_document,
                                        version_number=options.get('version-number'),
                                        methods_jinja_template_url=options.get('methods-jinja-template-url'),
                                        stdout=self.stdout,
@@ -39,6 +40,7 @@ class Command(BaseCommand):
             options.get('share-group'),
             options.get('volume-size-base'),
             options.get('volume-size-factor'),
+            cwl_document,
             stdout=self.stdout,
             stderr=self.stderr,
         )
