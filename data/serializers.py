@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, JobDDSOutputProject, URLJobInputFile, JobError, JobAnswerSet, \
     JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, WorkflowMethodsDocument, \
-    EmailTemplate, EmailMessage, VMSettings, CloudSettings
+    EmailTemplate, EmailMessage, VMSettings, CloudSettings, JobActivity
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -316,6 +316,14 @@ class AdminEmailMessageSerializer(serializers.ModelSerializer):
         model = EmailMessage
         resource_name = 'email-messages'
         fields = '__all__'
+
+
+class JobActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobActivity
+        resource_name = 'job-activities'
+        fields = '__all__'
+
 
 class AdminImportWorkflowQuestionnaireSerializer(serializers.Serializer):
 

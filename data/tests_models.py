@@ -7,6 +7,7 @@ from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, VMSettin
 from models import JobToken
 from models import DDSUser, ShareGroup, WorkflowMethodsDocument
 from models import EmailTemplate, EmailMessage
+from models import JobActivity
 
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
@@ -143,6 +144,7 @@ class JobTests(TestCase):
         self.assertIsNone(job.run_token)
         self.assertEqual(self.share_group, job.share_group)
         self.assertEqual(True, job.cleanup_vm)
+        activities = JobActivity.objects.all()
 
     def test_create_with_cleanup_vm(self):
         job = Job.objects.create(workflow_version=self.workflow_version,
@@ -319,6 +321,70 @@ class JobTests(TestCase):
                                       vm_flavor=self.vm_flavor,
                                       )
         self.assertTrue(str(raised_error.exception).startswith('UNIQUE constraint failed'))
+
+    def test_job_activity_creation(self):
+        # Create job which should start in new state
+        job = Job.objects.create(workflow_version=self.workflow_version, user=self.user, job_order=self.sample_json,
+                           share_group=self.share_group, vm_settings=self.vm_settings, vm_flavor=self.vm_flavor)
+
+        def get_activity_details(job):
+            return [(item.state, item.step) for item in JobActivity.objects.filter(job=job).order_by('created')]
+
+        self.assertEqual(get_activity_details(job), [
+            (Job.JOB_STATE_NEW, None),
+        ])
+
+        # Test that a change to an unrelated field will not create an activity
+        job.name = 'Some new name'
+        self.assertEqual(job.should_create_activity(), False)
+        job.save()
+        self.assertEqual(get_activity_details(job), [
+            (Job.JOB_STATE_NEW, None),
+        ])
+
+        # test that changing state will create an activity
+        job.state = Job.JOB_STATE_AUTHORIZED
+        self.assertEqual(job.should_create_activity(), True)
+        job.save()
+        self.assertEqual(job.should_create_activity(), False)
+        self.assertEqual(get_activity_details(job), [
+            (Job.JOB_STATE_NEW, None),
+            (Job.JOB_STATE_AUTHORIZED, None),
+        ])
+
+        # Test that only the most recent job activity should be checked against
+        job.state = Job.JOB_STATE_NEW
+        self.assertEqual(job.should_create_activity(), True)
+        job.save()
+        self.assertEqual(job.should_create_activity(), False)
+        self.assertEqual(get_activity_details(job), [
+            (Job.JOB_STATE_NEW, None),
+            (Job.JOB_STATE_AUTHORIZED, None),
+            (Job.JOB_STATE_NEW, None),
+        ])
+
+        # Test that changing step will create a new activity
+        job.step = Job.JOB_STEP_CREATE_VM
+        self.assertEqual(job.should_create_activity(), True)
+        job.save()
+        self.assertEqual(job.should_create_activity(), False)
+        self.assertEqual(get_activity_details(job), [
+            (Job.JOB_STATE_NEW, None),
+            (Job.JOB_STATE_AUTHORIZED, None),
+            (Job.JOB_STATE_NEW, None),
+            (Job.JOB_STATE_NEW, Job.JOB_STEP_CREATE_VM),
+        ])
+
+        # Test debounce step changes
+        job.step = Job.JOB_STEP_CREATE_VM
+        self.assertEqual(job.should_create_activity(), False)
+        job.save()
+        self.assertEqual(get_activity_details(job), [
+            (Job.JOB_STATE_NEW, None),
+            (Job.JOB_STATE_AUTHORIZED, None),
+            (Job.JOB_STATE_NEW, None),
+            (Job.JOB_STATE_NEW, Job.JOB_STEP_CREATE_VM),
+        ])
 
 
 class JobFileStageGroupTests(TestCase):

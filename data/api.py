@@ -148,7 +148,6 @@ class JobsViewSet(mixins.RetrieveModelMixin,
         serializer = JobSerializer(job)
         return Response(serializer.data, status=job_status)
 
-
     def destroy(self, request, *args, **kwargs):
         job = self.get_object()
         if job.state in JobsViewSet.DESTROY_ALLOWED_STATES:
@@ -352,6 +351,16 @@ class AdminEmailTemplateViewSet(viewsets.ModelViewSet):
     queryset = EmailTemplate.objects.all()
 
 
+class JobActivityViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = JobActivitySerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('job',)
+
+    def get_queryset(self):
+        return JobActivity.objects.filter(job__user=self.request.user).order_by('job', 'created')
+
+
 class AdminImportWorkflowQuestionnaireViewSet(mixins.CreateModelMixin,
                                               viewsets.GenericViewSet):
     permission_classes = (permissions.IsAdminUser,)
@@ -375,4 +384,3 @@ class AdminImportWorkflowQuestionnaireViewSet(mixins.CreateModelMixin,
             response_status = status.HTTP_200_OK # Already imported
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=response_status, headers=headers)
-
