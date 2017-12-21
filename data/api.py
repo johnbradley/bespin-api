@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status, mixins
 from util import get_user_projects, get_user_project, get_user_project_content, get_user_folder_content, \
     get_readme_file_url
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException, JobTokenException
 from data.models import *
 from django.db import IntegrityError
@@ -14,6 +15,7 @@ from django.db.models import Q
 from django.db import transaction
 from jobfactory import create_job_factory
 from mailer import EmailMessageSender, JobMailer
+from importers import WorkflowQuestionnaireImporter, ImporterException
 
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
@@ -348,3 +350,29 @@ class AdminEmailTemplateViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
     serializer_class = AdminEmailTemplateSerializer
     queryset = EmailTemplate.objects.all()
+
+
+class AdminImportWorkflowQuestionnaireViewSet(mixins.CreateModelMixin,
+                                              viewsets.GenericViewSet):
+    permission_classes = (permissions.IsAdminUser,)
+    serializer_class = AdminImportWorkflowQuestionnaireSerializer
+    queryset = []
+
+    def perform_create(self, serializer):
+        importer = WorkflowQuestionnaireImporter(serializer.validated_data)
+        try:
+            importer.run()
+            return importer.created_jobquestionnaire
+        except ImporterException as e:
+            raise BespinAPIException(status.HTTP_400_BAD_REQUEST, e.message)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if self.perform_create(serializer):
+            response_status = status.HTTP_201_CREATED # created new
+        else:
+            response_status = status.HTTP_200_OK # Already imported
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=response_status, headers=headers)
+
