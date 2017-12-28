@@ -120,11 +120,11 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
-        'data.renderers.JSONRootObjectRenderer',
+        'drf_json_api.renderers.JSONRootObjectRenderer',
     ),
     'DEFAULT_PARSER_CLASSES': (
         'rest_framework.parsers.JSONParser',
-        'data.parsers.JSONRootObjectParser',
+        'drf_json_api.parsers.JSONRootObjectParser',
     ),
-    'EXCEPTION_HANDLER': 'data.exception_handlers.switching_exception_handler',
+    'EXCEPTION_HANDLER': 'drf_json_api.exception_handlers.switching_exception_handler',
 }
