@@ -223,7 +223,7 @@ class DDSEndpointViewSet(viewsets.ModelViewSet):
 class DDSUserCredViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = ReadOnlyDDSUserCredSerializer
-    queryset = DDSUserCredential.objects.all()
+    queryset = DDSUserCredential.objects.all().order_by('id')
 
 
 class AdminDDSUserCredentialsViewSet(viewsets.ReadOnlyModelViewSet):

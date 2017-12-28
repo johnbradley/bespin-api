@@ -222,18 +222,16 @@ class DDSUserCredentialTestCase(APITestCase):
         """
         other_user = self.user_login.become_other_normal_user()
         user = self.user_login.become_normal_user()
-        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1',
-                                                    dds_id='1')
-        self.cred = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret2',
-                                                     dds_id='2')
+        cred1 = DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
+        cred2 = DDSUserCredential.objects.create(endpoint=self.endpoint, user=other_user, token='secret2', dds_id='2')
         self.assertEqual(2, len(DDSUserCredential.objects.all()))
 
         url = reverse('ddsusercredential-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(2, len(response.data))
-        self.assertEqual({'id': 1, 'user': 2, 'endpoint': 1}, response.data[0])
-        self.assertEqual({'id': 2, 'user': 1, 'endpoint': 1}, response.data[1])
+        self.assertEqual({'id': cred1.id, 'user': user.id, 'endpoint': self.endpoint.id}, response.data[0])
+        self.assertEqual({'id': cred2.id, 'user': other_user.id, 'endpoint': self.endpoint.id}, response.data[1])
 
     def testUserCantCreate(self):
         user = self.user_login.become_normal_user()
@@ -690,7 +688,7 @@ class JobsTestCase(APITestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['state'], Job.JOB_STATE_RESTARTING)
-        mock_make_client().restart_job.assert_called_with(str(1))
+        mock_make_client().restart_job.assert_called_with(str(job.id))
 
         # Post to /restart/ for job in CANCEL state should work
         job.state = Job.JOB_STATE_CANCEL
