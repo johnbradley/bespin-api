@@ -63,7 +63,7 @@ class LandoJobTests(TestCase):
         mock_give_download_permissions.assert_has_calls([
             call(self.user, '1234', '5432'),
             call(self.user, '1235', '5432')
-        ])
+        ], any_order=True)
 
     @patch('data.lando.LandoJob._make_client')
     @patch('data.lando.give_download_permissions')
@@ -76,4 +76,4 @@ class LandoJobTests(TestCase):
         mock_give_download_permissions.assert_has_calls([
             call(self.user, '1234', '5432'),
             call(self.user, '1235', '5432')
-        ])
+        ], any_order=True)

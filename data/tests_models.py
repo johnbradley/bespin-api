@@ -320,7 +320,7 @@ class JobTests(TestCase):
                                       vm_settings=self.vm_settings,
                                       vm_flavor=self.vm_flavor,
                                       )
-        self.assertTrue(str(raised_error.exception).startswith('UNIQUE constraint failed'))
+        self.assertIn("unique constraint", str(raised_error.exception).lower())
 
     def test_job_activity_creation(self):
         # Create job which should start in new state
@@ -664,7 +664,7 @@ class JobTokenTests(TestCase):
         JobToken.objects.create(token='secret1')
         with self.assertRaises(IntegrityError) as raised_error:
             JobToken.objects.create(token='secret1')
-        self.assertTrue(str(raised_error.exception).startswith('UNIQUE constraint failed'))
+        self.assertIn('unique constraint', str(raised_error.exception).lower())
 
 
 class DDSUserTests(TestCase):
