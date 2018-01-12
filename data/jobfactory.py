@@ -90,6 +90,11 @@ class JobFactory(object):
         if self.system_job_order is None or self.user_job_order is None:
             raise JobFactoryException('Attempted to create a job without specifying system job order or user job order')
 
+        max_volume_size = self.max_volume_size()
+        if self.volume_size > max_volume_size:
+            msg = "Volume size too large. Requested size {}. Maximum size {}.".format(self.volume_size, max_volume_size)
+            raise JobFactoryException(msg)
+
         # Create the job order to be submitted. Begin with the system info and overlay the user order
         job_order = self.system_job_order.copy()
         job_order.update(self.user_job_order)
@@ -112,3 +117,9 @@ class JobFactory(object):
         JobDDSOutputProject.objects.create(job=job, dds_user_credentials=worker_user_credentials)
         return job
 
+    def max_volume_size(self):
+        """
+        Returns maximum volume size supported by the cloud associated with vm_settings
+        :return: int
+        """
+        return self.vm_settings.cloud_settings.max_volume_size

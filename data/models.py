@@ -147,6 +147,8 @@ class CloudSettings(models.Model):
                                                 help_text='Allocate floating IPs to launched VMs')
     floating_ip_pool_name = models.CharField(max_length=255, blank=True, null=True,
                                              help_text='Name of floating IP pool to allocate from')
+    max_volume_size = models.IntegerField(null=False, blank=False, default=16000,  # 16 TB
+                                          help_text='Max volume size in GB supported by this cloud')
 
     def __unicode__(self):
         return '{}: id {}, Proj: {}'.format(self.name, self.pk, self.vm_project.name)
