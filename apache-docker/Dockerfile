@@ -37,6 +37,9 @@ EXPOSE 443
 # Add /scripts to the PATH
 ENV PATH ${PATH}:/scripts/
 
+# Ensure TMP is set, workaround for https://github.com/common-workflow-language/schema_salad/issues/158
+ENV TMP /tmp
+
 # set the command to start apache
 ENTRYPOINT ["/scripts/wait-for-postgres.sh"]
 CMD ["/scripts/start-apache.sh"]
