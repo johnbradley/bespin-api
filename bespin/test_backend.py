@@ -19,7 +19,14 @@ class BespinOAuth2BackendTestCase(TestCase):
 
     @override_settings(REQUIRED_GROUP_MANAGER_GROUP=None)
     @patch('bespin.backend.BespinOAuth2Backend.verify_user_belongs_to_group')
-    def test_check_user_details_skips_empty_group(self, mock_verify):
+    def test_check_user_details_skips_none_group(self, mock_verify):
+        backend = BespinOAuth2Backend()
+        backend.check_user_details(self.details)
+        self.assertFalse(mock_verify.called)
+
+    @override_settings(REQUIRED_GROUP_MANAGER_GROUP='')
+    @patch('bespin.backend.BespinOAuth2Backend.verify_user_belongs_to_group')
+    def test_check_user_details_skips_emptystring_group(self, mock_verify):
         backend = BespinOAuth2Backend()
         backend.check_user_details(self.details)
         self.assertFalse(mock_verify.called)
