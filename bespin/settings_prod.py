@@ -54,3 +54,5 @@ else:
 if os.getenv('BESPIN_SMTP_HOST') is not None:
   EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
   EMAIL_HOST = os.getenv('BESPIN_SMTP_HOST')
+
+REQUIRED_GROUP_MANAGER_GROUP = os.getenv('BESPIN_REQUIRED_GROUPMANAGER_GROUP')

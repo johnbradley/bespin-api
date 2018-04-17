@@ -128,3 +128,5 @@ REST_FRAMEWORK = {
     ),
     'EXCEPTION_HANDLER': 'drf_ember_backend.exception_handlers.switching_exception_handler',
 }
+
+REQUIRED_GROUP_MANAGER_GROUP = None
