@@ -63,7 +63,7 @@ class WorkflowVersion(models.Model):
     """
     workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE, related_name='versions')
     description = models.TextField()
-    object_name = models.CharField(max_length=255, null=True, default='#main',
+    object_name = models.CharField(max_length=255, blank=True, default='#main',
                                    help_text="Name of the object in a packed workflow to run. "
                                              "Typically set to '#main'.")
     created = models.DateTimeField(auto_now_add=True)
@@ -111,7 +111,7 @@ class ShareGroup(models.Model):
     name = models.CharField(max_length=255,
                             help_text="Name of this group")
     users = models.ManyToManyField(DDSUser, help_text="Users that belong to this group")
-    email = models.EmailField(null=True, help_text="Contact email for this group")
+    email = models.EmailField(blank=True, help_text="Contact email for this group")
 
     def __unicode__(self):
         return 'Share Group: {}'.format(self.name)
@@ -145,7 +145,7 @@ class CloudSettings(models.Model):
     network_name = models.CharField(max_length=255, help_text='Name of network to attach VM to on launch')
     allocate_floating_ips = models.BooleanField(default=False,
                                                 help_text='Allocate floating IPs to launched VMs')
-    floating_ip_pool_name = models.CharField(max_length=255, blank=True, null=True,
+    floating_ip_pool_name = models.CharField(max_length=255, blank=True,
                                              help_text='Name of floating IP pool to allocate from')
 
     def __unicode__(self):
@@ -163,9 +163,9 @@ class VMSettings(models.Model):
     cloud_settings = models.ForeignKey(CloudSettings, help_text='Cloud settings ')
     image_name = models.CharField(max_length=255, help_text='Name of the VM Image to launch')
     cwl_base_command = models.TextField(help_text='JSON-encoded command array to run the  image\'s installed CWL engine')
-    cwl_post_process_command = models.TextField(null=True, blank=True,
+    cwl_post_process_command = models.TextField(blank=True,
                                                 help_text='JSON-encoded command array to run after workflow completes')
-    cwl_pre_process_command = models.TextField(null=True, blank=True,
+    cwl_pre_process_command = models.TextField(blank=True,
                                                 help_text='JSON-encoded command array to run before cwl_base_command')
 
     def __unicode__(self):
@@ -219,27 +219,27 @@ class Job(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
     name = models.CharField(max_length=255,
                                         help_text="User specified name for this job.")
-    fund_code = models.CharField(max_length=255, blank=True, null=True,
+    fund_code = models.CharField(max_length=255, blank=True,
                                  help_text="Fund code this job will be charged to.")
     created = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=1, choices=JOB_STATES, default='N',
                              help_text="High level state of the project")
-    step = models.CharField(max_length=1, choices=JOB_STEPS, null=True, blank=True,
+    step = models.CharField(max_length=1, choices=JOB_STEPS, blank=True,
                             help_text="Job step (progress within Running state)")
     last_updated = models.DateTimeField(auto_now=True)
     vm_settings = models.ForeignKey(VMSettings,
                                     help_text='Collection of settings to use when launching VM for this job')
     vm_flavor = models.ForeignKey(VMFlavor,
                                   help_text='VM Flavor to use when launching VM for this job')
-    vm_instance_name = models.CharField(max_length=255, blank=True, null=True,
+    vm_instance_name = models.CharField(max_length=255, blank=True,
                                         help_text="Name of the vm this job is/was running on.")
-    vm_volume_name = models.CharField(max_length=255, blank=True, null=True,
+    vm_volume_name = models.CharField(max_length=255, blank=True,
                                       help_text="Name of the volume attached to store data for this job.")
-    job_order = models.TextField(null=True,
+    job_order = models.TextField(blank=True,
                                  help_text="CWL input json for use with the workflow.")
     stage_group = models.OneToOneField(JobFileStageGroup, null=True,
                                        help_text='Group of files to stage when running this job')
-    run_token = models.OneToOneField(JobToken, null=True, blank=True,
+    run_token = models.OneToOneField(JobToken, blank=True,
                                      help_text='Token that allows permission for a job to be run')
     volume_size = models.IntegerField(default=100,
                                       help_text='Size in GB of volume created for running this job')
@@ -286,7 +286,7 @@ class JobActivity(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=1, choices=Job.JOB_STATES, default='N',
                              help_text="High level state of the project")
-    step = models.CharField(max_length=1, choices=Job.JOB_STEPS, null=True, blank=True,
+    step = models.CharField(max_length=1, choices=Job.JOB_STEPS, blank=True,
                             help_text="Job step (progress within Running state)")
 
     class Meta:
@@ -301,9 +301,9 @@ class JobDDSOutputProject(models.Model):
     Output project where results of workflow will be uploaded to.
     """
     job = models.OneToOneField(Job, on_delete=models.CASCADE, related_name='output_project')
-    project_id = models.CharField(max_length=255, null=True)
-    dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE, null=True)
-    readme_file_id = models.CharField(max_length=255, null=True)
+    project_id = models.CharField(max_length=255, blank=True)
+    dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE, blank=True)
+    readme_file_id = models.CharField(max_length=255, blank=True)
 
     def __unicode__(self):
         return 'Project: {}'.format(self.project_id)
@@ -341,9 +341,9 @@ class JobQuestionnaire(models.Model):
     description = models.TextField(help_text="Detailed user facing description")
     workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.CASCADE,
                                          help_text="Workflow that this questionaire is for")
-    system_job_order_json = models.TextField(null=True,
+    system_job_order_json = models.TextField(blank=True,
                                              help_text="JSON containing the portion of the job order specified by system.")
-    user_fields_json = models.TextField(null=True,
+    user_fields_json = models.TextField(blank=True,
                                         help_text="JSON containing the array of fields required by the user when providing "
                                                   "a job answer set.")
     share_group = models.ForeignKey(ShareGroup,
@@ -374,11 +374,11 @@ class JobAnswerSet(models.Model):
                                       help_text='determines which questions are appropriate for this answer set')
     job_name = models.CharField(max_length=255,
                                 help_text='Name of the job')
-    user_job_order_json = models.TextField(null=True, default=json.dumps({}),
+    user_job_order_json = models.TextField(blank=True, default=json.dumps({}),
                                            help_text="JSON containing the portion of the job order specified by user")
-    stage_group = models.OneToOneField(JobFileStageGroup, null=True,
+    stage_group = models.OneToOneField(JobFileStageGroup, blank=True, null=True,
                                        help_text='Collection of files that must be staged for a job to be run')
-    fund_code = models.CharField(max_length=255, blank=True, null=True,
+    fund_code = models.CharField(max_length=255, blank=True,
                                  help_text="Fund code this job will be charged to.")
 
     def __unicode__(self):
@@ -397,10 +397,10 @@ class DDSJobInputFile(models.Model):
     stage_group = models.ForeignKey(JobFileStageGroup,
                                     help_text='Stage group to which this file belongs',
                                     related_name='dds_files')
-    project_id = models.CharField(max_length=255, null=True)
-    file_id = models.CharField(max_length=255, null=True)
+    project_id = models.CharField(max_length=255)
+    file_id = models.CharField(max_length=255)
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE)
-    destination_path = models.CharField(max_length=255, null=True)
+    destination_path = models.CharField(max_length=255)
     size = models.BigIntegerField(default=0, help_text='Size of file in bytes')
     sequence_group = models.IntegerField(null=True,
                                          help_text='Determines group(questionnaire field) sequence within the job')
@@ -421,8 +421,8 @@ class URLJobInputFile(models.Model):
     stage_group = models.ForeignKey(JobFileStageGroup,
                                     help_text='Stage group to which this file belongs',
                                     related_name='url_files')
-    url = models.URLField(null=True)
-    destination_path = models.CharField(max_length=255, null=True)
+    url = models.URLField()
+    destination_path = models.CharField(max_length=255)
     size = models.BigIntegerField(default=0, help_text='Size of file in bytes')
     sequence_group = models.IntegerField(null=True,
                                          help_text='Determines group(questionnaire field) sequence within the job')
@@ -469,9 +469,9 @@ class EmailMessage(models.Model):
     subject = models.TextField(help_text='Text of the message subject')
     sender_email = models.EmailField(help_text='Email address of the sender')
     to_email = models.EmailField(help_text='Email address of the recipient')
-    bcc_email = models.TextField(null=True, blank=True, help_text='space-separated Email addresses to bcc')
+    bcc_email = models.TextField(blank=True, help_text='space-separated Email addresses to bcc')
     state = models.TextField(choices=MESSAGE_STATES, default=MESSAGE_STATE_NEW)
-    errors = models.TextField(blank=True, null=True)
+    errors = models.TextField(blank=True)
 
     def __str__(self):
         return 'Email Message <{}>, state {}, subject: {}'.format(
