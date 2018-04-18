@@ -22,10 +22,10 @@ class DDSUserCredential(models.Model):
     """
     DDS Credentials for bespin users
     """
-    endpoint = models.ForeignKey(DDSEndpoint, on_delete=models.CASCADE, null=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=False)
+    endpoint = models.ForeignKey(DDSEndpoint, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL)
     token = models.CharField(max_length=32, blank=False, unique=True)
-    dds_id = models.CharField(max_length=255, blank=False, unique=True, null=False)
+    dds_id = models.CharField(max_length=255, blank=False, unique=True)
 
     class Meta:
         unique_together = ('endpoint', 'user',)
@@ -38,9 +38,9 @@ class DDSUser(models.Model):
     """
     Details about a DukeDS user.
     """
-    name = models.CharField(max_length=255, blank=False, null=False,
+    name = models.CharField(max_length=255, blank=False,
                             help_text="Name of the user")
-    dds_id = models.CharField(max_length=255, blank=False, unique=True, null=False,
+    dds_id = models.CharField(max_length=255, blank=False, unique=True,
                               help_text="Unique ID assigned to the user in DukeDS")
 
     def __unicode__(self):
@@ -66,9 +66,9 @@ class WorkflowVersion(models.Model):
     object_name = models.CharField(max_length=255, null=True, default='#main',
                                    help_text="Name of the object in a packed workflow to run. "
                                              "Typically set to '#main'.")
-    created = models.DateTimeField(auto_now_add=True, blank=False, null=False)
-    version = models.IntegerField(null=False)
-    url = models.URLField(null=False, help_text="URL to packed CWL workflow file.")
+    created = models.DateTimeField(auto_now_add=True, blank=False)
+    version = models.IntegerField()
+    url = models.URLField(help_text="URL to packed CWL workflow file.")
 
     class Meta:
         ordering = ['version']
@@ -82,9 +82,9 @@ class WorkflowMethodsDocument(models.Model):
     """
     Methods document for a particular workflow version.
     """
-    workflow_version = models.OneToOneField(WorkflowVersion, on_delete=models.CASCADE, null=False,
+    workflow_version = models.OneToOneField(WorkflowVersion, on_delete=models.CASCADE,
                                             related_name='methods_document')
-    content = models.TextField(blank=False, null=False, help_text="Methods document contents in markdown.")
+    content = models.TextField(blank=False, help_text="Methods document contents in markdown.")
 
 
 class JobFileStageGroup(models.Model):
@@ -98,7 +98,7 @@ class JobToken(models.Model):
     """
     Tokens that give users permission to start a job.
     """
-    token = models.CharField(max_length=255, blank=False, null=False, unique=True)
+    token = models.CharField(max_length=255, blank=False, unique=True)
 
     def __unicode__(self):
         return 'Job Token "{}"'.format(self.token)
@@ -108,7 +108,7 @@ class ShareGroup(models.Model):
     """A
     Group of users who will have data shared with them when a job finishes
     """
-    name = models.CharField(max_length=255, blank=False, null=False,
+    name = models.CharField(max_length=255, blank=False,
                             help_text="Name of this group")
     users = models.ManyToManyField(DDSUser, help_text="Users that belong to this group")
     email = models.EmailField(null=True, help_text="Contact email for this group")
@@ -130,7 +130,7 @@ class VMFlavor(models.Model):
 
 class VMProject(models.Model):
 
-    name = models.CharField(max_length=255, blank=False, null=False, unique=True,
+    name = models.CharField(max_length=255, blank=False, unique=True,
                             help_text="The name of the project in which to launch instances")
 
     def __unicode__(self):
@@ -139,7 +139,7 @@ class VMProject(models.Model):
 
 class CloudSettings(models.Model):
     name = models.CharField(max_length=255, help_text='Short name of this cloudsettings', default='default_settings', unique=True)
-    vm_project = models.ForeignKey(VMProject, null=False,
+    vm_project = models.ForeignKey(VMProject,
                                    help_text='Project name to use when creating VM instances for this questionnaire')
     ssh_key_name = models.CharField(max_length=255, help_text='Name of SSH key to inject into VM on launch')
     network_name = models.CharField(max_length=255, help_text='Name of network to attach VM to on launch')
@@ -217,7 +217,7 @@ class Job(models.Model):
 
     workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.SET_NULL, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
-    name = models.CharField(max_length=255, blank=False, null=False,
+    name = models.CharField(max_length=255, blank=False,
                                         help_text="User specified name for this job.")
     fund_code = models.CharField(max_length=255, blank=True, null=True,
                                  help_text="Fund code this job will be charged to.")
@@ -227,9 +227,9 @@ class Job(models.Model):
     step = models.CharField(max_length=1, choices=JOB_STEPS, null=True, blank=True,
                             help_text="Job step (progress within Running state)")
     last_updated = models.DateTimeField(auto_now=True, blank=False)
-    vm_settings = models.ForeignKey(VMSettings, null=False, blank=False,
+    vm_settings = models.ForeignKey(VMSettings, blank=False,
                                     help_text='Collection of settings to use when launching VM for this job')
-    vm_flavor = models.ForeignKey(VMFlavor, null=False,
+    vm_flavor = models.ForeignKey(VMFlavor,
                                   help_text='VM Flavor to use when launching VM for this job')
     vm_instance_name = models.CharField(max_length=255, blank=True, null=True,
                                         help_text="Name of the vm this job is/was running on.")
@@ -241,13 +241,13 @@ class Job(models.Model):
                                        help_text='Group of files to stage when running this job')
     run_token = models.OneToOneField(JobToken, null=True, blank=True,
                                      help_text='Token that allows permission for a job to be run')
-    volume_size = models.IntegerField(null=False, blank=False, default=100,
+    volume_size = models.IntegerField(blank=False, default=100,
                                       help_text='Size in GB of volume created for running this job')
-    share_group = models.ForeignKey(ShareGroup, blank=False, null=False,
+    share_group = models.ForeignKey(ShareGroup, blank=False,
                                     help_text='Users who will have job output shared with them')
-    cleanup_vm = models.BooleanField(default=True, blank=False, null=False,
+    cleanup_vm = models.BooleanField(default=True, blank=False,
                                      help_text='Should the VM and Volume be deleted upon job completion')
-    vm_volume_mounts = models.TextField(null=False, blank=False, default=json.dumps({'/dev/vdb1': '/work'}),
+    vm_volume_mounts = models.TextField(blank=False, default=json.dumps({'/dev/vdb1': '/work'}),
                                         help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
 
     def save(self, *args, **kwargs):
@@ -282,7 +282,7 @@ class JobActivity(models.Model):
     """
     Contains a record for each time a job state/step changes.
     """
-    job = models.ForeignKey(Job, on_delete=models.CASCADE, null=False, related_name='job_activities')
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='job_activities')
     created = models.DateTimeField(auto_now_add=True, blank=False)
     state = models.CharField(max_length=1, choices=Job.JOB_STATES, default='N',
                              help_text="High level state of the project")
@@ -300,7 +300,7 @@ class JobDDSOutputProject(models.Model):
     """
     Output project where results of workflow will be uploaded to.
     """
-    job = models.OneToOneField(Job, on_delete=models.CASCADE, null=False, related_name='output_project')
+    job = models.OneToOneField(Job, on_delete=models.CASCADE, related_name='output_project')
     project_id = models.CharField(max_length=255, blank=False, null=True)
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE, null=True)
     readme_file_id = models.CharField(max_length=255, blank=False, null=True)
@@ -313,8 +313,8 @@ class JobError(models.Model):
     """
     Record of a particular error that happened with a job including the state the job was at when the error happened.
     """
-    job = models.ForeignKey(Job, on_delete=models.CASCADE, null=False, related_name='job_errors')
-    content = models.TextField(null=False)
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='job_errors')
+    content = models.TextField()
     job_step = models.CharField(max_length=1, choices=Job.JOB_STEPS)
     created = models.DateTimeField(auto_now_add=True, blank=False)
 
@@ -323,10 +323,10 @@ class LandoConnection(models.Model):
     """
     Settings used to connect with lando to start, restart or cancel a job.
     """
-    host = models.CharField(max_length=255, blank=False, null=False)
-    username = models.CharField(max_length=255, blank=False, null=False)
-    password = models.CharField(max_length=255, blank=False, null=False)
-    queue_name = models.CharField(max_length=255, blank=False, null=False)
+    host = models.CharField(max_length=255, blank=False)
+    username = models.CharField(max_length=255, blank=False)
+    password = models.CharField(max_length=255, blank=False)
+    queue_name = models.CharField(max_length=255, blank=False)
 
     def __unicode__(self):
         return '{} on {}'.format(self.username, self.host)
@@ -336,29 +336,29 @@ class JobQuestionnaire(models.Model):
     """
     Specifies a Workflow Version and a set of system-provided answers in JSON format
     """
-    name = models.CharField(max_length=255, blank=False, null=False,
+    name = models.CharField(max_length=255, blank=False,
                             help_text="Short user facing name")
-    description = models.TextField(blank=False, null=False,
+    description = models.TextField(blank=False,
                                    help_text="Detailed user facing description")
-    workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.CASCADE, blank=False, null=False,
+    workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.CASCADE, blank=False,
                                          help_text="Workflow that this questionaire is for")
     system_job_order_json = models.TextField(null=True,
                                              help_text="JSON containing the portion of the job order specified by system.")
     user_fields_json = models.TextField(null=True,
                                         help_text="JSON containing the array of fields required by the user when providing "
                                                   "a job answer set.")
-    share_group = models.ForeignKey(ShareGroup, blank=False, null=False,
+    share_group = models.ForeignKey(ShareGroup, blank=False,
                                     help_text='Users who will have job output shared with them')
-    vm_settings = models.ForeignKey(VMSettings, blank=False, null=False,
+    vm_settings = models.ForeignKey(VMSettings, blank=False,
                                     help_text='Collection of settings to use when launching job VMs for this questionnaire')
-    vm_flavor = models.ForeignKey(VMFlavor, null=False,
+    vm_flavor = models.ForeignKey(VMFlavor,
                                   help_text='VM Flavor to use when creating VM instances for this questionnaire')
-    volume_size_base = models.IntegerField(null=False, blank=False, default=100,
+    volume_size_base = models.IntegerField(blank=False, default=100,
                                            help_text='Base size in GB of for determining job volume size')
-    volume_size_factor = models.IntegerField(null=False, blank=False, default=0,
+    volume_size_factor = models.IntegerField(blank=False, default=0,
                                              help_text='Number multiplied by total staged data size for '
                                                        'determining job volume size')
-    volume_mounts = models.TextField(null=False, blank=False, default=json.dumps({'/dev/vdb1': '/work'}),
+    volume_mounts = models.TextField(blank=False, default=json.dumps({'/dev/vdb1': '/work'}),
                                      help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
 
     def __unicode__(self):
@@ -369,11 +369,11 @@ class JobAnswerSet(models.Model):
     """
     List of user supplied JobAnswers to JobQuestions.
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=False,
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              help_text='User who owns this answer set')
-    questionnaire = models.ForeignKey(JobQuestionnaire, on_delete=models.CASCADE, null=False,
+    questionnaire = models.ForeignKey(JobQuestionnaire, on_delete=models.CASCADE,
                                       help_text='determines which questions are appropriate for this answer set')
-    job_name = models.CharField(null=False, blank=False, max_length=255,
+    job_name = models.CharField(blank=False, max_length=255,
                                 help_text='Name of the job')
     user_job_order_json = models.TextField(null=True, default=json.dumps({}),
                                            help_text="JSON containing the portion of the job order specified by user")
@@ -402,7 +402,7 @@ class DDSJobInputFile(models.Model):
     file_id = models.CharField(max_length=255, blank=False, null=True)
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE)
     destination_path = models.CharField(max_length=255, blank=False, null=True)
-    size = models.BigIntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
+    size = models.BigIntegerField(blank=False, default=0, help_text='Size of file in bytes')
     sequence_group = models.IntegerField(null=True, blank=False,
                                          help_text='Determines group(questionnaire field) sequence within the job')
     sequence = models.IntegerField(null=True, blank=False,
@@ -424,7 +424,7 @@ class URLJobInputFile(models.Model):
                                     related_name='url_files')
     url = models.URLField(null=True)
     destination_path = models.CharField(max_length=255, blank=False, null=True)
-    size = models.BigIntegerField(null=False, blank=False, default=0, help_text='Size of file in bytes')
+    size = models.BigIntegerField(blank=False, default=0, help_text='Size of file in bytes')
     sequence_group = models.IntegerField(null=True, blank=False,
                                          help_text='Determines group(questionnaire field) sequence within the job')
     sequence = models.IntegerField(null=True, blank=False,
