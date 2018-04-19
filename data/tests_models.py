@@ -138,8 +138,8 @@ class JobTests(TestCase):
         self.assertIsNotNone(job.created)
         self.assertEqual(Job.JOB_STATE_NEW, job.state)
         self.assertIsNotNone(job.last_updated)
-        self.assertIsNone(job.vm_instance_name)
-        self.assertIsNone(job.vm_volume_name)
+        self.assertEqual(job.vm_instance_name, '')
+        self.assertEqual(job.vm_volume_name, '')
         self.assertEqual(self.vm_settings, job.vm_settings)
         self.assertIsNone(job.run_token)
         self.assertEqual(self.share_group, job.share_group)
@@ -331,7 +331,7 @@ class JobTests(TestCase):
             return [(item.state, item.step) for item in JobActivity.objects.filter(job=job).order_by('created')]
 
         self.assertEqual(get_activity_details(job), [
-            (Job.JOB_STATE_NEW, None),
+            (Job.JOB_STATE_NEW, ''),
         ])
 
         # Test that a change to an unrelated field will not create an activity
@@ -339,7 +339,7 @@ class JobTests(TestCase):
         self.assertEqual(job.should_create_activity(), False)
         job.save()
         self.assertEqual(get_activity_details(job), [
-            (Job.JOB_STATE_NEW, None),
+            (Job.JOB_STATE_NEW, ''),
         ])
 
         # test that changing state will create an activity
@@ -348,8 +348,8 @@ class JobTests(TestCase):
         job.save()
         self.assertEqual(job.should_create_activity(), False)
         self.assertEqual(get_activity_details(job), [
-            (Job.JOB_STATE_NEW, None),
-            (Job.JOB_STATE_AUTHORIZED, None),
+            (Job.JOB_STATE_NEW, ''),
+            (Job.JOB_STATE_AUTHORIZED, ''),
         ])
 
         # Test that only the most recent job activity should be checked against
@@ -358,9 +358,9 @@ class JobTests(TestCase):
         job.save()
         self.assertEqual(job.should_create_activity(), False)
         self.assertEqual(get_activity_details(job), [
-            (Job.JOB_STATE_NEW, None),
-            (Job.JOB_STATE_AUTHORIZED, None),
-            (Job.JOB_STATE_NEW, None),
+            (Job.JOB_STATE_NEW, ''),
+            (Job.JOB_STATE_AUTHORIZED, ''),
+            (Job.JOB_STATE_NEW, ''),
         ])
 
         # Test that changing step will create a new activity
@@ -369,9 +369,9 @@ class JobTests(TestCase):
         job.save()
         self.assertEqual(job.should_create_activity(), False)
         self.assertEqual(get_activity_details(job), [
-            (Job.JOB_STATE_NEW, None),
-            (Job.JOB_STATE_AUTHORIZED, None),
-            (Job.JOB_STATE_NEW, None),
+            (Job.JOB_STATE_NEW, ''),
+            (Job.JOB_STATE_AUTHORIZED, ''),
+            (Job.JOB_STATE_NEW, ''),
             (Job.JOB_STATE_NEW, Job.JOB_STEP_CREATE_VM),
         ])
 
@@ -380,9 +380,9 @@ class JobTests(TestCase):
         self.assertEqual(job.should_create_activity(), False)
         job.save()
         self.assertEqual(get_activity_details(job), [
-            (Job.JOB_STATE_NEW, None),
-            (Job.JOB_STATE_AUTHORIZED, None),
-            (Job.JOB_STATE_NEW, None),
+            (Job.JOB_STATE_NEW, ''),
+            (Job.JOB_STATE_AUTHORIZED, ''),
+            (Job.JOB_STATE_NEW, ''),
             (Job.JOB_STATE_NEW, Job.JOB_STEP_CREATE_VM),
         ])
 

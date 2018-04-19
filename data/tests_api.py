@@ -1168,7 +1168,7 @@ class JobDDSOutputProjectTestCase(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job_output_project = JobDDSOutputProject.objects.first()
-        self.assertEqual(None, job_output_project.readme_file_id)
+        self.assertEqual('', job_output_project.readme_file_id)
 
     def test_can_use_others_creds(self):
         url = reverse('jobddsoutputproject-list')
@@ -1347,6 +1347,13 @@ class JobAnswerSetTests(APITestCase):
                                                    api_root='https://someserver.com/api')
         self.user_job_order_json1 = json.dumps({'input1': 'value1'})
         self.user_job_order_json2 = json.dumps({'input1': 'value1', 'input2': [1, 2, 3]})
+        # creating a job defaults to the first dds_user_credential
+        self.dds_user_credential = DDSUserCredential.objects.create(
+            endpoint=self.endpoint,
+            user=self.user,
+            token='dds-user-credential-token',
+            dds_id='dds-user-id'
+        )
 
     def test_user_crud(self):
         url = reverse('jobanswerset-list')
@@ -1905,7 +1912,7 @@ class JobActivitiesTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(self.get_job_details(response), [
-            (job1.id, Job.JOB_STATE_NEW, None),
+            (job1.id, Job.JOB_STATE_NEW, ''),
             (job1.id, Job.JOB_STATE_RUNNING, Job.JOB_STEP_CREATE_VM),
         ])
 
@@ -1922,7 +1929,7 @@ class JobActivitiesTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(self.get_job_details(response), [
-            (job2.id, Job.JOB_STATE_NEW, None),
+            (job2.id, Job.JOB_STATE_NEW, ''),
         ])
 
     def test_users_can_filter_by_job(self):
@@ -1948,8 +1955,8 @@ class JobActivitiesTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(self.get_job_details(response), [
-            (job1.id, Job.JOB_STATE_NEW, None),
-            (job2.id, Job.JOB_STATE_RUNNING, None),
+            (job1.id, Job.JOB_STATE_NEW, ''),
+            (job2.id, Job.JOB_STATE_RUNNING, ''),
         ])
         job2.step = Job.JOB_STEP_RUNNING
         job2.save()
@@ -1957,7 +1964,7 @@ class JobActivitiesTestCase(APITestCase):
         response = self.client.get('{}?job={}'.format(url, job2.id), format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(self.get_job_details(response), [
-            (job2.id, Job.JOB_STATE_RUNNING, None),
+            (job2.id, Job.JOB_STATE_RUNNING, ''),
             (job2.id, Job.JOB_STATE_RUNNING, Job.JOB_STEP_RUNNING),
         ])
 
