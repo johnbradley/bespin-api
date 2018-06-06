@@ -70,6 +70,8 @@ class WorkflowsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = Workflow.objects.all()
     serializer_class = WorkflowSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('slug',)
 
 
 class WorkflowVersionsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -103,18 +105,27 @@ class JobsViewSet(mixins.RetrieveModelMixin,
 
     @detail_route(methods=['post'])
     def start(self, request, pk=None):
-        LandoJob(pk, request.user).start()
-        return self._serialize_job_response(pk)
+        try:
+            LandoJob(pk, request.user).start()
+            return self._serialize_job_response(pk)
+        except Job.DoesNotExist:
+            raise NotFound("Job {} not found.".format(pk))
 
     @detail_route(methods=['post'])
     def cancel(self, request, pk=None):
-        LandoJob(pk, request.user).cancel()
-        return self._serialize_job_response(pk)
+        try:
+            LandoJob(pk, request.user).cancel()
+            return self._serialize_job_response(pk)
+        except Job.DoesNotExist:
+            raise NotFound("Job {} not found.".format(pk))
 
     @detail_route(methods=['post'])
     def restart(self, request, pk=None):
-        LandoJob(pk, request.user).restart()
-        return self._serialize_job_response(pk)
+        try:
+            LandoJob(pk, request.user).restart()
+            return self._serialize_job_response(pk)
+        except Job.DoesNotExist:
+            raise NotFound("Job {} not found.".format(pk))
 
     # Wrapping this in JobTokensSerializer so we can pass in the token inside a job-tokens payload when
     # used with vnd.rootobject+json Content-type. Returns serialized 'job' as part of the response inside the
@@ -284,10 +295,21 @@ class AdminJobDDSOutputProjectViewSet(viewsets.ModelViewSet):
 
 class JobQuestionnaireViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    queryset = JobQuestionnaire.objects.all()
     serializer_class = JobQuestionnaireSerializer
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('workflow_version',)
+
+    def get_queryset(self):
+        slug = self.request.query_params.get('slug', None)
+        if slug:
+            if ":" in slug:
+                workflow_slug, version_num = slug.split(":")
+                return JobQuestionnaire.objects.filter(workflow_version__version=version_num,
+                                                       workflow_version__workflow__slug=workflow_slug)
+            else:
+                return JobQuestionnaire.objects.none()
+        else:
+            return JobQuestionnaire.objects.all()
 
 
 class JobAnswerSetViewSet(viewsets.ModelViewSet):

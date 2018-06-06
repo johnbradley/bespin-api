@@ -10,7 +10,7 @@ class WorkflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workflow
         resource_name = 'workflows'
-        fields = ('id', 'name', 'versions')
+        fields = ('id', 'name', 'versions', 'slug')
         read_only_fields = ('versions',)
 
 
@@ -259,6 +259,12 @@ class JobAnswerSetSerializer(serializers.ModelSerializer):
 
 
 class JobQuestionnaireSerializer(serializers.ModelSerializer):
+    slug = serializers.SerializerMethodField()
+
+    def get_slug(self, obj):
+        workflow_slug = obj.workflow_version.workflow.slug
+        workflow_version_num = obj.workflow_version.version
+        return '{}:{}'.format(workflow_slug, workflow_version_num)
 
     class Meta:
         model = JobQuestionnaire

@@ -285,10 +285,10 @@ class WorkflowVersionTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def testFilterByWorkflow(self):
-        workflow1 = Workflow.objects.create(name='RnaSeq')
+        workflow1 = Workflow.objects.create(name='RnaSeq', slug='rnaseq1')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url)
-        workflow2 = Workflow.objects.create(name='RnaSeq2')
+        workflow2 = Workflow.objects.create(name='RnaSeq2', slug='rnaseq2')
         WorkflowVersion.objects.create(workflow=workflow2, version="30", url=cwl_url)
         self.user_login.become_normal_user()
         url = reverse('workflowversion-list')
