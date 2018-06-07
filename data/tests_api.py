@@ -8,7 +8,8 @@ import json
 from data.models import Workflow, WorkflowVersion, Job, JobFileStageGroup, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobDDSOutputProject, \
     JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, \
-    WorkflowMethodsDocument, EmailMessage, EmailTemplate, CloudSettings, VMSettings
+    WorkflowMethodsDocument, EmailMessage, EmailTemplate, CloudSettings, VMSettings, \
+    JobQuestionnaireType
 from exceptions import WrappedDataServiceException
 from util import DDSResource
 
@@ -1242,7 +1243,7 @@ class JobQuestionnaireTestCase(APITestCase):
         Create two questionnaires since this should be a read only endpoint.
         """
         self.user_login = UserLogin(self.client)
-        workflow = Workflow.objects.create(name='RnaSeq')
+        workflow = Workflow.objects.create(name='RnaSeq', slug='rnaseq')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.system_job_order_json1 = json.dumps({'system_input': 1})
         self.system_job_order_json2 = json.dumps({'system_input': 2})
@@ -1252,6 +1253,7 @@ class JobQuestionnaireTestCase(APITestCase):
                                                                version="1",
                                                                url=cwl_url)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
+        questionnaire_type = JobQuestionnaireType.objects.create(slug='human')
         self.questionnaire1 = JobQuestionnaire.objects.create(name='Workflow1',
                                                               description='A really large workflow',
                                                               workflow_version=self.workflow_version,
@@ -1259,6 +1261,7 @@ class JobQuestionnaireTestCase(APITestCase):
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
+                                                              type=questionnaire_type
                                                               )
         self.questionnaire2 = JobQuestionnaire.objects.create(name='Workflow2',
                                                               description='A rather small workflow',
@@ -1267,6 +1270,7 @@ class JobQuestionnaireTestCase(APITestCase):
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
+                                                              type=questionnaire_type
                                                               )
         self.questionnaire2.save()
 
