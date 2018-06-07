@@ -262,9 +262,7 @@ class JobQuestionnaireSerializer(serializers.ModelSerializer):
     slug = serializers.SerializerMethodField()
 
     def get_slug(self, obj):
-        workflow_slug = obj.workflow_version.workflow.slug
-        workflow_version_num = obj.workflow_version.version
-        return '{}:{}'.format(workflow_slug, workflow_version_num)
+        return obj.make_slug()
 
     class Meta:
         model = JobQuestionnaire

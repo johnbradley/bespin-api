@@ -226,7 +226,7 @@ class WorkflowImporter(BaseCreator):
         workflow_name = self.cwl_document.get('label')
         # Longer description used in workflow version
         workflow_version_description = self.cwl_document.get('doc')
-        workflow, created = Workflow.objects.get_or_create(name=workflow_name)
+        workflow, created = Workflow.objects.get_or_create(name=workflow_name) #TODO slug
         self.log_creation(created, 'Workflow', workflow_name, workflow.id)
         workflow_version, created = WorkflowVersion.objects.get_or_create(
             workflow=workflow,

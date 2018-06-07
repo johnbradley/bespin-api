@@ -302,10 +302,12 @@ class JobQuestionnaireViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         slug = self.request.query_params.get('slug', None)
         if slug:
-            if ":" in slug:
-                workflow_slug, version_num = slug.split(":")
-                return JobQuestionnaire.objects.filter(workflow_version__version=version_num,
-                                                       workflow_version__workflow__slug=workflow_slug)
+            parts = JobQuestionnaire.split_slug_parts(slug)
+            if parts:
+                workflow_slug, version_num, questionnaire_type_slug = parts
+                return JobQuestionnaire.objects.filter(workflow_version__workflow__slug=workflow_slug,
+                                                       workflow_version__version=version_num,
+                                                       type__slug=questionnaire_type_slug)
             else:
                 return JobQuestionnaire.objects.none()
         else:
