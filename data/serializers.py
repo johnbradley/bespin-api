@@ -156,7 +156,7 @@ class ReadOnlyDDSUserCredSerializer(serializers.ModelSerializer):
     class Meta:
         model = DDSUserCredential
         resource_name = 'dds-user-credentials'
-        fields = ('id', 'user', 'endpoint')
+        fields = ('id', 'user', 'endpoint', 'dds_id')
 
 
 class BaseJobInputFileSerializer(serializers.ModelSerializer):

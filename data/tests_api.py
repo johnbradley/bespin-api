@@ -231,8 +231,10 @@ class DDSUserCredentialTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(2, len(response.data))
-        self.assertEqual({'id': cred1.id, 'user': user.id, 'endpoint': self.endpoint.id}, response.data[0])
-        self.assertEqual({'id': cred2.id, 'user': other_user.id, 'endpoint': self.endpoint.id}, response.data[1])
+        self.assertEqual({'id': cred1.id, 'user': user.id, 'endpoint': self.endpoint.id, 'dds_id':'1'},
+                         response.data[0])
+        self.assertEqual({'id': cred2.id, 'user': other_user.id, 'endpoint': self.endpoint.id, 'dds_id':'2'},
+                         response.data[1])
 
     def testUserCantCreate(self):
         user = self.user_login.become_normal_user()

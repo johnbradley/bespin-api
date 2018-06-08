@@ -53,10 +53,12 @@ class LandoJobTests(TestCase):
         self.assertEqual(raised_exception.exception.detail[0], 'Job needs authorization token before it can start.')
 
     @patch('data.lando.LandoJob._make_client')
+    @patch('data.lando.has_download_permissions')
     @patch('data.lando.give_download_permissions')
-    def test_start_job(self, mock_give_download_permissions, mock_make_client):
+    def test_start_job(self, mock_give_download_permissions, mock_has_download_permissions, mock_make_client):
         self.job.state = Job.JOB_STATE_AUTHORIZED
         self.job.save()
+        mock_has_download_permissions.return_value = False
         job = LandoJob(self.job.id, self.user)
         job.start()
         mock_make_client().start_job.assert_called()
@@ -66,10 +68,26 @@ class LandoJobTests(TestCase):
         ], any_order=True)
 
     @patch('data.lando.LandoJob._make_client')
+    @patch('data.lando.has_download_permissions')
     @patch('data.lando.give_download_permissions')
-    def test_restart_job(self, mock_give_download_permissions, mock_make_client):
+    def test_start_job_already_has_perms(self, mock_give_download_permissions, mock_has_download_permissions,
+                                         mock_make_client):
+        self.job.state = Job.JOB_STATE_AUTHORIZED
+        self.job.save()
+        mock_has_download_permissions.return_value = True
+        job = LandoJob(self.job.id, self.user)
+        job.start()
+        mock_make_client().start_job.assert_called()
+        self.assertFalse(mock_give_download_permissions.called)
+
+    @patch('data.lando.LandoJob._make_client')
+    @patch('data.lando.has_download_permissions')
+    @patch('data.lando.give_download_permissions')
+    def test_restart_job(self, mock_give_download_permissions, mock_has_download_permissions, mock_make_client):
         self.job.state = Job.JOB_STATE_ERROR
         self.job.save()
+
+        mock_has_download_permissions.return_value = False
         job = LandoJob(self.job.id, self.user)
         job.restart()
         mock_make_client().restart_job.assert_called()

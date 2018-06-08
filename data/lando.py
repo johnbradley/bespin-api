@@ -5,7 +5,7 @@ Also updates job state before sending messages to lando.
 from models import Job, LandoConnection
 from lando_messaging.clients import LandoClient
 from rest_framework.exceptions import ValidationError
-from util import give_download_permissions
+from util import has_download_permissions, give_download_permissions
 
 
 class LandoConfig(object):
@@ -87,4 +87,5 @@ class LandoJob(object):
         for dds_file in job.stage_group.dds_files.all():
             unique_project_user_cred.add((dds_file.project_id, dds_file.dds_user_credentials))
         for project_id, dds_user_credential in unique_project_user_cred:
-            give_download_permissions(self.user, project_id, dds_user_credential.dds_id)
+            if not has_download_permissions(dds_user_credential, project_id):
+                give_download_permissions(self.user, project_id, dds_user_credential.dds_id)
