@@ -369,7 +369,7 @@ class JobQuestionnaire(models.Model):
     def make_slug(self):
         workflow_slug = self.workflow_version.workflow.slug
         workflow_version_num = self.workflow_version.version
-        return '{}/{}/{}'.format(workflow_slug, workflow_version_num, self.type.slug)
+        return '{}/v{}/{}'.format(workflow_slug, workflow_version_num, self.type.slug)
 
     @staticmethod
     def split_slug_parts(slug):
@@ -381,7 +381,8 @@ class JobQuestionnaire(models.Model):
         parts = slug.split("/")
         if len(parts) != 3:
             return None
-        workflow_slug, version_num, questionnaire_type_slug = parts
+        workflow_slug, version_num_str, questionnaire_type_slug = parts
+        version_num = int(version_num_str.replace("v", ""))
         return workflow_slug, version_num, questionnaire_type_slug
 
     def __unicode__(self):
