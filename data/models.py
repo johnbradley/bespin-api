@@ -23,7 +23,7 @@ class DDSUserCredential(models.Model):
     DDS Credentials for bespin users
     """
     endpoint = models.ForeignKey(DDSEndpoint, on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='bespin_api_user')
     token = models.CharField(max_length=32, unique=True)
     dds_id = models.CharField(max_length=255, unique=True)
 
