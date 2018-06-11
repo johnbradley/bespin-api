@@ -8,6 +8,8 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
+    atomic = False
+
     replaces = [(b'data', '0046_auto_20180418_2022'), (b'data', '0047_auto_20180419_1330')]
 
     dependencies = [
