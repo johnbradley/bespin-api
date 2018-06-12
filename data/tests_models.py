@@ -3,7 +3,7 @@ from models import DDSEndpoint, DDSUserCredential
 from models import Workflow, WorkflowVersion
 from models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, JobDDSOutputProject, JobError
 from models import LandoConnection
-from models import JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, VMSettings, CloudSettings
+from models import JobQuestionnaire, JobQuestionnaireType, JobAnswerSet, VMFlavor, VMProject, VMSettings, CloudSettings
 from models import JobToken
 from models import DDSUser, ShareGroup, WorkflowMethodsDocument
 from models import EmailTemplate, EmailMessage
@@ -569,6 +569,7 @@ class JobQuestionnaireTests(TestCase):
                                               cloud_settings=cloud)
         settings2 = VMSettings.objects.create(name='settings2',
                                               cloud_settings=cloud)
+        questionnaire_type = JobQuestionnaireType.objects.create(slug='human')
         questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
                                                         description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=self.workflow_version,
@@ -578,6 +579,7 @@ class JobQuestionnaireTests(TestCase):
                                                         vm_flavor=self.flavor1,
                                                         volume_size_base=10,
                                                         volume_size_factor=5,
+                                                        type=questionnaire_type
                                                         )
         questionnaire = JobQuestionnaire.objects.create(name='Human RnaSeq',
                                                         description='Uses reference genome zew and gene index def',
@@ -588,6 +590,7 @@ class JobQuestionnaireTests(TestCase):
                                                         vm_flavor=self.flavor2,
                                                         volume_size_base=3,
                                                         volume_size_factor=2,
+                                                        type=questionnaire_type
                                                         )
         ant_questionnaire = JobQuestionnaire.objects.filter(name='Ant RnaSeq').first()
         self.assertEqual('Ant RnaSeq', ant_questionnaire.name)
@@ -616,13 +619,17 @@ class JobAnswerSetTests(TestCase):
         JobQuestionnaireTests.add_workflowversion_fields(self)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         JobQuestionnaireTests.add_vmsettings_fields(self)
+        self.questionnaire_type = JobQuestionnaireType.objects.create(slug='human')
         self.questionnaire = JobQuestionnaire.objects.create(name='Exome Seq Q',
                                                              description='Uses reference genome xyz and gene index abc',
                                                              workflow_version=self.workflow_version,
                                                              system_job_order_json='{"system_input": "foo"}',
                                                              share_group=self.share_group,
                                                              vm_settings=self.vm_settings,
-                                                             vm_flavor=self.vm_flavor)
+                                                             vm_flavor=self.vm_flavor,
+                                                             type=self.questionnaire_type,
+                                                             )
+
     def test_basic_functionality(self):
         JobAnswerSet.objects.create(user=self.user,
                                     questionnaire=self.questionnaire,

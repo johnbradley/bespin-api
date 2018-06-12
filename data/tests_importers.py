@@ -95,6 +95,7 @@ class JobQuestionnaireImporterTestCase(TestCase):
             "workflow_version_number": 12,
             "name": "Test Questionnaire Name",
             "description": "Test Questionnaire Description",
+            "slug": "my-slug",
             "methods_template_url": "https://example.org/exome-seq.md.j2",
             "system_json": {
                 "threads": 4,
@@ -109,7 +110,8 @@ class JobQuestionnaireImporterTestCase(TestCase):
             "vm_flavor_name": "test-flavor",
             "share_group_name": self.share_group_name,
             "volume_size_base": 100,
-            "volume_size_factor": 10
+            "volume_size_factor": 10,
+            "type_slug": "human",
         }
 
     def test_raises_on_vm_settings_name_not_found(self):
@@ -155,7 +157,10 @@ class JobQuestionnaireImporterTestCase(TestCase):
 
         # Check that the workflow importer was called with the CWL Document, workflow_version_number, and methods_template_url
         args, kwargs = mock_workflow_importer.call_args
-        self.assertEqual(args, (mock_doc, self.data['workflow_version_number'], self.data['methods_template_url'],))
+        self.assertEqual(args, (mock_doc,
+                                self.data['workflow_version_number'],
+                                self.data['methods_template_url'],
+                                self.data['slug'],))
         self.assertEqual(kwargs, {})
         self.assertTrue(mock_wfi_run.called)
 
@@ -164,6 +169,7 @@ class JobQuestionnaireImporterTestCase(TestCase):
         self.assertEqual(args, (
             self.data['name'],
             self.data['description'],
+            self.data['type_slug'],
             mock_workflow_version,
             self.data['system_json'],
             self.data['vm_settings_name'],

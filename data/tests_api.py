@@ -1322,7 +1322,7 @@ class JobAnswerSetTests(APITestCase):
 
     def setUp(self):
         self.user_login = UserLogin(self.client)
-        workflow = Workflow.objects.create(name='RnaSeq')
+        workflow = Workflow.objects.create(name='RnaSeq', slug='rna-seq')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         add_vm_settings(self)
         self.vm_flavor = VMFlavor.objects.create(name='flavor')
@@ -1332,12 +1332,14 @@ class JobAnswerSetTests(APITestCase):
                                                                version="1",
                                                                url=cwl_url)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
+        self.questionnaire_type = JobQuestionnaireType.objects.create(slug='human')
         self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
                                                               workflow_version=self.workflow_version,
                                                               system_job_order_json=self.system_job_order_json1,
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
+                                                              type=self.questionnaire_type,
                                                               )
         self.questionnaire2 = JobQuestionnaire.objects.create(description='Workflow1',
                                                               workflow_version=self.workflow_version,
@@ -1345,6 +1347,7 @@ class JobAnswerSetTests(APITestCase):
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
+                                                              type=self.questionnaire_type,
                                                               )
         self.other_user = self.user_login.become_other_normal_user()
         self.user = self.user_login.become_normal_user()
@@ -1400,7 +1403,9 @@ class JobAnswerSetTests(APITestCase):
                                                         system_job_order_json=self.system_job_order_json1,
                                                         share_group=self.share_group,
                                                         vm_settings=self.vm_settings,
-                                                        vm_flavor=vm_flavor,)
+                                                        vm_flavor=vm_flavor,
+                                                        type=self.questionnaire_type,
+                                                        )
         return questionnaire
 
     def test_create_job_with_items(self):

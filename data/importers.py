@@ -1,5 +1,5 @@
 from data.models import Workflow, WorkflowVersion, JobQuestionnaire, VMFlavor, VMProject, \
-    VMSettings, ShareGroup, WorkflowMethodsDocument
+    VMSettings, ShareGroup, WorkflowMethodsDocument, JobQuestionnaireType
 from cwltool.load_tool import load_tool
 from cwltool.workflow import defaultMakeTool
 import sys
@@ -7,6 +7,7 @@ import requests
 import json
 from habanero import cn
 from jinja2 import Template
+from django.template.defaultfilters import slugify
 SCHEMA_ORG_CITATION = 'https://schema.org/citation'
 HTTPS_DOI_URL = 'https://dx.doi.org/'
 import logging
@@ -131,6 +132,7 @@ class JobQuestionnaireImporter(BaseCreator):
     def __init__(self,
                  name,
                  description,
+                 type_slug,
                  workflow_version,
                  system_job_order_dict,
                  vm_settings_name,
@@ -144,6 +146,7 @@ class JobQuestionnaireImporter(BaseCreator):
         super(JobQuestionnaireImporter, self).__init__(stdout, stderr)
         self.name = name
         self.description = description
+        self.type_slug = type_slug
         self.workflow_version = workflow_version
         self.system_job_order_dict = system_job_order_dict
         self.vm_flavor_name = vm_flavor_name
@@ -173,6 +176,9 @@ class JobQuestionnaireImporter(BaseCreator):
             if not input_field.get('name') in self.system_job_order_dict:
                 user_fields.append(input_field)
 
+        # get or create type based on slug
+        type, _ = JobQuestionnaireType.get_or_create(slug=self.type_slug)
+
         # Job questionnaire
         self.job_questionnaire, self.created_job_questionnaire = JobQuestionnaire.objects.get_or_create(
             name=self.name,
@@ -185,6 +191,7 @@ class JobQuestionnaireImporter(BaseCreator):
             share_group=self.share_group,
             volume_size_base=self.volume_size_base,
             volume_size_factor=self.volume_size_factor,
+            type=type
         )
         self.log_creation(created, 'JobQuestionnaire', self.job_questionnaire.name, self.job_questionnaire.id)
 
@@ -204,6 +211,7 @@ class WorkflowImporter(BaseCreator):
                  cwl_document,
                  version_number=1,
                  methods_jinja_template_url=None,
+                 slug=None,
                  stdout=sys.stdout,
                  stderr=sys.stderr):
         """
@@ -217,6 +225,7 @@ class WorkflowImporter(BaseCreator):
         self.cwl_document = cwl_document
         self.version_number = version_number
         self.methods_jinja_template_url = methods_jinja_template_url
+        sefl.slug = slug
         # django model objects built up
         self.workflow = None
         self.workflow_version = None
@@ -226,7 +235,9 @@ class WorkflowImporter(BaseCreator):
         workflow_name = self.cwl_document.get('label')
         # Longer description used in workflow version
         workflow_version_description = self.cwl_document.get('doc')
-        workflow, created = Workflow.objects.get_or_create(name=workflow_name) #TODO slug
+        if not self.slug:
+            self.slug = slugify(workflow_name)
+        workflow, created = Workflow.objects.get_or_create(name=workflow_name, slug=self.slug)
         self.log_creation(created, 'Workflow', workflow_name, workflow.id)
         workflow_version, created = WorkflowVersion.objects.get_or_create(
             workflow=workflow,
@@ -293,7 +304,8 @@ class WorkflowQuestionnaireImporter(object):
             wf_importer = WorkflowImporter(
                 cwl_document,
                 self.data.get('workflow_version_number'),
-                self.data.get('methods_template_url')
+                self.data.get('methods_template_url'),
+                self.data.get('slug')
             )
             wf_importer.run()
         except Exception as e:
@@ -305,6 +317,7 @@ class WorkflowQuestionnaireImporter(object):
             jq_importer = JobQuestionnaireImporter(
                 self.data.get('name'),
                 self.data.get('description'),
+                self.data.get('type_slug'),
                 wf_importer.workflow_version,
                 self.data.get('system_json'),
                 self.data.get('vm_settings_name'),
