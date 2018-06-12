@@ -335,6 +335,8 @@ class AdminImportWorkflowQuestionnaireSerializer(serializers.Serializer):
     workflow_version_number = serializers.IntegerField()
     name = serializers.CharField(min_length=1)
     description = serializers.CharField(min_length=1)
+    slug = serializers.CharField()
+    type_slug = serializers.CharField(min_length=1)
     methods_template_url = serializers.URLField()
     system_json = serializers.DictField()
     vm_settings_name = serializers.CharField(min_length=1) # must relate to an existing VM Settings

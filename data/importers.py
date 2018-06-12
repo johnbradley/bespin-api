@@ -177,7 +177,7 @@ class JobQuestionnaireImporter(BaseCreator):
                 user_fields.append(input_field)
 
         # get or create type based on slug
-        type, _ = JobQuestionnaireType.get_or_create(slug=self.type_slug)
+        type, _ = JobQuestionnaireType.objects.get_or_create(slug=self.type_slug)
 
         # Job questionnaire
         self.job_questionnaire, self.created_job_questionnaire = JobQuestionnaire.objects.get_or_create(
@@ -225,7 +225,7 @@ class WorkflowImporter(BaseCreator):
         self.cwl_document = cwl_document
         self.version_number = version_number
         self.methods_jinja_template_url = methods_jinja_template_url
-        sefl.slug = slug
+        self.slug = slug
         # django model objects built up
         self.workflow = None
         self.workflow_version = None

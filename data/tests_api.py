@@ -1988,6 +1988,8 @@ class AdminImportWorkflowQuestionnaireTestCase(APITestCase):
             "workflow_version_number": 12,
             "name": "Test Questionnaire Name",
             "description" : "Test Questionnaire Description",
+            "slug": "my-slug",
+            "type_slug": "human",
             "methods_template_url": "https://example.org/exome-seq.md.j2",
             "system_json": {
                 "threads": 4,

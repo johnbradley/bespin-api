@@ -336,6 +336,9 @@ class LandoConnection(models.Model):
 class JobQuestionnaireType(models.Model):
     slug = models.SlugField(help_text="Unique slug for specifying a questionnaire for a workflow version", unique=True)
 
+    def __unicode__(self):
+        return 'JobQuestionnaireType: {}'.format(self.slug)
+
 
 class JobQuestionnaire(models.Model):
     """
