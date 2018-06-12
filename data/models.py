@@ -52,7 +52,7 @@ class Workflow(models.Model):
     Name of a workflow that will apply some processing to some data.
     """
     name = models.CharField(max_length=255)
-    slug = models.SlugField(help_text="Unique slug to represent this workflow", null=True)
+    slug = models.SlugField(help_text="Unique slug to represent this workflow", unique=True)
 
     def __unicode__(self):
         return self.name
@@ -334,7 +334,7 @@ class LandoConnection(models.Model):
 
 
 class JobQuestionnaireType(models.Model):
-    slug = models.SlugField(help_text="Unique slug for specifying a questionnaire for a workflow version")
+    slug = models.SlugField(help_text="Unique slug for specifying a questionnaire for a workflow version", unique=True)
 
 
 class JobQuestionnaire(models.Model):
@@ -364,7 +364,7 @@ class JobQuestionnaire(models.Model):
                                                        'determining job volume size')
     volume_mounts = models.TextField(default=json.dumps({'/dev/vdb1': '/work'}),
                                      help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
-    type = models.ForeignKey(JobQuestionnaireType, help_text='Type of questionnaire', null=True)
+    type = models.ForeignKey(JobQuestionnaireType, help_text='Type of questionnaire')
 
     def make_slug(self):
         workflow_slug = self.workflow_version.workflow.slug
