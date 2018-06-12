@@ -60,9 +60,15 @@ class DDSUserCredentialTests(TestCase):
 
 class WorkflowTests(TestCase):
     def test_basic_functionality(self):
-        Workflow.objects.create(name='RnaSeq')
+        Workflow.objects.create(name='RnaSeq', slug='rna-seq')
         workflow = Workflow.objects.first()
         self.assertEqual('RnaSeq', workflow.name)
+        self.assertEqual('rna-seq', workflow.slug)
+
+    def test_slug_field_unique(self):
+        Workflow.objects.create(name='RnaSeq', slug='rna-seq')
+        with self.assertRaises(IntegrityError):
+            Workflow.objects.create(name='RnaSeq2', slug='rna-seq')
 
 
 class WorkflowVersionTests(TestCase):
@@ -549,7 +555,7 @@ class JobQuestionnaireTests(TestCase):
     @staticmethod
     def add_workflowversion_fields(obj):
         obj.user = User.objects.create_user('user')
-        obj.workflow = Workflow.objects.create(name='RnaSeq')
+        obj.workflow = Workflow.objects.create(name='RnaSeq', slug='rna-seq')
         obj.workflow_version = WorkflowVersion.objects.create(workflow=obj.workflow,
                                                               object_name='#main',
                                                               version='1',
@@ -561,36 +567,36 @@ class JobQuestionnaireTests(TestCase):
     def setUp(self):
         self.add_workflowversion_fields(self)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
+        self.cloud = CloudSettings.objects.create(name='cloud',
+                                                  vm_project=self.project)
+        self.settings1 = VMSettings.objects.create(name='settings1',
+                                                   cloud_settings=self.cloud)
+        self.settings2 = VMSettings.objects.create(name='settings2',
+                                                   cloud_settings=self.cloud)
+        self.questionnaire_type = JobQuestionnaireType.objects.create(slug='human')
 
     def test_two_questionnaires(self):
-        cloud = CloudSettings.objects.create(name='cloud',
-                                             vm_project=self.project)
-        settings1 = VMSettings.objects.create(name='settings1',
-                                              cloud_settings=cloud)
-        settings2 = VMSettings.objects.create(name='settings2',
-                                              cloud_settings=cloud)
-        questionnaire_type = JobQuestionnaireType.objects.create(slug='human')
         questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
                                                         description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=self.workflow_version,
                                                         system_job_order_json='{"system_input": "foo"}',
                                                         share_group=self.share_group,
-                                                        vm_settings=settings1,
+                                                        vm_settings=self.settings1,
                                                         vm_flavor=self.flavor1,
                                                         volume_size_base=10,
                                                         volume_size_factor=5,
-                                                        type=questionnaire_type
+                                                        type=self.questionnaire_type
                                                         )
         questionnaire = JobQuestionnaire.objects.create(name='Human RnaSeq',
                                                         description='Uses reference genome zew and gene index def',
                                                         workflow_version=self.workflow_version,
                                                         system_job_order_json='{"system_input":"bar"}',
                                                         share_group=self.share_group,
-                                                        vm_settings=settings2,
+                                                        vm_settings=self.settings2,
                                                         vm_flavor=self.flavor2,
                                                         volume_size_base=3,
                                                         volume_size_factor=2,
-                                                        type=questionnaire_type
+                                                        type=self.questionnaire_type
                                                         )
         ant_questionnaire = JobQuestionnaire.objects.filter(name='Ant RnaSeq').first()
         self.assertEqual('Ant RnaSeq', ant_questionnaire.name)
@@ -611,6 +617,31 @@ class JobQuestionnaireTests(TestCase):
         self.assertEqual(self.share_group, human_questionnaire.share_group)
         self.assertEqual(3, human_questionnaire.volume_size_base)
         self.assertEqual(2, human_questionnaire.volume_size_factor)
+
+    def test_make_slug(self):
+        questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
+                                                        description='Uses reference genome xyz and gene index abc',
+                                                        workflow_version=self.workflow_version,
+                                                        system_job_order_json='{"system_input": "foo"}',
+                                                        share_group=self.share_group,
+                                                        vm_settings=self.settings1,
+                                                        vm_flavor=self.flavor1,
+                                                        volume_size_base=10,
+                                                        volume_size_factor=5,
+                                                        type=self.questionnaire_type
+                                                        )
+        self.assertEqual(questionnaire.make_slug(), 'rna-seq/v1/human')
+        self.assertEqual(JobQuestionnaire.split_slug_parts(questionnaire.make_slug(), ('rna-seq', 1, 'human')))
+
+    def test_split_slug_parts(self):
+        data = {
+            ("stuff", None),
+            ("exome/v1", None),
+            ("exome/v1/human", ("exome", 1, "human")),
+            ("exome/v1/human/other", None),
+        }
+        for slug, expected_parts in data:
+            self.assertEqual(JobQuestionnaire.split_slug_parts(slug=slug), expected_parts)
 
 
 class JobAnswerSetTests(TestCase):
@@ -864,3 +895,16 @@ class VMSettingsTests(TestCase):
         VMSettings.objects.create(**self.create_args)
         with self.assertRaises(IntegrityError):
             VMSettings.objects.create(**self.create_args)
+
+
+class JobQuestionnaireTypeTests(TestCase):
+    def test_basic_functionality(self):
+        JobQuestionnaireType.objects.create(slug='human')
+        qtypes = JobQuestionnaireType.objects.all()
+        self.assertIn('human', [qtype.slug for qtype in qtypes])
+
+    def test_slug_field_unique(self):
+        JobQuestionnaireType.objects.create(slug='slug1')
+        JobQuestionnaireType.objects.create(slug='slug2')
+        with self.assertRaises(IntegrityError):
+            JobQuestionnaireType.objects.create(slug='slug1')
