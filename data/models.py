@@ -52,7 +52,7 @@ class Workflow(models.Model):
     Name of a workflow that will apply some processing to some data.
     """
     name = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, help_text="Unique slug to represent this workflow", null=True)
+    slug = models.SlugField(help_text="Unique slug to represent this workflow", null=True)
 
     def __unicode__(self):
         return self.name
@@ -334,7 +334,7 @@ class LandoConnection(models.Model):
 
 
 class JobQuestionnaireType(models.Model):
-    slug = models.SlugField(unique=True, help_text="Unique slug for specifying a questionnaire for a workflow version")
+    slug = models.SlugField(help_text="Unique slug for specifying a questionnaire for a workflow version")
 
 
 class JobQuestionnaire(models.Model):
