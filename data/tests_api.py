@@ -266,6 +266,21 @@ class WorkflowTestCase(APITestCase):
         response = self.client.post(url, format='json', data={'name': 'RnaSeq'})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def testFilterBySlug(self):
+        Workflow.objects.create(name='workflow1', slug='one')
+        Workflow.objects.create(name='workflow2', slug='two')
+        Workflow.objects.create(name='workflow3', slug='three')
+        self.user_login.become_normal_user()
+        url = reverse('workflow-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+        url = reverse('workflow-list') + "?slug=two"
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], 'workflow2')
+
 
 class WorkflowVersionTestCase(APITestCase):
     def setUp(self):
@@ -1255,7 +1270,8 @@ class JobQuestionnaireTestCase(APITestCase):
                                                                version="1",
                                                                url=cwl_url)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
-        questionnaire_type = JobQuestionnaireType.objects.create(slug='human')
+        questionnaire_type1 = JobQuestionnaireType.objects.create(slug='human')
+        questionnaire_type2 = JobQuestionnaireType.objects.create(slug='ant')
         self.questionnaire1 = JobQuestionnaire.objects.create(name='Workflow1',
                                                               description='A really large workflow',
                                                               workflow_version=self.workflow_version,
@@ -1263,7 +1279,7 @@ class JobQuestionnaireTestCase(APITestCase):
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
-                                                              type=questionnaire_type
+                                                              type=questionnaire_type1
                                                               )
         self.questionnaire2 = JobQuestionnaire.objects.create(name='Workflow2',
                                                               description='A rather small workflow',
@@ -1272,7 +1288,7 @@ class JobQuestionnaireTestCase(APITestCase):
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
-                                                              type=questionnaire_type
+                                                              type=questionnaire_type2
                                                               )
         self.questionnaire2.save()
 
@@ -1316,6 +1332,18 @@ class JobQuestionnaireTestCase(APITestCase):
             'workflow_version': self.workflow_version.id
         })
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_filter_by_slug(self):
+        self.user_login.become_normal_user()
+        url = reverse('jobquestionnaire-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        url = reverse('jobquestionnaire-list') + "?slug={}".format(self.questionnaire1.make_slug())
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], self.questionnaire1.name)
 
 
 class JobAnswerSetTests(APITestCase):
