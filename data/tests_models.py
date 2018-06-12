@@ -631,7 +631,7 @@ class JobQuestionnaireTests(TestCase):
                                                         type=self.questionnaire_type
                                                         )
         self.assertEqual(questionnaire.make_slug(), 'rna-seq/v1/human')
-        self.assertEqual(JobQuestionnaire.split_slug_parts(questionnaire.make_slug(), ('rna-seq', 1, 'human')))
+        self.assertEqual(JobQuestionnaire.split_slug_parts(questionnaire.make_slug()), ('rna-seq', 1, 'human'))
 
     def test_split_slug_parts(self):
         data = {
