@@ -8,7 +8,8 @@ import json
 from data.models import Workflow, WorkflowVersion, Job, JobFileStageGroup, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobDDSOutputProject, \
     JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, \
-    WorkflowMethodsDocument, EmailMessage, EmailTemplate, CloudSettings, VMSettings
+    WorkflowMethodsDocument, EmailMessage, EmailTemplate, CloudSettings, VMSettings, \
+    JobQuestionnaireType
 from exceptions import WrappedDataServiceException
 from util import DDSResource
 
@@ -230,8 +231,10 @@ class DDSUserCredentialTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(2, len(response.data))
-        self.assertEqual({'id': cred1.id, 'user': user.id, 'endpoint': self.endpoint.id}, response.data[0])
-        self.assertEqual({'id': cred2.id, 'user': other_user.id, 'endpoint': self.endpoint.id}, response.data[1])
+        self.assertEqual({'id': cred1.id, 'user': user.id, 'endpoint': self.endpoint.id, 'dds_id':'1'},
+                         response.data[0])
+        self.assertEqual({'id': cred2.id, 'user': other_user.id, 'endpoint': self.endpoint.id, 'dds_id':'2'},
+                         response.data[1])
 
     def testUserCantCreate(self):
         user = self.user_login.become_normal_user()
@@ -263,6 +266,21 @@ class WorkflowTestCase(APITestCase):
         response = self.client.post(url, format='json', data={'name': 'RnaSeq'})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def testFilterBySlug(self):
+        Workflow.objects.create(name='workflow1', slug='one')
+        Workflow.objects.create(name='workflow2', slug='two')
+        Workflow.objects.create(name='workflow3', slug='three')
+        self.user_login.become_normal_user()
+        url = reverse('workflow-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+        url = reverse('workflow-list') + "?slug=two"
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], 'workflow2')
+
 
 class WorkflowVersionTestCase(APITestCase):
     def setUp(self):
@@ -285,10 +303,10 @@ class WorkflowVersionTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def testFilterByWorkflow(self):
-        workflow1 = Workflow.objects.create(name='RnaSeq')
+        workflow1 = Workflow.objects.create(name='RnaSeq', slug='rnaseq1')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url)
-        workflow2 = Workflow.objects.create(name='RnaSeq2')
+        workflow2 = Workflow.objects.create(name='RnaSeq2', slug='rnaseq2')
         WorkflowVersion.objects.create(workflow=workflow2, version="30", url=cwl_url)
         self.user_login.become_normal_user()
         url = reverse('workflowversion-list')
@@ -1242,7 +1260,7 @@ class JobQuestionnaireTestCase(APITestCase):
         Create two questionnaires since this should be a read only endpoint.
         """
         self.user_login = UserLogin(self.client)
-        workflow = Workflow.objects.create(name='RnaSeq')
+        workflow = Workflow.objects.create(name='RnaSeq', slug='rnaseq')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.system_job_order_json1 = json.dumps({'system_input': 1})
         self.system_job_order_json2 = json.dumps({'system_input': 2})
@@ -1251,7 +1269,12 @@ class JobQuestionnaireTestCase(APITestCase):
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
                                                                url=cwl_url)
+        self.workflow_version2 = WorkflowVersion.objects.create(workflow=workflow,
+                                                                version="2",
+                                                                url=cwl_url)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
+        questionnaire_type1 = JobQuestionnaireType.objects.create(slug='human')
+        questionnaire_type2 = JobQuestionnaireType.objects.create(slug='ant')
         self.questionnaire1 = JobQuestionnaire.objects.create(name='Workflow1',
                                                               description='A really large workflow',
                                                               workflow_version=self.workflow_version,
@@ -1259,14 +1282,16 @@ class JobQuestionnaireTestCase(APITestCase):
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
+                                                              type=questionnaire_type1
                                                               )
         self.questionnaire2 = JobQuestionnaire.objects.create(name='Workflow2',
                                                               description='A rather small workflow',
-                                                              workflow_version=self.workflow_version,
+                                                              workflow_version=self.workflow_version2,
                                                               system_job_order_json=self.system_job_order_json2,
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
+                                                              type=questionnaire_type2
                                                               )
         self.questionnaire2.save()
 
@@ -1291,7 +1316,7 @@ class JobQuestionnaireTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual('Workflow2', response.data['name'])
         self.assertEqual('A rather small workflow', response.data['description'])
-        self.assertEqual(self.workflow_version.id, response.data['workflow_version'])
+        self.assertEqual(self.workflow_version2.id, response.data['workflow_version'])
         self.assertEqual(self.system_job_order_json2, response.data['system_job_order_json'])
         self.assertEqual(self.vm_settings.id, response.data['vm_settings'])
 
@@ -1311,12 +1336,36 @@ class JobQuestionnaireTestCase(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def test_filter_by_slug(self):
+        self.user_login.become_normal_user()
+        url = reverse('jobquestionnaire-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        url = reverse('jobquestionnaire-list') + "?slug={}".format(self.questionnaire1.make_slug())
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], self.questionnaire1.name)
+
+    def test_filter_by_workflow_version(self):
+        self.user_login.become_normal_user()
+        url = reverse('jobquestionnaire-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        url = reverse('jobquestionnaire-list') + "?workflow_version={}".format(self.questionnaire2.workflow_version_id)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], self.questionnaire2.name)
+
 
 class JobAnswerSetTests(APITestCase):
 
     def setUp(self):
         self.user_login = UserLogin(self.client)
-        workflow = Workflow.objects.create(name='RnaSeq')
+        workflow = Workflow.objects.create(name='RnaSeq', slug='rna-seq')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         add_vm_settings(self)
         self.vm_flavor = VMFlavor.objects.create(name='flavor')
@@ -1326,12 +1375,14 @@ class JobAnswerSetTests(APITestCase):
                                                                version="1",
                                                                url=cwl_url)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
+        self.questionnaire_type = JobQuestionnaireType.objects.create(slug='human')
         self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
                                                               workflow_version=self.workflow_version,
                                                               system_job_order_json=self.system_job_order_json1,
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
+                                                              type=self.questionnaire_type,
                                                               )
         self.questionnaire2 = JobQuestionnaire.objects.create(description='Workflow1',
                                                               workflow_version=self.workflow_version,
@@ -1339,6 +1390,7 @@ class JobAnswerSetTests(APITestCase):
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
+                                                              type=self.questionnaire_type,
                                                               )
         self.other_user = self.user_login.become_other_normal_user()
         self.user = self.user_login.become_normal_user()
@@ -1394,7 +1446,9 @@ class JobAnswerSetTests(APITestCase):
                                                         system_job_order_json=self.system_job_order_json1,
                                                         share_group=self.share_group,
                                                         vm_settings=self.vm_settings,
-                                                        vm_flavor=vm_flavor,)
+                                                        vm_flavor=vm_flavor,
+                                                        type=self.questionnaire_type,
+                                                        )
         return questionnaire
 
     def test_create_job_with_items(self):
@@ -1977,6 +2031,8 @@ class AdminImportWorkflowQuestionnaireTestCase(APITestCase):
             "workflow_version_number": 12,
             "name": "Test Questionnaire Name",
             "description" : "Test Questionnaire Description",
+            "slug": "my-slug",
+            "type_slug": "human",
             "methods_template_url": "https://example.org/exome-seq.md.j2",
             "system_json": {
                 "threads": 4,

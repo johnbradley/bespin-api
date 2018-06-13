@@ -52,6 +52,7 @@ class Workflow(models.Model):
     Name of a workflow that will apply some processing to some data.
     """
     name = models.CharField(max_length=255)
+    slug = models.SlugField(help_text="Unique slug to represent this workflow", unique=True)
 
     def __unicode__(self):
         return self.name
@@ -332,6 +333,13 @@ class LandoConnection(models.Model):
         return '{} on {}'.format(self.username, self.host)
 
 
+class JobQuestionnaireType(models.Model):
+    slug = models.SlugField(help_text="Unique slug for specifying a questionnaire for a workflow version", unique=True)
+
+    def __unicode__(self):
+        return 'JobQuestionnaireType: {}'.format(self.slug)
+
+
 class JobQuestionnaire(models.Model):
     """
     Specifies a Workflow Version and a set of system-provided answers in JSON format
@@ -359,6 +367,26 @@ class JobQuestionnaire(models.Model):
                                                        'determining job volume size')
     volume_mounts = models.TextField(default=json.dumps({'/dev/vdb1': '/work'}),
                                      help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
+    type = models.ForeignKey(JobQuestionnaireType, help_text='Type of questionnaire')
+
+    def make_slug(self):
+        workflow_slug = self.workflow_version.workflow.slug
+        workflow_version_num = self.workflow_version.version
+        return '{}/v{}/{}'.format(workflow_slug, workflow_version_num, self.type.slug)
+
+    @staticmethod
+    def split_slug_parts(slug):
+        """
+        Given slug string return tuple of workflow_slug, version_num, questionnaire_type_slug
+        :param slug: str: slug to split into parts
+        :return: (workflow_slug, version_num, questionnaire_type_slug)
+        """
+        parts = slug.split("/")
+        if len(parts) != 3:
+            return None
+        workflow_slug, version_num_str, questionnaire_type_slug = parts
+        version_num = int(version_num_str.replace("v", ""))
+        return workflow_slug, version_num, questionnaire_type_slug
 
     def __unicode__(self):
         return '{} desc:{}'.format(self.id, self.description)

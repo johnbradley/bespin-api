@@ -10,7 +10,7 @@ class WorkflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workflow
         resource_name = 'workflows'
-        fields = ('id', 'name', 'versions')
+        fields = ('id', 'name', 'versions', 'slug')
         read_only_fields = ('versions',)
 
 
@@ -156,7 +156,7 @@ class ReadOnlyDDSUserCredSerializer(serializers.ModelSerializer):
     class Meta:
         model = DDSUserCredential
         resource_name = 'dds-user-credentials'
-        fields = ('id', 'user', 'endpoint')
+        fields = ('id', 'user', 'endpoint', 'dds_id')
 
 
 class BaseJobInputFileSerializer(serializers.ModelSerializer):
@@ -259,6 +259,10 @@ class JobAnswerSetSerializer(serializers.ModelSerializer):
 
 
 class JobQuestionnaireSerializer(serializers.ModelSerializer):
+    slug = serializers.SerializerMethodField()
+
+    def get_slug(self, obj):
+        return obj.make_slug()
 
     class Meta:
         model = JobQuestionnaire
@@ -331,6 +335,8 @@ class AdminImportWorkflowQuestionnaireSerializer(serializers.Serializer):
     workflow_version_number = serializers.IntegerField()
     name = serializers.CharField(min_length=1)
     description = serializers.CharField(min_length=1)
+    slug = serializers.CharField()
+    type_slug = serializers.CharField(min_length=1)
     methods_template_url = serializers.URLField()
     system_json = serializers.DictField()
     vm_settings_name = serializers.CharField(min_length=1) # must relate to an existing VM Settings

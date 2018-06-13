@@ -235,6 +235,26 @@ def get_file_name(user, dds_file_id):
         raise WrappedDataServiceException(dse)
 
 
+def has_download_permissions(dds_user_credential, project_id):
+    """
+    Does dds_user_credential have permissions to download project project_id
+    :param dds_user_credential: DDSUserCredential: credential to check
+    :param project_id: str: uuid of the project to check
+    :return: boolean: True if the user can download the project
+    """
+    try:
+        config = get_dds_config_for_credentials(dds_user_credential)
+        remote_store = RemoteStore(config)
+        current_user = remote_store.get_current_user()
+        response = remote_store.data_service.get_user_project_permission(project_id, current_user.id)
+        auth_role = response.json()['auth_role']['id']
+        return auth_role in ['file_downloader', 'file_editor', 'project_admin']
+    except DataServiceError as dse:
+        if dse.status_code == 404:
+            return False
+        raise WrappedDataServiceException(dse)
+
+
 def give_download_permissions(user, project_id, target_dds_user_id):
     """
     Using the data service permissions of user give file_downloader permissions to project_id to target_dds_user_credential

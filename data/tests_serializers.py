@@ -16,7 +16,9 @@ class AdminImportWorkflowQuestionnaireSerializerTest(TestCase):
             "vm_flavor_name": "m1.xlarge",
             "share_group_name": "Informatics",
             "volume_size_base": 1000,
-            "volume_size_factor": 10
+            "volume_size_factor": 10,
+            "slug": "my-slug",
+            "type_slug": "human",
         }
 
     def test_valid(self):
@@ -34,6 +36,8 @@ class AdminImportWorkflowQuestionnaireSerializerTest(TestCase):
                                                'workflow_version_number',
                                                'name',
                                                'description',
+                                               'slug',
+                                               'type_slug',
                                                'methods_template_url',
                                                'system_json',
                                                'vm_settings_name',
