@@ -3,35 +3,8 @@ from __future__ import unicode_literals
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from gcb_web_auth.models import DDSUserCredential, DDSEndpoint
 import json
-
-
-class DDSEndpoint(models.Model):
-    """
-    Stores the agent key for this application
-    """
-    name = models.CharField(max_length=255, unique=True)
-    agent_key = models.CharField(max_length=32, unique=True)
-    api_root = models.URLField()
-
-    def __unicode__(self):
-        return '{} - {}'.format(self.name, self.api_root, )
-
-
-class DDSUserCredential(models.Model):
-    """
-    DDS Credentials for bespin users
-    """
-    endpoint = models.ForeignKey(DDSEndpoint, on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='bespin_api_user')
-    token = models.CharField(max_length=32, unique=True)
-    dds_id = models.CharField(max_length=255, unique=True)
-
-    class Meta:
-        unique_together = ('endpoint', 'user',)
-
-    def __unicode__(self):
-        return '{} - {}'.format(self.endpoint, self.user, )
 
 
 class DDSUser(models.Model):

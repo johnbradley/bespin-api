@@ -12,8 +12,6 @@ class CreateOnlyWorkflowVersionAdmin(admin.ModelAdmin):
         return False
 
 
-admin.site.register(DDSEndpoint)
-admin.site.register(DDSUserCredential)
 admin.site.register(Workflow)
 admin.site.register(WorkflowVersion, CreateOnlyWorkflowVersionAdmin)
 admin.site.register(Job)
