@@ -95,7 +95,7 @@ class JobQuestionnaireImporterTestCase(TestCase):
             "workflow_version_number": 12,
             "name": "Test Questionnaire Name",
             "description": "Test Questionnaire Description",
-            "slug": "my-slug",
+            "workflow_tag": "my-tag",
             "methods_template_url": "https://example.org/exome-seq.md.j2",
             "system_json": {
                 "threads": 4,
@@ -111,7 +111,7 @@ class JobQuestionnaireImporterTestCase(TestCase):
             "share_group_name": self.share_group_name,
             "volume_size_base": 100,
             "volume_size_factor": 10,
-            "type_slug": "human",
+            "type_tag": "human",
         }
 
     def test_raises_on_vm_settings_name_not_found(self):
@@ -160,7 +160,7 @@ class JobQuestionnaireImporterTestCase(TestCase):
         self.assertEqual(args, (mock_doc,
                                 self.data['workflow_version_number'],
                                 self.data['methods_template_url'],
-                                self.data['slug'],))
+                                self.data['workflow_tag'],))
         self.assertEqual(kwargs, {})
         self.assertTrue(mock_wfi_run.called)
 
@@ -169,7 +169,7 @@ class JobQuestionnaireImporterTestCase(TestCase):
         self.assertEqual(args, (
             self.data['name'],
             self.data['description'],
-            self.data['type_slug'],
+            self.data['type_tag'],
             mock_workflow_version,
             self.data['system_json'],
             self.data['vm_settings_name'],

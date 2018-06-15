@@ -10,7 +10,7 @@ class WorkflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workflow
         resource_name = 'workflows'
-        fields = ('id', 'name', 'versions', 'slug')
+        fields = ('id', 'name', 'versions', 'tag')
         read_only_fields = ('versions',)
 
 
@@ -259,10 +259,10 @@ class JobAnswerSetSerializer(serializers.ModelSerializer):
 
 
 class JobQuestionnaireSerializer(serializers.ModelSerializer):
-    slug = serializers.SerializerMethodField()
+    tag = serializers.SerializerMethodField()
 
-    def get_slug(self, obj):
-        return obj.make_slug()
+    def get_tag(self, obj):
+        return obj.make_tag()
 
     class Meta:
         model = JobQuestionnaire
@@ -335,8 +335,8 @@ class AdminImportWorkflowQuestionnaireSerializer(serializers.Serializer):
     workflow_version_number = serializers.IntegerField()
     name = serializers.CharField(min_length=1)
     description = serializers.CharField(min_length=1)
-    slug = serializers.CharField()
-    type_slug = serializers.CharField(min_length=1)
+    workflow_tag = serializers.CharField()
+    type_tag = serializers.CharField(min_length=1)
     methods_template_url = serializers.URLField()
     system_json = serializers.DictField()
     vm_settings_name = serializers.CharField(min_length=1) # must relate to an existing VM Settings

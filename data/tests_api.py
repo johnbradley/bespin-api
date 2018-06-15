@@ -267,15 +267,15 @@ class WorkflowTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def testFilterBySlug(self):
-        Workflow.objects.create(name='workflow1', slug='one')
-        Workflow.objects.create(name='workflow2', slug='two')
-        Workflow.objects.create(name='workflow3', slug='three')
+        Workflow.objects.create(name='workflow1', tag='one')
+        Workflow.objects.create(name='workflow2', tag='two')
+        Workflow.objects.create(name='workflow3', tag='three')
         self.user_login.become_normal_user()
         url = reverse('workflow-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 3)
-        url = reverse('workflow-list') + "?slug=two"
+        url = reverse('workflow-list') + "?tag=two"
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -303,10 +303,10 @@ class WorkflowVersionTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def testFilterByWorkflow(self):
-        workflow1 = Workflow.objects.create(name='RnaSeq', slug='rnaseq1')
+        workflow1 = Workflow.objects.create(name='RnaSeq', tag='rnaseq1')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url)
-        workflow2 = Workflow.objects.create(name='RnaSeq2', slug='rnaseq2')
+        workflow2 = Workflow.objects.create(name='RnaSeq2', tag='rnaseq2')
         WorkflowVersion.objects.create(workflow=workflow2, version="30", url=cwl_url)
         self.user_login.become_normal_user()
         url = reverse('workflowversion-list')
@@ -1260,7 +1260,7 @@ class JobQuestionnaireTestCase(APITestCase):
         Create two questionnaires since this should be a read only endpoint.
         """
         self.user_login = UserLogin(self.client)
-        workflow = Workflow.objects.create(name='RnaSeq', slug='rnaseq')
+        workflow = Workflow.objects.create(name='RnaSeq', tag='rnaseq')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.system_job_order_json1 = json.dumps({'system_input': 1})
         self.system_job_order_json2 = json.dumps({'system_input': 2})
@@ -1273,8 +1273,8 @@ class JobQuestionnaireTestCase(APITestCase):
                                                                 version="2",
                                                                 url=cwl_url)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
-        questionnaire_type1 = JobQuestionnaireType.objects.create(slug='human')
-        questionnaire_type2 = JobQuestionnaireType.objects.create(slug='ant')
+        questionnaire_type1 = JobQuestionnaireType.objects.create(tag='human')
+        questionnaire_type2 = JobQuestionnaireType.objects.create(tag='ant')
         self.questionnaire1 = JobQuestionnaire.objects.create(name='Workflow1',
                                                               description='A really large workflow',
                                                               workflow_version=self.workflow_version,
@@ -1336,13 +1336,13 @@ class JobQuestionnaireTestCase(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_filter_by_slug(self):
+    def test_filter_by_tag(self):
         self.user_login.become_normal_user()
         url = reverse('jobquestionnaire-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
-        url = reverse('jobquestionnaire-list') + "?slug={}".format(self.questionnaire1.make_slug())
+        url = reverse('jobquestionnaire-list') + "?tag={}".format(self.questionnaire1.make_tag())
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -1365,7 +1365,7 @@ class JobAnswerSetTests(APITestCase):
 
     def setUp(self):
         self.user_login = UserLogin(self.client)
-        workflow = Workflow.objects.create(name='RnaSeq', slug='rna-seq')
+        workflow = Workflow.objects.create(name='RnaSeq', tag='rna-seq')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         add_vm_settings(self)
         self.vm_flavor = VMFlavor.objects.create(name='flavor')
@@ -1375,7 +1375,7 @@ class JobAnswerSetTests(APITestCase):
                                                                version="1",
                                                                url=cwl_url)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
-        self.questionnaire_type = JobQuestionnaireType.objects.create(slug='human')
+        self.questionnaire_type = JobQuestionnaireType.objects.create(tag='human')
         self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
                                                               workflow_version=self.workflow_version,
                                                               system_job_order_json=self.system_job_order_json1,
@@ -2031,8 +2031,8 @@ class AdminImportWorkflowQuestionnaireTestCase(APITestCase):
             "workflow_version_number": 12,
             "name": "Test Questionnaire Name",
             "description" : "Test Questionnaire Description",
-            "slug": "my-slug",
-            "type_slug": "human",
+            "workflow_tag": "my-tag",
+            "type_tag": "human",
             "methods_template_url": "https://example.org/exome-seq.md.j2",
             "system_json": {
                 "threads": 4,

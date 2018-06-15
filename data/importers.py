@@ -132,7 +132,7 @@ class JobQuestionnaireImporter(BaseCreator):
     def __init__(self,
                  name,
                  description,
-                 type_slug,
+                 type_tag,
                  workflow_version,
                  system_job_order_dict,
                  vm_settings_name,
@@ -146,7 +146,7 @@ class JobQuestionnaireImporter(BaseCreator):
         super(JobQuestionnaireImporter, self).__init__(stdout, stderr)
         self.name = name
         self.description = description
-        self.type_slug = type_slug
+        self.type_tag = type_tag
         self.workflow_version = workflow_version
         self.system_job_order_dict = system_job_order_dict
         self.vm_flavor_name = vm_flavor_name
@@ -176,8 +176,8 @@ class JobQuestionnaireImporter(BaseCreator):
             if not input_field.get('name') in self.system_job_order_dict:
                 user_fields.append(input_field)
 
-        # get or create type based on slug
-        type, _ = JobQuestionnaireType.objects.get_or_create(slug=self.type_slug)
+        # get or create type based on tag
+        type, _ = JobQuestionnaireType.objects.get_or_create(tag=self.type_tag)
 
         # Job questionnaire
         self.job_questionnaire, self.created_job_questionnaire = JobQuestionnaire.objects.get_or_create(
@@ -211,7 +211,7 @@ class WorkflowImporter(BaseCreator):
                  cwl_document,
                  version_number=1,
                  methods_jinja_template_url=None,
-                 slug=None,
+                 tag=None,
                  stdout=sys.stdout,
                  stderr=sys.stderr):
         """
@@ -225,7 +225,7 @@ class WorkflowImporter(BaseCreator):
         self.cwl_document = cwl_document
         self.version_number = version_number
         self.methods_jinja_template_url = methods_jinja_template_url
-        self.slug = slug
+        self.tag = tag
         # django model objects built up
         self.workflow = None
         self.workflow_version = None
@@ -235,9 +235,9 @@ class WorkflowImporter(BaseCreator):
         workflow_name = self.cwl_document.get('label')
         # Longer description used in workflow version
         workflow_version_description = self.cwl_document.get('doc')
-        if not self.slug:
-            self.slug = slugify(workflow_name)
-        workflow, created = Workflow.objects.get_or_create(name=workflow_name, slug=self.slug)
+        if not self.tag:
+            self.tag = slugify(workflow_name)
+        workflow, created = Workflow.objects.get_or_create(name=workflow_name, tag=self.tag)
         self.log_creation(created, 'Workflow', workflow_name, workflow.id)
         workflow_version, created = WorkflowVersion.objects.get_or_create(
             workflow=workflow,
@@ -305,7 +305,7 @@ class WorkflowQuestionnaireImporter(object):
                 cwl_document,
                 self.data.get('workflow_version_number'),
                 self.data.get('methods_template_url'),
-                self.data.get('slug')
+                self.data.get('workflow_tag')
             )
             wf_importer.run()
         except Exception as e:
@@ -317,7 +317,7 @@ class WorkflowQuestionnaireImporter(object):
             jq_importer = JobQuestionnaireImporter(
                 self.data.get('name'),
                 self.data.get('description'),
-                self.data.get('type_slug'),
+                self.data.get('type_tag'),
                 wf_importer.workflow_version,
                 self.data.get('system_json'),
                 self.data.get('vm_settings_name'),

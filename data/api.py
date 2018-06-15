@@ -71,7 +71,7 @@ class WorkflowsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Workflow.objects.all()
     serializer_class = WorkflowSerializer
     filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('slug',)
+    filter_fields = ('tag',)
 
 
 class WorkflowVersionsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -300,14 +300,14 @@ class JobQuestionnaireViewSet(viewsets.ReadOnlyModelViewSet):
     filter_fields = ('workflow_version',)
 
     def get_queryset(self):
-        slug = self.request.query_params.get('slug', None)
-        if slug:
-            parts = JobQuestionnaire.split_slug_parts(slug)
+        tag = self.request.query_params.get('tag', None)
+        if tag:
+            parts = JobQuestionnaire.split_tag_parts(tag)
             if parts:
-                workflow_slug, version_num, questionnaire_type_slug = parts
-                return JobQuestionnaire.objects.filter(workflow_version__workflow__slug=workflow_slug,
+                workflow_tag, version_num, questionnaire_type_tag = parts
+                return JobQuestionnaire.objects.filter(workflow_version__workflow__tag=workflow_tag,
                                                        workflow_version__version=version_num,
-                                                       type__slug=questionnaire_type_slug)
+                                                       type__tag=questionnaire_type_tag)
             else:
                 return JobQuestionnaire.objects.none()
         else:
