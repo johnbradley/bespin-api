@@ -60,15 +60,15 @@ class DDSUserCredentialTests(TestCase):
 
 class WorkflowTests(TestCase):
     def test_basic_functionality(self):
-        Workflow.objects.create(name='RnaSeq', slug='rna-seq')
+        Workflow.objects.create(name='RnaSeq', tag='rna-seq')
         workflow = Workflow.objects.first()
         self.assertEqual('RnaSeq', workflow.name)
-        self.assertEqual('rna-seq', workflow.slug)
+        self.assertEqual('rna-seq', workflow.tag)
 
-    def test_slug_field_unique(self):
-        Workflow.objects.create(name='RnaSeq', slug='rna-seq')
+    def test_tag_field_unique(self):
+        Workflow.objects.create(name='RnaSeq', tag='rna-seq')
         with self.assertRaises(IntegrityError):
-            Workflow.objects.create(name='RnaSeq2', slug='rna-seq')
+            Workflow.objects.create(name='RnaSeq2', tag='rna-seq')
 
 
 class WorkflowVersionTests(TestCase):
@@ -555,7 +555,7 @@ class JobQuestionnaireTests(TestCase):
     @staticmethod
     def add_workflowversion_fields(obj):
         obj.user = User.objects.create_user('user')
-        obj.workflow = Workflow.objects.create(name='RnaSeq', slug='rna-seq')
+        obj.workflow = Workflow.objects.create(name='RnaSeq', tag='rna-seq')
         obj.workflow_version = WorkflowVersion.objects.create(workflow=obj.workflow,
                                                               object_name='#main',
                                                               version='1',
@@ -573,7 +573,7 @@ class JobQuestionnaireTests(TestCase):
                                                    cloud_settings=self.cloud)
         self.settings2 = VMSettings.objects.create(name='settings2',
                                                    cloud_settings=self.cloud)
-        self.questionnaire_type = JobQuestionnaireType.objects.create(slug='human')
+        self.questionnaire_type = JobQuestionnaireType.objects.create(tag='human')
 
     def test_two_questionnaires(self):
         questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
@@ -618,7 +618,7 @@ class JobQuestionnaireTests(TestCase):
         self.assertEqual(3, human_questionnaire.volume_size_base)
         self.assertEqual(2, human_questionnaire.volume_size_factor)
 
-    def test_make_slug(self):
+    def test_make_tag(self):
         questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
                                                         description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=self.workflow_version,
@@ -630,18 +630,18 @@ class JobQuestionnaireTests(TestCase):
                                                         volume_size_factor=5,
                                                         type=self.questionnaire_type
                                                         )
-        self.assertEqual(questionnaire.make_slug(), 'rna-seq/v1/human')
-        self.assertEqual(JobQuestionnaire.split_slug_parts(questionnaire.make_slug()), ('rna-seq', 1, 'human'))
+        self.assertEqual(questionnaire.make_tag(), 'rna-seq/v1/human')
+        self.assertEqual(JobQuestionnaire.split_tag_parts(questionnaire.make_tag()), ('rna-seq', 1, 'human'))
 
-    def test_split_slug_parts(self):
+    def test_split_tag_parts(self):
         data = {
             ("stuff", None),
             ("exome/v1", None),
             ("exome/v1/human", ("exome", 1, "human")),
             ("exome/v1/human/other", None),
         }
-        for slug, expected_parts in data:
-            self.assertEqual(JobQuestionnaire.split_slug_parts(slug=slug), expected_parts)
+        for tag, expected_parts in data:
+            self.assertEqual(JobQuestionnaire.split_tag_parts(tag=tag), expected_parts)
 
 
 class JobAnswerSetTests(TestCase):
@@ -650,7 +650,7 @@ class JobAnswerSetTests(TestCase):
         JobQuestionnaireTests.add_workflowversion_fields(self)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         JobQuestionnaireTests.add_vmsettings_fields(self)
-        self.questionnaire_type = JobQuestionnaireType.objects.create(slug='human')
+        self.questionnaire_type = JobQuestionnaireType.objects.create(tag='human')
         self.questionnaire = JobQuestionnaire.objects.create(name='Exome Seq Q',
                                                              description='Uses reference genome xyz and gene index abc',
                                                              workflow_version=self.workflow_version,
@@ -899,12 +899,12 @@ class VMSettingsTests(TestCase):
 
 class JobQuestionnaireTypeTests(TestCase):
     def test_basic_functionality(self):
-        JobQuestionnaireType.objects.create(slug='human')
+        JobQuestionnaireType.objects.create(tag='human')
         qtypes = JobQuestionnaireType.objects.all()
-        self.assertIn('human', [qtype.slug for qtype in qtypes])
+        self.assertIn('human', [qtype.tag for qtype in qtypes])
 
-    def test_slug_field_unique(self):
-        JobQuestionnaireType.objects.create(slug='slug1')
-        JobQuestionnaireType.objects.create(slug='slug2')
+    def test_tag_field_unique(self):
+        JobQuestionnaireType.objects.create(tag='tag1')
+        JobQuestionnaireType.objects.create(tag='tag2')
         with self.assertRaises(IntegrityError):
-            JobQuestionnaireType.objects.create(slug='slug1')
+            JobQuestionnaireType.objects.create(tag='tag1')
