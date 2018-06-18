@@ -267,7 +267,10 @@ class JobQuestionnaireSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobQuestionnaire
         resource_name = 'job-questionnaires'
-        fields = '__all__'
+        fields = ('id', 'name', 'description', 'workflow_version', 'system_job_order_json',
+                  'user_fields_json', 'share_group', 'vm_settings', 'vm_flavor',
+                  'volume_size_base', 'volume_size_factor', 'volume_mounts',
+                  'tag')  # Removed 'type' since it is incompatible with ember data
 
 
 class AdminJobTokensSerializer(serializers.ModelSerializer):
