@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User as django_user
 from django.core.urlresolvers import reverse, NoReverseMatch
+from django.test import override_settings
 from mock.mock import MagicMock, patch, Mock
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -1475,6 +1476,44 @@ class JobAnswerSetTests(APITestCase):
         self.assertEqual(json.dumps(expected_job_order), response.data['job_order'])
         self.assertEqual(1, len(Job.objects.all()))
         self.assertEqual(1, len(JobDDSOutputProject.objects.all()))
+
+    @override_settings(REQUIRE_JOB_TOKEN=True)
+    def test_create_job_require_job_token_true(self):
+        questionnaire = self.setup_minimal_questionnaire()
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': questionnaire.id,
+            'job_name': 'Test job',
+            'user_job_order_json': self.user_job_order_json1,
+            'stage_group': self.stage_group.id,
+            'vm_settings': self.vm_settings.id,
+            'fund_code': '123-5'
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_answer_set_id = response.data['id']
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create-job/"
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(Job.JOB_STATE_NEW, response.data['state'])
+
+    @override_settings(REQUIRE_JOB_TOKEN=False)
+    def test_create_job_require_job_token_false(self):
+        questionnaire = self.setup_minimal_questionnaire()
+        url = reverse('jobanswerset-list')
+        response = self.client.post(url, format='json', data={
+            'questionnaire': questionnaire.id,
+            'job_name': 'Test job with items',
+            'user_job_order_json': self.user_job_order_json1,
+            'stage_group': self.stage_group.id,
+            'vm_settings': self.vm_settings.id,
+            'fund_code': '123-5'
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job_answer_set_id = response.data['id']
+        url = reverse('jobanswerset-list') + str(job_answer_set_id) + "/create-job/"
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(Job.JOB_STATE_AUTHORIZED, response.data['state'])
 
     @patch('data.jobfactory.JobDDSOutputProject')
     def test_create_job_with_exception_rolls_back(self, MockJobDDSOutputProject):

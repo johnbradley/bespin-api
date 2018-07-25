@@ -6,6 +6,7 @@ from rest_framework.exceptions import NotFound
 from exceptions import DataServiceUnavailable, WrappedDataServiceException, BespinAPIException, JobTokenException
 from data.models import *
 from django.db import IntegrityError
+from django.conf import settings
 
 from data.serializers import *
 from django_filters.rest_framework import DjangoFilterBackend
@@ -329,7 +330,7 @@ class JobAnswerSetViewSet(viewsets.ModelViewSet):
         """
         job_answer_set = JobAnswerSet.objects.filter(user=request.user, pk=pk).first()
         job_factory = create_job_factory(job_answer_set)
-        job = job_factory.create_job()
+        job = job_factory.create_job(is_authorized=(not settings.REQUIRE_JOB_TOKEN))
         serializer = JobSerializer(job)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

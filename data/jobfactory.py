@@ -81,12 +81,12 @@ class JobFactory(object):
         self.share_group = share_group
         self.fund_code = fund_code
 
-    def create_job(self):
+    def create_job(self, is_authorized):
         """
         Create a job based on the workflow_version, system job order and user job order
+        :param is_authorized: bool: if True job is created in authorized state
         :return: Job: job that was inserted into the database along with it's output project and input files.
         """
-
         if self.system_job_order is None or self.user_job_order is None:
             raise JobFactoryException('Attempted to create a job without specifying system job order or user job order')
 
@@ -94,6 +94,9 @@ class JobFactory(object):
         job_order = self.system_job_order.copy()
         job_order.update(self.user_job_order)
 
+        job_state = Job.JOB_STATE_NEW
+        if is_authorized:
+            job_state = Job.JOB_STATE_AUTHORIZED
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  user=self.user,
                                  stage_group=self.stage_group,
@@ -104,7 +107,8 @@ class JobFactory(object):
                                  vm_volume_mounts=self.volume_mounts,
                                  vm_flavor=self.vm_flavor,
                                  share_group=self.share_group,
-                                 fund_code=self.fund_code
+                                 fund_code=self.fund_code,
+                                 state=job_state
         )
         # Create output project
         # just taking the first worker user credential for now(there is only one production DukeDS instance)
