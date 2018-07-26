@@ -1,5 +1,6 @@
 from data.models import Job, JobDDSOutputProject, DDSJobInputFile, DDSUserCredential
 from exceptions import JobFactoryException
+from django.conf import settings
 import json
 import math
 
@@ -81,10 +82,9 @@ class JobFactory(object):
         self.share_group = share_group
         self.fund_code = fund_code
 
-    def create_job(self, is_authorized):
+    def create_job(self):
         """
         Create a job based on the workflow_version, system job order and user job order
-        :param is_authorized: bool: if True job is created in authorized state
         :return: Job: job that was inserted into the database along with it's output project and input files.
         """
         if self.system_job_order is None or self.user_job_order is None:
@@ -94,8 +94,9 @@ class JobFactory(object):
         job_order = self.system_job_order.copy()
         job_order.update(self.user_job_order)
 
-        job_state = Job.JOB_STATE_NEW
-        if is_authorized:
+        if settings.REQUIRE_JOB_TOKENS:
+            job_state = Job.JOB_STATE_NEW
+        else:
             job_state = Job.JOB_STATE_AUTHORIZED
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  user=self.user,

@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
+from django.test import override_settings
 from rest_framework.exceptions import ValidationError
 from mock.mock import MagicMock, patch, Mock
 from models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion, JobFileStageGroup, ShareGroup, \
@@ -41,7 +42,7 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, None, None, user_job_order, system_job_order, None, None, None, 150,
                                  self.volume_mounts, self.share_group, '123-4')
         with self.assertRaises(JobFactoryException):
-            job_factory.create_job(is_authorized=False)
+            job_factory.create_job()
 
     def test_requires_system_order(self):
         user_job_order = {}
@@ -49,14 +50,15 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, None, None, user_job_order, system_job_order, None, None, None, 150,
                                  self.volume_mounts, self.share_group, '123-4')
         with self.assertRaises(JobFactoryException):
-            job_factory.create_job(is_authorized=False)
+            job_factory.create_job()
 
+    @override_settings(REQUIRE_JOB_TOKENS=True)
     def test_creates_job(self):
         user_job_order = {'input1': 'user'}
         system_job_order = {'input2' : 'system'}
         job_factory = JobFactory(self.user, self.workflow_version, self.stage_group, user_job_order, system_job_order,
                                  'Test Job', self.vm_settings, self.vm_flavor, 110, self.volume_mounts, self.share_group, '123-4')
-        job = job_factory.create_job(is_authorized=False)
+        job = job_factory.create_job()
         self.assertEqual(job.user, self.user)
         self.assertEqual(job.workflow_version, self.workflow_version)
         expected_job_order = json.dumps({'input1':'user','input2':'system'})
@@ -71,12 +73,13 @@ class JobFactoryTests(TestCase):
         self.assertEqual(job.fund_code, '123-4')
         self.assertEqual(job.state, Job.JOB_STATE_NEW)
 
+    @override_settings(REQUIRE_JOB_TOKENS=False)
     def test_creates_job_is_authorized(self):
         user_job_order = {'input1': 'user'}
         system_job_order = {'input2' : 'system'}
         job_factory = JobFactory(self.user, self.workflow_version, self.stage_group, user_job_order, system_job_order,
                                  'Test Job', self.vm_settings, self.vm_flavor, 110, self.volume_mounts, self.share_group, '123-4')
-        job = job_factory.create_job(is_authorized=True)
+        job = job_factory.create_job()
         self.assertEqual(job.user, self.user)
         self.assertEqual(job.workflow_version, self.workflow_version)
         self.assertEqual(job.state, Job.JOB_STATE_AUTHORIZED)
@@ -87,7 +90,7 @@ class JobFactoryTests(TestCase):
         job_factory = JobFactory(self.user, self.workflow_version, self.stage_group, user_job_order, system_job_order,
                                  'Test Job', self.vm_settings, self.vm_flavor, 120, self.volume_mounts,
                                  self.share_group, '123-4')
-        job = job_factory.create_job(is_authorized=False)
+        job = job_factory.create_job()
         expected_job_order = json.dumps({'input1':'user'})
         self.assertEqual(expected_job_order, job.job_order)
 

@@ -133,7 +133,7 @@ REST_FRAMEWORK = {
 
 REQUIRED_GROUP_MANAGER_GROUP = None
 
-REQUIRE_JOB_TOKEN = False
+REQUIRE_JOB_TOKENS = False
 
 # Configure djangorestframework-jwt
 JWT_AUTH = {
