@@ -7,13 +7,13 @@ from jobsummary import JobSummary
 
 class JobSummaryTests(TestCase):
     @staticmethod
-    def mock_job(activity_values):
+    def mock_job(activity_values, num_cpus):
         activities = []
         for state, step, created in activity_values:
             activities.append(Mock(state=state, step=step, created=created))
         mock_manager = Mock()
         mock_manager.all.return_value = activities
-        return Mock(job_activities=mock_manager)
+        return Mock(job_activities=mock_manager, vm_flavor=Mock(cpus=num_cpus))
 
     @staticmethod
     def created_ts(hr_min_str):
@@ -27,7 +27,7 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_RUNNING, '', self.created_ts('12:02')),
             (Job.JOB_STATE_RUNNING, Job.JOB_STEP_STAGING, self.created_ts('12:02')),
         ]
-        mock_job = self.mock_job(activities)
+        mock_job = self.mock_job(activities, num_cpus=32)
         summary = JobSummary(mock_job)
         pairs = JobSummary._zip_job_activity_pairs(mock_job.job_activities.all())
         self.assertEqual(len(pairs), 4)
@@ -55,7 +55,7 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_RUNNING, Job.JOB_STEP_STAGING, self.created_ts('12:04')),
             (Job.JOB_STATE_RUNNING, Job.JOB_STATE_RUNNING, self.created_ts('12:05')),
         ]
-        mock_job = self.mock_job(activities)
+        mock_job = self.mock_job(activities, num_cpus=32)
         summary = JobSummary(mock_job)
         pairs = summary._filtered_activity_pairs(Job.JOB_STATE_RUNNING,
                                                  [Job.JOB_STEP_STAGING, Job.JOB_STEP_RUNNING, Job.JOB_STEP_STORE_OUTPUT])
@@ -85,7 +85,7 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_RUNNING, Job.JOB_STEP_STAGING, self.created_ts('12:00')),
             (Job.JOB_STATE_RUNNING, Job.JOB_STATE_RUNNING, self.created_ts('12:30')),
         ]
-        mock_job = self.mock_job(activities)
+        mock_job = self.mock_job(activities, num_cpus=32)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
         summary = JobSummary(mock_job)
         self.assertEqual(summary.vm_hours, 2.5)
@@ -101,7 +101,7 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_RUNNING, Job.JOB_STEP_TERMINATE_VM, self.created_ts('13:15')),
             (Job.JOB_STATE_FINISHED, '', self.created_ts('13:16')),
         ]
-        mock_job = self.mock_job(activities)
+        mock_job = self.mock_job(activities, num_cpus=32)
         summary = JobSummary(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
         self.assertEqual(summary.vm_hours, 1.25)
@@ -116,7 +116,7 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_RUNNING, Job.JOB_STATE_RUNNING, self.created_ts('12:30')),
             (Job.JOB_STATE_ERROR, Job.JOB_STATE_RUNNING, self.created_ts('13:15')),
         ]
-        mock_job = self.mock_job(activities)
+        mock_job = self.mock_job(activities, num_cpus=32)
         summary = JobSummary(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
         self.assertEqual(summary.vm_hours, 1.25)

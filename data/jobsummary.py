@@ -8,6 +8,7 @@ class JobSummary(object):
     def __init__(self, job):
         self.job = job
         self.vm_hours = self._calculate_vm_hours()
+        self.cpu_hours = self._calculate_cpu_hours(self.vm_hours)
 
     @staticmethod
     def _zip_job_activity_pairs(activities):
@@ -61,3 +62,11 @@ class JobSummary(object):
         for activity, next_activity in vm_step_activity_pairs:
             hours += self._calculate_elapsed_hours(activity, next_activity)
         return hours
+
+    def _calculate_cpu_hours(self, vm_hours):
+        """
+        Calculate how many CPU hours a job has used up.
+        :param vm_hours: int: number VM hours used by job
+        :return: int
+        """
+        return vm_hours * self.job.vm_flavor.cpus

@@ -292,6 +292,7 @@ class JobTokensSerializer(serializers.ModelSerializer):
 
 class JobSummarySerializer(serializers.Serializer):
     vm_hours = serializers.FloatField()
+    cpu_hours = serializers.FloatField()
     class Meta:
         resource_name = 'job-summaries'
 
