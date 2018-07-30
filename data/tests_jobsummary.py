@@ -29,7 +29,7 @@ class JobSummaryTests(TestCase):
         ]
         mock_job = self.mock_job(activities)
         summary = JobSummary(mock_job)
-        pairs = JobSummary.zip_job_activity_pairs(mock_job.job_activities.all())
+        pairs = JobSummary._zip_job_activity_pairs(mock_job.job_activities.all())
         self.assertEqual(len(pairs), 4)
         pair = pairs[0]
         self.assertEqual(pair[0].state, Job.JOB_STATE_NEW)  # first item is NEW
@@ -57,8 +57,8 @@ class JobSummaryTests(TestCase):
         ]
         mock_job = self.mock_job(activities)
         summary = JobSummary(mock_job)
-        pairs = summary.filtered_activity_pairs(Job.JOB_STATE_RUNNING,
-                                                [Job.JOB_STEP_STAGING, Job.JOB_STEP_RUNNING, Job.JOB_STEP_STORE_OUTPUT])
+        pairs = summary._filtered_activity_pairs(Job.JOB_STATE_RUNNING,
+                                                 [Job.JOB_STEP_STAGING, Job.JOB_STEP_RUNNING, Job.JOB_STEP_STORE_OUTPUT])
         self.assertEqual(len(pairs), 2)
         pair = pairs[0]
         self.assertEqual(pair[0].state, Job.JOB_STATE_RUNNING)  # first item is RUNNING
@@ -71,7 +71,7 @@ class JobSummaryTests(TestCase):
         self.assertEqual(pair[1], None)  # last item is None because there is no next item
 
     def test_calculate_elapsed_hours(self):
-        hours = JobSummary.calculate_elapsed_hours(
+        hours = JobSummary._calculate_elapsed_hours(
             activity=Mock(created=self.created_ts('12:00')),
             next_activity=Mock(created=self.created_ts('14:30')))
         self.assertEqual(hours, 2.5)
@@ -88,7 +88,7 @@ class JobSummaryTests(TestCase):
         mock_job = self.mock_job(activities)
         summary = JobSummary(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
-        self.assertEqual(summary.calculate_vm_hours(), 2.5)
+        self.assertEqual(summary._calculate_vm_hours(), 2.5)
 
     @patch('data.jobsummary.datetime')
     def test_calculate_vm_hours_finished(self, mock_datetime):
@@ -104,7 +104,7 @@ class JobSummaryTests(TestCase):
         mock_job = self.mock_job(activities)
         summary = JobSummary(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
-        self.assertEqual(summary.calculate_vm_hours(), 1.25)
+        self.assertEqual(summary._calculate_vm_hours(), 1.25)
 
     @patch('data.jobsummary.datetime')
     def test_calculate_vm_hours_error(self, mock_datetime):
@@ -119,4 +119,4 @@ class JobSummaryTests(TestCase):
         mock_job = self.mock_job(activities)
         summary = JobSummary(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
-        self.assertEqual(summary.calculate_vm_hours(), 1.25)
+        self.assertEqual(summary._calculate_vm_hours(), 1.25)

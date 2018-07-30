@@ -7,9 +7,10 @@ SECONDS_IN_AN_HOUR = 3600.0
 class JobSummary(object):
     def __init__(self, job):
         self.job = job
+        self.vm_hours = self._calculate_vm_hours()
 
     @staticmethod
-    def zip_job_activity_pairs(activities):
+    def _zip_job_activity_pairs(activities):
         """
         Return a list of (activity, next_activity) pairs based on this job's activities.
         Last next_activity value will be None.
@@ -18,7 +19,7 @@ class JobSummary(object):
         """
         return zip(activities, activities[1:] + [None])
 
-    def filtered_activity_pairs(self, state, steps_to_include):
+    def _filtered_activity_pairs(self, state, steps_to_include):
         """
         Return pairs(current_activity, next_activity) of this job's activities filtered by state and step data.
         :param state: str: the job state to include
@@ -27,14 +28,14 @@ class JobSummary(object):
         """
         filtered_activity_pairs = []
         activities = list(self.job.job_activities.all())
-        for activity_pair in self.zip_job_activity_pairs(activities):
+        for activity_pair in self._zip_job_activity_pairs(activities):
             activity, next_activity = activity_pair
             if activity.state == state and activity.step in steps_to_include:
                 filtered_activity_pairs.append(activity_pair)
         return filtered_activity_pairs
 
     @staticmethod
-    def calculate_elapsed_hours(activity, next_activity):
+    def _calculate_elapsed_hours(activity, next_activity):
         """
         Return how long an activity took in hours.
         :param activity: JobActivity: activity to determine length of (starting time)
@@ -49,14 +50,14 @@ class JobSummary(object):
         elapsed_seconds = time_delta.total_seconds()
         return elapsed_seconds / SECONDS_IN_AN_HOUR
 
-    def calculate_vm_hours(self):
+    def _calculate_vm_hours(self):
         """
         Calculate how long a job has run(or is currently running) on a VM.
         :return: float: number hours
         """
         hours = 0
         steps_to_include = [Job.JOB_STEP_STAGING, Job.JOB_STEP_RUNNING, Job.JOB_STEP_STORE_OUTPUT]
-        vm_step_activity_pairs = self.filtered_activity_pairs(Job.JOB_STATE_RUNNING, steps_to_include)
+        vm_step_activity_pairs = self._filtered_activity_pairs(Job.JOB_STATE_RUNNING, steps_to_include)
         for activity, next_activity in vm_step_activity_pairs:
-            hours += self.calculate_elapsed_hours(activity, next_activity)
+            hours += self._calculate_elapsed_hours(activity, next_activity)
         return hours

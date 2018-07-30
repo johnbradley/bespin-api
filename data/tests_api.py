@@ -868,6 +868,25 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['run_token'], 'test-token')
 
+    @patch('data.api.JobSummary')
+    def test_job_summary(self, mock_job_summary):
+        mock_job_summary.return_value.vm_hours = 1.2
+        normal_user = self.user_login.become_normal_user()
+        stage_group = JobFileStageGroup.objects.create(user=normal_user)
+        job = Job.objects.create(workflow_version=self.workflow_version,
+                                 job_order={},
+                                 user=normal_user,
+                                 stage_group=stage_group,
+                                 share_group=self.share_group,
+                                 vm_settings=self.vm_settings,
+                                 vm_flavor=self.vm_flavor,
+                                 )
+        url = reverse('job-list') + str(job.id) + '/summary/'
+        # Post to /cancel/ for job should work
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['vm_hours'], 1.2)
+
 
 class JobStageGroupTestCase(APITestCase):
     def setUp(self):

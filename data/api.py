@@ -157,7 +157,8 @@ class JobsViewSet(mixins.RetrieveModelMixin,
     def summary(self, request, pk=None):
         try:
             job = Job.objects.get(pk=pk)
-            serializer = JobSummarySerializer(job)
+            summary = JobSummary(job)
+            serializer = JobSummarySerializer(summary)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Job.DoesNotExist:
             raise NotFound("Job {} not found.".format(pk))

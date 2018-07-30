@@ -290,17 +290,10 @@ class JobTokensSerializer(serializers.ModelSerializer):
         fields = ('token', 'job')
 
 
-class JobSummarySerializer(serializers.ModelSerializer):
-    vm_hours = serializers.SerializerMethodField()
-
-    def get_vm_hours(self, job):
-        summary = JobSummary(job)
-        return summary.calculate_vm_hours()
-
+class JobSummarySerializer(serializers.Serializer):
+    vm_hours = serializers.FloatField()
     class Meta:
-        model = Job
-        resource_name = 'job-summary'
-        fields = ('id', 'name', 'state', 'step', 'vm_hours')
+        resource_name = 'job-summaries'
 
 
 class DDSUserSerializer(serializers.ModelSerializer):
