@@ -86,8 +86,8 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_RUNNING, Job.JOB_STATE_RUNNING, self.created_ts('12:30')),
         ]
         mock_job = self.mock_job(activities)
-        summary = JobSummary(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
+        summary = JobSummary(mock_job)
         self.assertEqual(summary.vm_hours, 2.5)
 
     @patch('data.jobsummary.datetime')
