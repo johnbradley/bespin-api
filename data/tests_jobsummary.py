@@ -77,7 +77,7 @@ class JobSummaryTests(TestCase):
         self.assertEqual(hours, 2.5)
 
     @patch('data.jobsummary.datetime')
-    def test_calculate_vm_hours_still_running(self, mock_datetime):
+    def test_vm_hours_still_running(self, mock_datetime):
         activities = [
             (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
             (Job.JOB_STATE_AUTHORIZED, '', self.created_ts('11:58')),
@@ -88,10 +88,10 @@ class JobSummaryTests(TestCase):
         mock_job = self.mock_job(activities)
         summary = JobSummary(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
-        self.assertEqual(summary._calculate_vm_hours(), 2.5)
+        self.assertEqual(summary.vm_hours, 2.5)
 
     @patch('data.jobsummary.datetime')
-    def test_calculate_vm_hours_finished(self, mock_datetime):
+    def test_vm_hours_finished(self, mock_datetime):
         activities = [
             (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
             (Job.JOB_STATE_AUTHORIZED, '', self.created_ts('11:58')),
@@ -104,10 +104,10 @@ class JobSummaryTests(TestCase):
         mock_job = self.mock_job(activities)
         summary = JobSummary(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
-        self.assertEqual(summary._calculate_vm_hours(), 1.25)
+        self.assertEqual(summary.vm_hours, 1.25)
 
     @patch('data.jobsummary.datetime')
-    def test_calculate_vm_hours_error(self, mock_datetime):
+    def test_vm_hours_error(self, mock_datetime):
         activities = [
             (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
             (Job.JOB_STATE_AUTHORIZED, '', self.created_ts('11:58')),
@@ -119,4 +119,4 @@ class JobSummaryTests(TestCase):
         mock_job = self.mock_job(activities)
         summary = JobSummary(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
-        self.assertEqual(summary._calculate_vm_hours(), 1.25)
+        self.assertEqual(summary.vm_hours, 1.25)
