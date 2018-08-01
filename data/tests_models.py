@@ -908,3 +908,19 @@ class JobQuestionnaireTypeTests(TestCase):
         JobQuestionnaireType.objects.create(tag='tag2')
         with self.assertRaises(IntegrityError):
             JobQuestionnaireType.objects.create(tag='tag1')
+
+
+class VMFlavorTests(TestCase):
+    def test_default_cpus(self):
+        VMFlavor.objects.create(name='m1.small')
+        flavors = VMFlavor.objects.all()
+        self.assertEqual(len(flavors), 1)
+        self.assertEqual(flavors[0].name, 'm1.small')
+        self.assertEqual(flavors[0].cpus, 1)
+
+    def test_cpus(self):
+        VMFlavor.objects.create(name='m1.xxlarge', cpus=32)
+        flavors = VMFlavor.objects.all()
+        self.assertEqual(len(flavors), 1)
+        self.assertEqual(flavors[0].name, 'm1.xxlarge')
+        self.assertEqual(flavors[0].cpus, 32)
