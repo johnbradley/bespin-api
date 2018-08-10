@@ -83,7 +83,7 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_AUTHORIZED, '', self.created_ts('11:58')),
             (Job.JOB_STATE_RUNNING, '', self.created_ts('11:59')),
             (Job.JOB_STATE_RUNNING, Job.JOB_STEP_STAGING, self.created_ts('12:00')),
-            (Job.JOB_STATE_RUNNING, Job.JOB_STATE_RUNNING, self.created_ts('12:30')),
+            (Job.JOB_STATE_RUNNING, Job.JOB_STEP_RUNNING, self.created_ts('12:30')),
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
@@ -97,7 +97,7 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_AUTHORIZED, '', self.created_ts('11:58')),
             (Job.JOB_STATE_RUNNING, '', self.created_ts('11:59')),
             (Job.JOB_STATE_RUNNING, Job.JOB_STEP_STAGING, self.created_ts('12:00')),
-            (Job.JOB_STATE_RUNNING, Job.JOB_STATE_RUNNING, self.created_ts('12:30')),
+            (Job.JOB_STATE_RUNNING, Job.JOB_STEP_RUNNING, self.created_ts('12:30')),
             (Job.JOB_STATE_RUNNING, Job.JOB_STEP_TERMINATE_VM, self.created_ts('13:15')),
             (Job.JOB_STATE_FINISHED, '', self.created_ts('13:16')),
         ]
@@ -113,10 +113,30 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_AUTHORIZED, '', self.created_ts('11:58')),
             (Job.JOB_STATE_RUNNING, '', self.created_ts('11:59')),
             (Job.JOB_STATE_RUNNING, Job.JOB_STEP_STAGING, self.created_ts('12:00')),
-            (Job.JOB_STATE_RUNNING, Job.JOB_STATE_RUNNING, self.created_ts('12:30')),
-            (Job.JOB_STATE_ERROR, Job.JOB_STATE_RUNNING, self.created_ts('13:15')),
+            (Job.JOB_STATE_RUNNING, Job.JOB_STEP_RUNNING, self.created_ts('12:30')),
+            (Job.JOB_STATE_ERROR, Job.JOB_STEP_RUNNING, self.created_ts('13:15')),
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
         summary = JobSummary(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
         self.assertEqual(summary.vm_hours, 1.25)
+
+    @patch('data.jobsummary.datetime')
+    def test_vm_hours_skip_idle_time_while_in_error(self, mock_datetime):
+        activities = [
+            (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
+            (Job.JOB_STATE_AUTHORIZED, '', self.created_ts('11:58')),
+            (Job.JOB_STATE_RUNNING, '', self.created_ts('11:59')),
+            (Job.JOB_STATE_RUNNING, Job.JOB_STEP_STAGING, self.created_ts('12:00')),       # 2 min staging
+            (Job.JOB_STATE_RUNNING, Job.JOB_STEP_RUNNING, self.created_ts('12:02')),       # 8 min running
+            (Job.JOB_STATE_ERROR, Job.JOB_STEP_RUNNING, self.created_ts('12:10')),         # 60 min idle
+            (Job.JOB_STATE_RESTARTING, Job.JOB_STEP_RUNNING, self.created_ts('13:10')),    # user clicks restart
+            (Job.JOB_STATE_RUNNING, Job.JOB_STEP_RUNNING, self.created_ts('13:20')),       # 20 min running
+            (Job.JOB_STATE_RUNNING, Job.JOB_STEP_STORE_OUTPUT, self.created_ts('13:40')),  # 5 min storing output
+            (Job.JOB_STATE_RUNNING, Job.JOB_STEP_TERMINATE_VM, self.created_ts('13:45')),
+            (Job.JOB_STATE_FINISHED, '', self.created_ts('12:50')),
+        ]
+        mock_job = self.mock_job(activities, num_cpus=32)
+        summary = JobSummary(mock_job)
+        mock_datetime.datetime.now.return_value = self.created_ts('14:30')
+        self.assertEqual(summary.vm_hours * 60, 35)  # 2(staging) + 8(running) + 20(running) + 5(store output)
