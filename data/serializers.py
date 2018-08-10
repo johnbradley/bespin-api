@@ -4,6 +4,7 @@ from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFile
     DDSEndpoint, DDSUserCredential, JobDDSOutputProject, URLJobInputFile, JobError, JobAnswerSet, \
     JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, WorkflowMethodsDocument, \
     EmailTemplate, EmailMessage, VMSettings, CloudSettings, JobActivity
+from data.jobsummary import JobSummary
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -287,6 +288,13 @@ class JobTokensSerializer(serializers.ModelSerializer):
         model = JobToken
         resource_name = 'job-tokens'
         fields = ('token', 'job')
+
+
+class JobSummarySerializer(serializers.Serializer):
+    vm_hours = serializers.FloatField()
+    cpu_hours = serializers.FloatField()
+    class Meta:
+        resource_name = 'job-summaries'
 
 
 class DDSUserSerializer(serializers.ModelSerializer):

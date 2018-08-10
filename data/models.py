@@ -97,6 +97,8 @@ class VMFlavor(models.Model):
     """
     name = models.CharField(max_length=255, unique=True,
                             help_text="The name of the flavor to use when launching instances (specifies CPU/RAM)")
+    cpus = models.IntegerField(default=1,
+                               help_text="How many CPUs are assigned to this flavor")
 
     def __unicode__(self):
         return 'Flavor: {}'.format(self.name)

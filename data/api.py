@@ -153,6 +153,16 @@ class JobsViewSet(mixins.RetrieveModelMixin,
         serializer = JobTokensSerializer(job.run_token)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @detail_route(methods=['post'], serializer_class=JobSummarySerializer)
+    def summary(self, request, pk=None):
+        try:
+            job = Job.objects.get(pk=pk)
+            summary = JobSummary(job)
+            serializer = JobSummarySerializer(summary)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Job.DoesNotExist:
+            raise NotFound("Job {} not found.".format(pk))
+
     @staticmethod
     def _serialize_job_response(pk, job_status=status.HTTP_200_OK):
         job = Job.objects.get(pk=pk)
