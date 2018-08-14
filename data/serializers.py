@@ -5,6 +5,7 @@ from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFile
     JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, WorkflowMethodsDocument, \
     EmailTemplate, EmailMessage, VMSettings, CloudSettings, JobActivity
 from data.jobsummary import JobSummary
+from rest_framework.authtoken.models import Token
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -85,6 +86,19 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         resource_name = 'users'
         fields = ('id', 'username', 'first_name', 'last_name', 'email',)
+
+
+class TokenSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField("get_key")
+
+    class Meta:
+        model = Token
+        resource_name = 'tokens'
+        fields = ('id', 'created')
+        read_only_fields = ('created', 'user',)
+
+    def get_key(self, obj):
+        return obj.key
 
 
 class VMProjectSerializer(serializers.ModelSerializer):

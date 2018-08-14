@@ -16,7 +16,7 @@ from django.db import transaction
 from jobfactory import create_job_factory
 from mailer import EmailMessageSender, JobMailer
 from importers import WorkflowQuestionnaireImporter, ImporterException
-
+from rest_framework.authtoken.models import Token
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -274,6 +274,27 @@ class UserViewSet(viewsets.GenericViewSet):
         current_user = self.request.user
         serializer = UserSerializer(self.request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TokenViewSet(mixins.CreateModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.DestroyModelMixin,
+                   mixins.ListModelMixin,
+                   viewsets.GenericViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = TokenSerializer
+
+    def get_queryset(self):
+        return Token.objects.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        if Token.objects.filter(user=request.user).exists():
+            message = "Only one token is allowed per user. " \
+                      "You must delete your existing token before you can create a new token."
+            raise BespinAPIException(status.HTTP_400_BAD_REQUEST, message)
+        token = Token.objects.create(user=request.user)
+        serializer = TokenSerializer(token)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class AdminJobErrorViewSet(viewsets.ModelViewSet):
