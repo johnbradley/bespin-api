@@ -4,13 +4,16 @@ from django.test import override_settings
 from mock.mock import MagicMock, patch, Mock
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework import ISO_8601
 import json
+import datetime
 
 from data.models import Workflow, WorkflowVersion, Job, JobFileStageGroup, JobError, \
     DDSUserCredential, DDSEndpoint, DDSJobInputFile, URLJobInputFile, JobDDSOutputProject, \
     JobQuestionnaire, JobAnswerSet, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, \
     WorkflowMethodsDocument, EmailMessage, EmailTemplate, CloudSettings, VMSettings, \
     JobQuestionnaireType
+from rest_framework.authtoken.models import Token
 from exceptions import WrappedDataServiceException
 from util import DDSResource
 
@@ -2170,3 +2173,72 @@ class AdminImportWorkflowQuestionnaireTestCase(APITestCase):
         url = reverse('admin_importworkflowquestionnaire-list')
         response = self.client.post(url, self.data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class TokenTestCase(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+
+    def testFailsUnauthenticated(self):
+        self.user_login.become_unauthorized()
+        url = reverse('token-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def testListOnlyShowsCurrentUsersTokens(self):
+        other_user = self.user_login.become_other_normal_user()
+        Token.objects.create(user=other_user)
+        normal_user = self.user_login.become_normal_user()
+        current_user_token = Token.objects.create(user=normal_user)
+        self.assertEqual(Token.objects.count(), 2)
+
+        url = reverse('token-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], current_user_token.key)
+        created_str = current_user_token.created.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        self.assertEqual(response.data[0]['created'], created_str)
+
+    def testCreate(self):
+        normal_user = self.user_login.become_normal_user()
+        url = reverse('token-list')
+        self.assertEqual(Token.objects.filter(user=normal_user).count(), 0)
+
+        # when a user has no tokens they can create a token
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Token.objects.filter(user=normal_user).count(), 1)
+        token = Token.objects.get(user=normal_user)
+        self.assertEqual(response.data['id'], token.key)
+        created_str = token.created.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        self.assertEqual(response.data['created'], created_str)
+
+        # when a user has a tokens they cannot create a token
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        token.delete()
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def testGet(self):
+        normal_user = self.user_login.become_normal_user()
+        token = Token.objects.create(user=normal_user)
+        url = reverse('token-list') + token.key + '/'
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], token.key)
+
+    def testPutForbidden(self):
+        normal_user = self.user_login.become_normal_user()
+        url = reverse('token-list')
+        response = self.client.put(url, format='json', data={})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def testDelete(self):
+        normal_user = self.user_login.become_normal_user()
+        token = Token.objects.create(user=normal_user)
+        url = reverse('token-list') + token.key + '/'
+        response = self.client.delete(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
