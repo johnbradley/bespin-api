@@ -89,16 +89,13 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class TokenSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField("get_key")
+    id = serializers.CharField(source='key', read_only=True)
 
     class Meta:
         model = Token
         resource_name = 'tokens'
         fields = ('id', 'created')
         read_only_fields = ('created', 'user',)
-
-    def get_key(self, obj):
-        return obj.key
 
 
 class VMProjectSerializer(serializers.ModelSerializer):
