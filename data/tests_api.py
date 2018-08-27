@@ -897,23 +897,23 @@ class JobsTestCase(APITestCase):
         url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
         job1 = Job.objects.create(name='job1',
-                                 workflow_version=self.workflow_version,
-                                 job_order={},
-                                 user=normal_user,
-                                 share_group=self.share_group,
-                                 vm_settings=self.vm_settings,
-                                 vm_flavor=self.vm_flavor,
-                                 state=Job.JOB_STATE_FINISHED
-                                 )
+                                  workflow_version=self.workflow_version,
+                                  job_order={},
+                                  user=normal_user,
+                                  share_group=self.share_group,
+                                  vm_settings=self.vm_settings,
+                                  vm_flavor=self.vm_flavor,
+                                  state=Job.JOB_STATE_FINISHED
+                                  )
         job2 = Job.objects.create(name='job2',
-                                 workflow_version=self.workflow_version,
-                                 job_order={},
-                                 user=normal_user,
-                                 share_group=self.share_group,
-                                 vm_settings=self.vm_settings,
-                                 vm_flavor=self.vm_flavor,
-                                 state=Job.JOB_STATE_RUNNING
-                                 )
+                                  workflow_version=self.workflow_version,
+                                  job_order={},
+                                  user=normal_user,
+                                  share_group=self.share_group,
+                                  vm_settings=self.vm_settings,
+                                  vm_flavor=self.vm_flavor,
+                                  state=Job.JOB_STATE_RUNNING
+                                  )
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(2, len(response.data))
