@@ -71,6 +71,22 @@ class JobSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
     job_errors = JobErrorSerializer(required=False, read_only=True, many=True)
     run_token = serializers.CharField(required=False, read_only=True, source='run_token.token')
+    summary = serializers.SerializerMethodField()
+
+    def get_summary(self, job):
+        """
+        Return summary suitable for displaying in a list to compare jobs.
+        Since the summary information (vm hours/cpu hours) for running jobs is not comparable against complete jobs
+        the summary will be None for jobs in this state.
+        :param job: Job
+        :return: dict of job summary data or None if in running state
+        """
+        if job.state == Job.JOB_STATE_RUNNING:
+            return None
+        else:
+            summary = JobSummary(job)
+            serializer = JobSummarySerializer(summary)
+            return serializer.data
 
     class Meta:
         model = Job
@@ -78,7 +94,7 @@ class JobSerializer(serializers.ModelSerializer):
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_settings', 'vm_instance_name', 'vm_volume_name', 'job_order',
                   'output_project', 'job_errors', 'stage_group', 'volume_size', 'fund_code', 'share_group',
-                  'run_token',)
+                  'run_token', 'summary')
 
 
 class UserSerializer(serializers.ModelSerializer):

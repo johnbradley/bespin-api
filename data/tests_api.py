@@ -890,6 +890,38 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['vm_hours'], 1.2)
 
+    @patch('data.serializers.JobSummary')
+    def test_summary_included_in_jobs_list(self, mock_job_summary):
+        mock_job_summary.return_value.vm_hours = 1.2
+        mock_job_summary.return_value.cpu_hours = 1.2
+        url = reverse('job-list')
+        normal_user = self.user_login.become_normal_user()
+        job1 = Job.objects.create(name='job1',
+                                 workflow_version=self.workflow_version,
+                                 job_order={},
+                                 user=normal_user,
+                                 share_group=self.share_group,
+                                 vm_settings=self.vm_settings,
+                                 vm_flavor=self.vm_flavor,
+                                 state=Job.JOB_STATE_FINISHED
+                                 )
+        job2 = Job.objects.create(name='job2',
+                                 workflow_version=self.workflow_version,
+                                 job_order={},
+                                 user=normal_user,
+                                 share_group=self.share_group,
+                                 vm_settings=self.vm_settings,
+                                 vm_flavor=self.vm_flavor,
+                                 state=Job.JOB_STATE_RUNNING
+                                 )
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(2, len(response.data))
+        self.assertEqual(response.data[0]['id'], job1.id)
+        self.assertEqual(response.data[0]['summary'], {'cpu_hours': 1.2, 'vm_hours': 1.2})
+        self.assertEqual(response.data[1]['id'], job2.id)
+        self.assertEqual(response.data[1]['summary'], None)
+
 
 class JobStageGroupTestCase(APITestCase):
     def setUp(self):
