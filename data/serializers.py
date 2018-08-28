@@ -4,7 +4,7 @@ from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFile
     DDSEndpoint, DDSUserCredential, JobDDSOutputProject, URLJobInputFile, JobError, JobAnswerSet, \
     JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, WorkflowMethodsDocument, \
     EmailTemplate, EmailMessage, VMSettings, CloudSettings, JobActivity
-from data.jobsummary import JobSummary
+from data.jobusage import JobUsage
 from rest_framework.authtoken.models import Token
 
 
@@ -71,21 +71,21 @@ class JobSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
     job_errors = JobErrorSerializer(required=False, read_only=True, many=True)
     run_token = serializers.CharField(required=False, read_only=True, source='run_token.token')
-    summary = serializers.SerializerMethodField()
+    usage = serializers.SerializerMethodField()
 
-    def get_summary(self, job):
+    def get_usage(self, job):
         """
-        Return summary suitable for displaying in a list to compare jobs.
-        Since the summary information (vm hours/cpu hours) for running jobs is not comparable against complete jobs
-        the summary will be None for jobs in this state.
+        Return job usage suitable for displaying in a list to compare jobs.
+        Since the usage information (vm hours/cpu hours) for running jobs is not comparable against complete jobs
+        the usage will be None for jobs in this state.
         :param job: Job
-        :return: dict of job summary data or None if in running state
+        :return: dict of job usage data or None if in running state
         """
         if job.state == Job.JOB_STATE_RUNNING:
             return None
         else:
-            summary = JobSummary(job)
-            serializer = JobSummarySerializer(summary)
+            usage = JobUsage(job)
+            serializer = JobUsageSerializer(usage)
             return serializer.data
 
     class Meta:
@@ -94,7 +94,7 @@ class JobSerializer(serializers.ModelSerializer):
         fields = ('id', 'workflow_version', 'user', 'name', 'created', 'state', 'step', 'last_updated',
                   'vm_settings', 'vm_instance_name', 'vm_volume_name', 'job_order',
                   'output_project', 'job_errors', 'stage_group', 'volume_size', 'fund_code', 'share_group',
-                  'run_token', 'summary')
+                  'run_token', 'usage')
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -317,11 +317,11 @@ class JobTokensSerializer(serializers.ModelSerializer):
         fields = ('token', 'job')
 
 
-class JobSummarySerializer(serializers.Serializer):
+class JobUsageSerializer(serializers.Serializer):
     vm_hours = serializers.FloatField()
     cpu_hours = serializers.FloatField()
     class Meta:
-        resource_name = 'job-summaries'
+        resource_name = 'job-usage'
 
 
 class DDSUserSerializer(serializers.ModelSerializer):

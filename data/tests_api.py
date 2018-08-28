@@ -871,9 +871,9 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['run_token'], 'test-token')
 
-    @patch('data.api.JobSummary')
-    def test_job_summary(self, mock_job_summary):
-        mock_job_summary.return_value.vm_hours = 1.2
+    @patch('data.api.JobUsage')
+    def test_job_usage(self, mock_job_usage):
+        mock_job_usage.return_value.vm_hours = 1.2
         normal_user = self.user_login.become_normal_user()
         stage_group = JobFileStageGroup.objects.create(user=normal_user)
         job = Job.objects.create(workflow_version=self.workflow_version,
@@ -884,16 +884,16 @@ class JobsTestCase(APITestCase):
                                  vm_settings=self.vm_settings,
                                  vm_flavor=self.vm_flavor,
                                  )
-        url = reverse('job-list') + str(job.id) + '/summary/'
+        url = reverse('job-list') + str(job.id) + '/live_usage/'
         # Post to /cancel/ for job should work
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['vm_hours'], 1.2)
 
-    @patch('data.serializers.JobSummary')
-    def test_summary_included_in_jobs_list(self, mock_job_summary):
-        mock_job_summary.return_value.vm_hours = 1.2
-        mock_job_summary.return_value.cpu_hours = 1.2
+    @patch('data.serializers.JobUsage')
+    def test_usage_included_in_jobs_list(self, mock_job_usage):
+        mock_job_usage.return_value.vm_hours = 1.2
+        mock_job_usage.return_value.cpu_hours = 1.2
         url = reverse('job-list')
         normal_user = self.user_login.become_normal_user()
         job1 = Job.objects.create(name='job1',
@@ -918,9 +918,9 @@ class JobsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(2, len(response.data))
         self.assertEqual(response.data[0]['id'], job1.id)
-        self.assertEqual(response.data[0]['summary'], {'cpu_hours': 1.2, 'vm_hours': 1.2})
+        self.assertEqual(response.data[0]['usage'], {'cpu_hours': 1.2, 'vm_hours': 1.2})
         self.assertEqual(response.data[1]['id'], job2.id)
-        self.assertEqual(response.data[1]['summary'], None)
+        self.assertEqual(response.data[1]['usage'], None)
 
 
 class JobStageGroupTestCase(APITestCase):
