@@ -4,7 +4,7 @@ import datetime
 SECONDS_IN_AN_HOUR = 3600.0
 
 
-class JobSummary(object):
+class JobUsage(object):
     def __init__(self, job):
         self.job = job
         self.vm_hours = self._calculate_vm_hours()

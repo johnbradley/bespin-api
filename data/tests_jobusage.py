@@ -2,10 +2,10 @@ from django.test import TestCase
 from models import Job, JobActivity
 import datetime
 from mock import Mock, patch
-from jobsummary import JobSummary
+from jobusage import JobUsage
 
 
-class JobSummaryTests(TestCase):
+class JobUsageTests(TestCase):
     @staticmethod
     def mock_job(activity_values, num_cpus):
         activities = []
@@ -28,8 +28,7 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_RUNNING, Job.JOB_STEP_STAGING, self.created_ts('12:02')),
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
-        summary = JobSummary(mock_job)
-        pairs = JobSummary._zip_job_activity_pairs(mock_job.job_activities.all())
+        pairs = JobUsage._zip_job_activity_pairs(mock_job.job_activities.all())
         self.assertEqual(len(pairs), 4)
         pair = pairs[0]
         self.assertEqual(pair[0].state, Job.JOB_STATE_NEW)  # first item is NEW
@@ -56,9 +55,9 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_RUNNING, Job.JOB_STATE_RUNNING, self.created_ts('12:05')),
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
-        summary = JobSummary(mock_job)
-        pairs = summary._filtered_activity_pairs(Job.JOB_STATE_RUNNING,
-                                                 [Job.JOB_STEP_STAGING, Job.JOB_STEP_RUNNING, Job.JOB_STEP_STORE_OUTPUT])
+        usage = JobUsage(mock_job)
+        pairs = usage._filtered_activity_pairs(Job.JOB_STATE_RUNNING,
+                                               [Job.JOB_STEP_STAGING, Job.JOB_STEP_RUNNING, Job.JOB_STEP_STORE_OUTPUT])
         self.assertEqual(len(pairs), 2)
         pair = pairs[0]
         self.assertEqual(pair[0].state, Job.JOB_STATE_RUNNING)  # first item is RUNNING
@@ -71,12 +70,12 @@ class JobSummaryTests(TestCase):
         self.assertEqual(pair[1], None)  # last item is None because there is no next item
 
     def test_calculate_elapsed_hours(self):
-        hours = JobSummary._calculate_elapsed_hours(
+        hours = JobUsage._calculate_elapsed_hours(
             activity=Mock(created=self.created_ts('12:00')),
             next_activity=Mock(created=self.created_ts('14:30')))
         self.assertEqual(hours, 2.5)
 
-    @patch('data.jobsummary.datetime')
+    @patch('data.jobusage.datetime')
     def test_vm_hours_still_running(self, mock_datetime):
         activities = [
             (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
@@ -87,10 +86,10 @@ class JobSummaryTests(TestCase):
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
-        summary = JobSummary(mock_job)
-        self.assertEqual(summary.vm_hours, 2.5)
+        usage = JobUsage(mock_job)
+        self.assertEqual(usage.vm_hours, 2.5)
 
-    @patch('data.jobsummary.datetime')
+    @patch('data.jobusage.datetime')
     def test_vm_hours_finished(self, mock_datetime):
         activities = [
             (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
@@ -102,11 +101,11 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_FINISHED, '', self.created_ts('13:16')),
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
-        summary = JobSummary(mock_job)
+        usage = JobUsage(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
-        self.assertEqual(summary.vm_hours, 1.25)
+        self.assertEqual(usage.vm_hours, 1.25)
 
-    @patch('data.jobsummary.datetime')
+    @patch('data.jobusage.datetime')
     def test_vm_hours_error(self, mock_datetime):
         activities = [
             (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
@@ -117,11 +116,11 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_ERROR, Job.JOB_STEP_RUNNING, self.created_ts('13:15')),
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
-        summary = JobSummary(mock_job)
+        usage = JobUsage(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
-        self.assertEqual(summary.vm_hours, 1.25)
+        self.assertEqual(usage.vm_hours, 1.25)
 
-    @patch('data.jobsummary.datetime')
+    @patch('data.jobusage.datetime')
     def test_vm_hours_skip_idle_time_while_in_error(self, mock_datetime):
         activities = [
             (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
@@ -137,6 +136,6 @@ class JobSummaryTests(TestCase):
             (Job.JOB_STATE_FINISHED, '', self.created_ts('12:50')),
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
-        summary = JobSummary(mock_job)
+        usage = JobUsage(mock_job)
         mock_datetime.datetime.now.return_value = self.created_ts('14:30')
-        self.assertEqual(summary.vm_hours * 60, 35)  # 2(staging) + 8(running) + 20(running) + 5(store output)
+        self.assertEqual(usage.vm_hours * 60, 35)  # 2(staging) + 8(running) + 20(running) + 5(store output)
