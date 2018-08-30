@@ -1,8 +1,8 @@
 - model: data.emailtemplate
   pk: 1
   fields: {name: job-running-user, body_template: "Hello,\r\n\r\nYour Bespin job,
-      '{{ name }}', has started executing. You will receive another email if the job
-      fails or in the event of an error.\r\n\r\nTo view status of this job, please
+      '{{ name }}', has started executing. You will receive another email when
+      the job completes or in the event of an error.\r\n\r\nTo view status of this job, please
       visit https://bespin-dev.gcb.duke.edu/jobs/{{ id }}\r\n\r\nRegards,\r\n\r\nComputational
       Solutions\r\nDuke Center for Genomic and Computational Biology\r\ngcb-help@duke.edu\r\nhttp://www.genome.duke.edu/cores-and-services/computational-solutions",
     subject_template: 'Bespin Job {{ id }} started'}
