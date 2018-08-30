@@ -153,7 +153,7 @@ class JobsViewSet(mixins.RetrieveModelMixin,
         serializer = JobTokensSerializer(job.run_token)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @detail_route(methods=['post'], serializer_class=JobUsageSerializer)
+    @detail_route(methods=['post'], serializer_class=JobUsageSerializer, url_path='live-usage')
     def live_usage(self, request, pk=None):
         try:
             job = Job.objects.get(pk=pk)

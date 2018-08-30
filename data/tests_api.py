@@ -884,7 +884,7 @@ class JobsTestCase(APITestCase):
                                  vm_settings=self.vm_settings,
                                  vm_flavor=self.vm_flavor,
                                  )
-        url = reverse('job-list') + str(job.id) + '/live_usage/'
+        url = reverse('job-list') + str(job.id) + '/live-usage/'
         # Post to /cancel/ for job should work
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
