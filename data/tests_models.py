@@ -392,6 +392,14 @@ class JobTests(TestCase):
             (Job.JOB_STATE_NEW, Job.JOB_STEP_CREATE_VM),
         ])
 
+    def test_record_output_project_step(self):
+        job = Job.objects.create(workflow_version=self.workflow_version, user=self.user, job_order=self.sample_json,
+                                 share_group=self.share_group, vm_settings=self.vm_settings, vm_flavor=self.vm_flavor)
+        job.state = Job.JOB_STATE_RUNNING
+        job.step = Job.JOB_STEP_RECORD_OUTPUT_PROJECT
+        job.save()
+        self.assertEqual(Job.objects.get(pk=job.pk).step, Job.JOB_STEP_RECORD_OUTPUT_PROJECT)
+
 
 class JobFileStageGroupTests(TestCase):
 
