@@ -7,6 +7,8 @@ from lando_messaging.clients import LandoClient
 from rest_framework.exceptions import ValidationError
 from util import has_download_permissions, give_download_permissions
 
+CANNOT_RESTART_JOB_STEP_MSG = "Restart not allowed for jobs at step {}. Please contact gcb-bespin@duke.edu."
+
 
 class LandoConfig(object):
     """
@@ -67,6 +69,8 @@ class LandoJob(object):
         The job must be at the ERROR or CANCEL state or this will raise ValidationError.
         """
         job = self.get_job()
+        if job.state == Job.JOB_STATE_ERROR and job.step == Job.JOB_STEP_RECORD_OUTPUT_PROJECT:
+            raise ValidationError(CANNOT_RESTART_JOB_STEP_MSG.format(job.get_step_display()))
         if job.state == Job.JOB_STATE_ERROR or job.state == Job.JOB_STATE_CANCEL:
             job.state = Job.JOB_STATE_RESTARTING
             job.save()
