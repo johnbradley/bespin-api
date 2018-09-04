@@ -6,8 +6,9 @@ from models import Job, LandoConnection
 from lando_messaging.clients import LandoClient
 from rest_framework.exceptions import ValidationError
 from util import has_download_permissions, give_download_permissions
+from django.conf import settings
 
-CANNOT_RESTART_JOB_STEP_MSG = "Restart not allowed for jobs at step {}. Please contact gcb-bespin@duke.edu."
+CANNOT_RESTART_JOB_STEP_MSG = "Restart not allowed for jobs at step {}. Please contact {}."
 
 
 class LandoConfig(object):
@@ -70,7 +71,8 @@ class LandoJob(object):
         """
         job = self.get_job()
         if job.state == Job.JOB_STATE_ERROR and job.step == Job.JOB_STEP_RECORD_OUTPUT_PROJECT:
-            raise ValidationError(CANNOT_RESTART_JOB_STEP_MSG.format(job.get_step_display()))
+            msg = CANNOT_RESTART_JOB_STEP_MSG.format(job.get_step_display(), settings.DEFAULT_FROM_EMAIL)
+            raise ValidationError(msg)
         if job.state == Job.JOB_STATE_ERROR or job.state == Job.JOB_STATE_CANCEL:
             job.state = Job.JOB_STATE_RESTARTING
             job.save()
