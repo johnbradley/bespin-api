@@ -182,12 +182,14 @@ class Job(models.Model):
     JOB_STEP_STAGING = 'S'
     JOB_STEP_RUNNING = 'R'
     JOB_STEP_STORE_OUTPUT = 'O'
+    JOB_STEP_RECORD_OUTPUT_PROJECT = 'P'
     JOB_STEP_TERMINATE_VM = 'T'
     JOB_STEPS = (
         (JOB_STEP_CREATE_VM, 'Create VM'),
         (JOB_STEP_STAGING, 'Staging In'),
         (JOB_STEP_RUNNING, 'Running Workflow'),
         (JOB_STEP_STORE_OUTPUT, 'Store Job Output'),
+        (JOB_STEP_RECORD_OUTPUT_PROJECT, 'Record Output Project'),
         (JOB_STEP_TERMINATE_VM, 'Terminate VM'),
     )
 

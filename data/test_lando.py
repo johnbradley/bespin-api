@@ -85,6 +85,7 @@ class LandoJobTests(TestCase):
     @patch('data.lando.give_download_permissions')
     def test_restart_job(self, mock_give_download_permissions, mock_has_download_permissions, mock_make_client):
         self.job.state = Job.JOB_STATE_ERROR
+        self.job.step = Job.JOB_STEP_RUNNING
         self.job.save()
 
         mock_has_download_permissions.return_value = False
@@ -95,3 +96,12 @@ class LandoJobTests(TestCase):
             call(self.user, '1234', '5432'),
             call(self.user, '1235', '5432')
         ], any_order=True)
+
+    def test_restart_job_in_record_output_step(self):
+        self.job.state = Job.JOB_STATE_ERROR
+        self.job.step = Job.JOB_STEP_RECORD_OUTPUT_PROJECT
+        self.job.save()
+
+        job = LandoJob(self.job.id, self.user)
+        with self.assertRaises(ValidationError) as raised_error:
+            job.restart()
