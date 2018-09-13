@@ -19,5 +19,5 @@ pika==0.10.0
 psycopg2==2.7.3.2
 PyYAML==3.12
 requests==2.11.1
-schema-salad==2.7.2018061113340
+schema-salad==2.7.20180611133406
 six==1.10.0
