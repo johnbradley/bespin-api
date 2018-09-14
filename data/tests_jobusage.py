@@ -3,6 +3,7 @@ from models import Job, JobActivity
 import datetime
 from mock import Mock, patch
 from jobusage import JobUsage
+from django.utils import timezone
 
 
 class JobUsageTests(TestCase):
@@ -18,7 +19,7 @@ class JobUsageTests(TestCase):
     @staticmethod
     def created_ts(hr_min_str):
         hr, min = hr_min_str.split(':')
-        return datetime.datetime(2018, 1, 1, int(hr), int(min))
+        return datetime.datetime(2018, 1, 1, int(hr), int(min), tzinfo=timezone.utc)
 
     def test_zip_job_activity_pairs(self):
         activities = [
@@ -75,8 +76,8 @@ class JobUsageTests(TestCase):
             next_activity=Mock(created=self.created_ts('14:30')))
         self.assertEqual(hours, 2.5)
 
-    @patch('data.jobusage.datetime')
-    def test_vm_hours_still_running(self, mock_datetime):
+    @patch('data.jobusage.timezone')
+    def test_vm_hours_still_running(self, mock_timezone):
         activities = [
             (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
             (Job.JOB_STATE_AUTHORIZED, '', self.created_ts('11:58')),
@@ -85,12 +86,12 @@ class JobUsageTests(TestCase):
             (Job.JOB_STATE_RUNNING, Job.JOB_STEP_RUNNING, self.created_ts('12:30')),
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
-        mock_datetime.datetime.now.return_value = self.created_ts('14:30')
+        mock_timezone.now.return_value = self.created_ts('14:30')
         usage = JobUsage(mock_job)
         self.assertEqual(usage.vm_hours, 2.5)
 
-    @patch('data.jobusage.datetime')
-    def test_vm_hours_finished(self, mock_datetime):
+    @patch('data.jobusage.timezone')
+    def test_vm_hours_finished(self, mock_timezone):
         activities = [
             (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
             (Job.JOB_STATE_AUTHORIZED, '', self.created_ts('11:58')),
@@ -102,11 +103,11 @@ class JobUsageTests(TestCase):
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
         usage = JobUsage(mock_job)
-        mock_datetime.datetime.now.return_value = self.created_ts('14:30')
+        mock_timezone.now.return_value = self.created_ts('14:30')
         self.assertEqual(usage.vm_hours, 1.25)
 
-    @patch('data.jobusage.datetime')
-    def test_vm_hours_error(self, mock_datetime):
+    @patch('data.jobusage.timezone')
+    def test_vm_hours_error(self, mock_timezone):
         activities = [
             (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
             (Job.JOB_STATE_AUTHORIZED, '', self.created_ts('11:58')),
@@ -117,11 +118,11 @@ class JobUsageTests(TestCase):
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
         usage = JobUsage(mock_job)
-        mock_datetime.datetime.now.return_value = self.created_ts('14:30')
+        mock_timezone.now.return_value = self.created_ts('14:30')
         self.assertEqual(usage.vm_hours, 1.25)
 
-    @patch('data.jobusage.datetime')
-    def test_vm_hours_skip_idle_time_while_in_error(self, mock_datetime):
+    @patch('data.jobusage.timezone')
+    def test_vm_hours_skip_idle_time_while_in_error(self, mock_timezone):
         activities = [
             (Job.JOB_STATE_NEW, '', self.created_ts('11:50')),
             (Job.JOB_STATE_AUTHORIZED, '', self.created_ts('11:58')),
@@ -137,5 +138,5 @@ class JobUsageTests(TestCase):
         ]
         mock_job = self.mock_job(activities, num_cpus=32)
         usage = JobUsage(mock_job)
-        mock_datetime.datetime.now.return_value = self.created_ts('14:30')
+        mock_timezone.return_value = self.created_ts('14:30')
         self.assertEqual(usage.vm_hours * 60, 35)  # 2(staging) + 8(running) + 20(running) + 5(store output)

@@ -1,5 +1,6 @@
 from models import Job
 import datetime
+from django.utils import timezone
 
 SECONDS_IN_AN_HOUR = 3600.0
 
@@ -46,7 +47,7 @@ class JobUsage(object):
         if next_activity:
             end_datetime = next_activity.created
         else:
-            end_datetime = datetime.datetime.now()
+            end_datetime = timezone.now()
         time_delta = end_datetime - activity.created
         elapsed_seconds = time_delta.total_seconds()
         return elapsed_seconds / SECONDS_IN_AN_HOUR
