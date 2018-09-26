@@ -4,7 +4,6 @@ from cwltool.context import LoadingContext
 from cwltool.workflow import default_make_tool
 from cwltool.resolver import tool_resolver
 from cwltool.load_tool import load_tool
-import cwltool.factory
 import sys
 import requests
 import json
