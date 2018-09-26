@@ -1,7 +1,9 @@
 from data.models import Workflow, WorkflowVersion, JobQuestionnaire, VMFlavor, VMProject, \
     VMSettings, ShareGroup, WorkflowMethodsDocument, JobQuestionnaireType
+from cwltool import workflow
 from cwltool.load_tool import load_tool
-from cwltool.workflow import defaultMakeTool
+from cwltool.context import LoadingContext, getdefault
+from cwltool.resolver import tool_resolver
 import sys
 import requests
 import json
@@ -58,7 +60,13 @@ class CWLDocument(object):
         :return: The CWL document, parsed into a dict
         """
         if self._parsed is None:
-            self._parsed = load_tool(self.url + '#main', defaultMakeTool)
+            context = LoadingContext()
+            context.construct_tool_object = getdefault(
+                context.construct_tool_object, workflow.default_make_tool)
+            context.disable_js_validation = True
+            context.resolver = getdefault(context.resolver, tool_resolver)
+
+            self._parsed = load_tool(self.url + '#main', context)
         return self._parsed
 
     @property
