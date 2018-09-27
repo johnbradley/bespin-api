@@ -19,7 +19,7 @@ class JobUsage(object):
         :param activities: [JobActivity]: activities to be zipped
         :return: [(JobActivity, JobActivity)]: pairs of job activities
         """
-        return zip(activities, activities[1:] + [None])
+        return list(zip(activities, activities[1:] + [None]))
 
     def _filtered_activity_pairs(self, state, steps_to_include):
         """
