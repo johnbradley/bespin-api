@@ -1,5 +1,5 @@
-from models import DDSUserCredential, DDSEndpoint
-from exceptions import WrappedDataServiceException
+from data.models import DDSUserCredential, DDSEndpoint
+from data.exceptions import WrappedDataServiceException
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from ddsc.core.remotestore import RemoteStore
 from ddsc.core.ddsapi import DataServiceError

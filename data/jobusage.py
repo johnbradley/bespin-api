@@ -1,4 +1,4 @@
-from models import Job
+from data.models import Job
 import datetime
 from django.utils import timezone
 

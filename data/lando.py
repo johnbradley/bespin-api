@@ -2,10 +2,10 @@
 Handles communication with lando server that spawns VMs and runs jobs.
 Also updates job state before sending messages to lando.
 """
-from models import Job, LandoConnection
+from data.models import Job, LandoConnection
 from lando_messaging.clients import LandoClient
 from rest_framework.exceptions import ValidationError
-from util import has_download_permissions, give_download_permissions
+from data.util import has_download_permissions, give_download_permissions
 from django.conf import settings
 
 CANNOT_RESTART_JOB_STEP_MSG = "Restart not allowed for jobs at step {}. Please contact {}."
@@ -86,7 +86,7 @@ class LandoJob(object):
 
     def _give_download_permissions(self, job):
         """
-        Give download permissions to the bespin user for the projects that contain input files. 
+        Give download permissions to the bespin user for the projects that contain input files.
         :param job: Job: job containing files in one or more projects
         """
         unique_project_user_cred = set()
