@@ -1,13 +1,13 @@
 from django.test import TestCase
-from models import DDSEndpoint, DDSUserCredential
-from models import Workflow, WorkflowVersion
-from models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, JobDDSOutputProject, JobError
-from models import LandoConnection
-from models import JobQuestionnaire, JobQuestionnaireType, JobAnswerSet, VMFlavor, VMProject, VMSettings, CloudSettings
-from models import JobToken
-from models import DDSUser, ShareGroup, WorkflowMethodsDocument
-from models import EmailTemplate, EmailMessage
-from models import JobActivity
+from data.models import DDSEndpoint, DDSUserCredential
+from data.models import Workflow, WorkflowVersion
+from data.models import Job, JobFileStageGroup, DDSJobInputFile, URLJobInputFile, JobDDSOutputProject, JobError
+from data.models import LandoConnection
+from data.models import JobQuestionnaire, JobQuestionnaireType, JobAnswerSet, VMFlavor, VMProject, VMSettings, CloudSettings
+from data.models import JobToken
+from data.models import DDSUser, ShareGroup, WorkflowMethodsDocument
+from data.models import EmailTemplate, EmailMessage
+from data.models import JobActivity
 
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError

@@ -1,8 +1,8 @@
 from django.test.utils import override_settings
 from django.test import TestCase
-from mock import patch
+from unittest.mock import patch
 
-from backend import BespinOAuth2Backend
+from bespin.backend import BespinOAuth2Backend
 
 class BespinOAuth2BackendTestCase(TestCase):
 

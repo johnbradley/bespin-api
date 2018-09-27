@@ -4,7 +4,7 @@ from data.importers import CWLDocument, MethodsDocumentContents, SCHEMA_ORG_CITA
     HTTPS_DOI_URL, WorkflowQuestionnaireImporter, ImporterException
 from data.models import ShareGroup
 from data.tests_api import add_vm_settings
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 
 
 class CWLNodeWithSteps(object):

@@ -1,5 +1,5 @@
 from django.test import TestCase
-from serializers import AdminImportWorkflowQuestionnaireSerializer
+from data.serializers import AdminImportWorkflowQuestionnaireSerializer
 
 class AdminImportWorkflowQuestionnaireSerializerTest(TestCase):
 

@@ -1,8 +1,8 @@
 from django.test import TestCase
-from models import Job, JobActivity
+from data.models import Job, JobActivity
 import datetime
-from mock import Mock, patch
-from jobusage import JobUsage
+from unittest.mock import Mock, patch
+from data.jobusage import JobUsage
 from django.utils import timezone
 
 

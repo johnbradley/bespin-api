@@ -1,8 +1,8 @@
 from django.test import TestCase
-from mailer import EmailMessageFactory, EmailMessageSender, JobMailer
-from models import EmailMessage, EmailTemplate, Job
-from mock import MagicMock, patch, call
-from exceptions import EmailServiceException, EmailAlreadySentException
+from data.mailer import EmailMessageFactory, EmailMessageSender, JobMailer
+from data.models import EmailMessage, EmailTemplate, Job
+from unittest.mock import MagicMock, patch, call
+from data.exceptions import EmailServiceException, EmailAlreadySentException
 from django.test.utils import override_settings
 
 class EmailMessageFactoryTestCase(TestCase):

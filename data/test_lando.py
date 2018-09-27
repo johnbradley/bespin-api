@@ -1,10 +1,10 @@
 from django.test import TestCase
-from lando import LandoJob
-from models import LandoConnection, Workflow, WorkflowVersion, Job, JobFileStageGroup, \
+from data.lando import LandoJob
+from data.models import LandoConnection, Workflow, WorkflowVersion, Job, JobFileStageGroup, \
     DDSJobInputFile, DDSEndpoint, DDSUserCredential, ShareGroup, VMFlavor, VMProject, VMSettings, CloudSettings
 from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
-from mock.mock import patch, call
+from unittest.mock import patch, call
 
 
 class LandoJobTests(TestCase):
