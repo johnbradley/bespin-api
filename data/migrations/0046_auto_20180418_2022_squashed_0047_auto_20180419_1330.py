@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     atomic = False
 
-    replaces = [(b'data', '0046_auto_20180418_2022'), (b'data', '0047_auto_20180419_1330')]
+    replaces = [('data', '0046_auto_20180418_2022'), ('data', '0047_auto_20180419_1330')]
 
     dependencies = [
         ('data', '0045_auto_20180116_1623'),
