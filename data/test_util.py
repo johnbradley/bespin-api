@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from django.test import TestCase
 from data.util import has_download_permissions, DataServiceError, WrappedDataServiceException
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 
 
 class HasDownloadPermissionsTestCase(TestCase):
