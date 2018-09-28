@@ -1,6 +1,6 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
-MAINTAINER dan.leehr@duke.edu
+LABEL maintainer="dan.leehr@duke.edu"
 
 RUN apt-get update && apt-get install -y \
   apache2 \

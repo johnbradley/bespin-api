@@ -1,5 +1,5 @@
 FROM python:3.6
-MAINTAINER dan.leehr@duke.edu
+LABEL maintainer="dan.leehr@duke.edu"
 
 ENV TZ=US/Eastern
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
