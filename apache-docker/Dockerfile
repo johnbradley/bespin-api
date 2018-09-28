@@ -2,9 +2,18 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 LABEL maintainer="dan.leehr@duke.edu"
 
+# Uses mod_wsgi from pip since it's more up-to-date than apt
+# mod_wsgi requires apache2-dev
+
 RUN apt-get update && apt-get install -y \
   apache2 \
-  libapache2-mod-wsgi-py3
+  apache2-dev
+
+RUN pip install mod_wsgi==4.6.4
+
+# Since mod_wsgi is installed in python libs directory, this command
+# links it into apache for easier usage.
+RUN mod_wsgi-express install-module
 
 # Globally set DJANGO_SETTINGS_MODULE to settings_prod so we don't have to override it individually
 ENV DJANGO_SETTINGS_MODULE bespin.settings_prod
