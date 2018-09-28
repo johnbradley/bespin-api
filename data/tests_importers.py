@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from django.test import TestCase
 from data.importers import CWLDocument, MethodsDocumentContents, SCHEMA_ORG_CITATION, \
     HTTPS_DOI_URL, WorkflowQuestionnaireImporter, ImporterException
