@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 		gettext \
 		postgresql-client libpq-dev \
 		sqlite3 \
-		python-psycopg2 \
+		python3-psycopg2 \
 	--no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /app

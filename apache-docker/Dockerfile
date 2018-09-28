@@ -4,7 +4,7 @@ LABEL maintainer="dan.leehr@duke.edu"
 
 RUN apt-get update && apt-get install -y \
   apache2 \
-  libapache2-mod-wsgi
+  libapache2-mod-wsgi-py3
 
 # Globally set DJANGO_SETTINGS_MODULE to settings_prod so we don't have to override it individually
 ENV DJANGO_SETTINGS_MODULE bespin.settings_prod
