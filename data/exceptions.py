@@ -12,7 +12,7 @@ class WrappedDataServiceException(APIException):
     """
     def __init__(self, data_service_exception):
         self.status_code = data_service_exception.status_code
-        self.detail = data_service_exception.message
+        self.detail = str(data_service_exception)
 
 
 class BespinAPIException(APIException):

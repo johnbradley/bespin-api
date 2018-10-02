@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User as django_user
 from django.core.urlresolvers import reverse, NoReverseMatch
 from django.test import override_settings
-from mock.mock import MagicMock, patch, Mock
+from unittest.mock import MagicMock, patch, Mock
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework import ISO_8601
@@ -14,8 +14,8 @@ from data.models import Workflow, WorkflowVersion, Job, JobFileStageGroup, JobEr
     WorkflowMethodsDocument, EmailMessage, EmailTemplate, CloudSettings, VMSettings, \
     JobQuestionnaireType
 from rest_framework.authtoken.models import Token
-from exceptions import WrappedDataServiceException
-from util import DDSResource
+from data.exceptions import WrappedDataServiceException
+from data.util import DDSResource
 
 
 class UserLogin(object):

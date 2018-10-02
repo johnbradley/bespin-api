@@ -2,8 +2,8 @@ from django.core.mail import EmailMessage as DjangoEmailMessage
 from django.template import Template, Context
 from django.utils.safestring import mark_safe
 from django.conf import settings
-from models import Job, EmailMessage, EmailTemplate, LandoConnection
-from exceptions import EmailServiceException, EmailAlreadySentException
+from data.models import Job, EmailMessage, EmailTemplate, LandoConnection
+from data.exceptions import EmailServiceException, EmailAlreadySentException
 import pickle
 from lando_messaging.workqueue import WorkQueueConnection
 

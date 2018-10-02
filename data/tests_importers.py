@@ -1,10 +1,9 @@
-from __future__ import absolute_import
 from django.test import TestCase
 from data.importers import CWLDocument, MethodsDocumentContents, SCHEMA_ORG_CITATION, \
     HTTPS_DOI_URL, WorkflowQuestionnaireImporter, ImporterException
 from data.models import ShareGroup
 from data.tests_api import add_vm_settings
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 
 
 class CWLNodeWithSteps(object):

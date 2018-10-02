@@ -1,5 +1,5 @@
 from data.models import Job, JobDDSOutputProject, DDSJobInputFile, DDSUserCredential
-from exceptions import JobFactoryException
+from data.exceptions import JobFactoryException
 from django.conf import settings
 import json
 import math

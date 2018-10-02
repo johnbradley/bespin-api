@@ -2,10 +2,10 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from django.test import override_settings
 from rest_framework.exceptions import ValidationError
-from mock.mock import MagicMock, patch, Mock
-from models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion, JobFileStageGroup, ShareGroup, \
+from unittest.mock import MagicMock, patch, Mock
+from data.models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion, JobFileStageGroup, ShareGroup, \
     DDSJobInputFile, URLJobInputFile, VMFlavor, VMProject, VMSettings, CloudSettings, Job
-from jobfactory import JobFactory, JobFactoryException, calculate_stage_group_size, calculate_volume_size
+from data.jobfactory import JobFactory, JobFactoryException, calculate_stage_group_size, calculate_volume_size
 import json
 
 
@@ -61,8 +61,8 @@ class JobFactoryTests(TestCase):
         job = job_factory.create_job()
         self.assertEqual(job.user, self.user)
         self.assertEqual(job.workflow_version, self.workflow_version)
-        expected_job_order = json.dumps({'input1':'user','input2':'system'})
-        self.assertEqual(expected_job_order, job.job_order)
+        expected_job_order = {'input1':'user','input2':'system'}
+        self.assertEqual(expected_job_order, json.loads(job.job_order))
         self.assertEqual(job.name, 'Test Job')
         self.assertEqual(job.vm_settings, self.vm_settings)
         self.assertEqual(job.vm_flavor, self.vm_flavor)

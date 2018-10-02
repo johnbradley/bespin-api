@@ -1,5 +1,5 @@
 from django.contrib import admin
-from models import *
+from data.models import *
 
 
 class CreateOnlyWorkflowVersionAdmin(admin.ModelAdmin):
