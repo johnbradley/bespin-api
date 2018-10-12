@@ -14,8 +14,8 @@ class DDSUser(models.Model):
     dds_id = models.CharField(max_length=255, unique=True,
                               help_text="Unique ID assigned to the user in DukeDS")
 
-    def __unicode__(self):
-        return 'DDSUser {}'.format(self.name, )
+    def __str__(self):
+        return "DDSUser - pk: {} name: '{}', dds_id: '{}'".format(self.pk, self.name, self.dds_id,)
 
 
 class Workflow(models.Model):
@@ -25,8 +25,8 @@ class Workflow(models.Model):
     name = models.CharField(max_length=255)
     tag = models.SlugField(help_text="Unique tag to represent this workflow", unique=True)
 
-    def __unicode__(self):
-        return self.name
+    def __str__(self):
+        return "Workflow - pk: {} name: '{}', tag: '{}'".format(self.pk, self.name, self.tag,)
 
 
 class WorkflowVersion(models.Model):
@@ -46,8 +46,8 @@ class WorkflowVersion(models.Model):
         ordering = ['version']
         unique_together = ('workflow', 'version',)
 
-    def __unicode__(self):
-        return '{} version: {} created: {}'.format(self.workflow.name, self.version, self.created)
+    def __str__(self):
+        return "WorkflowVersion - pk: {} workflow.pk: {}, version: {}".format(self.pk, self.workflow.pk, self.version,)
 
 
 class WorkflowMethodsDocument(models.Model):
@@ -58,12 +58,18 @@ class WorkflowMethodsDocument(models.Model):
                                             related_name='methods_document')
     content = models.TextField(help_text="Methods document contents in markdown.")
 
+    def __str__(self):
+        return "WorkflowMethodsDocument - pk: {} workflow_version.pk".format(self.pk, self.workflow_version.pk,)
+
 
 class JobFileStageGroup(models.Model):
     """
     Group of files to stage for a job
     """
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
+
+    def __str__(self):
+        return "JobFileStageGroup - pk: {} user: '{}'".format(self.pk, self.user,)
 
 
 class JobToken(models.Model):
@@ -72,8 +78,8 @@ class JobToken(models.Model):
     """
     token = models.CharField(max_length=255, unique=True)
 
-    def __unicode__(self):
-        return 'Job Token "{}"'.format(self.token)
+    def __str__(self):
+        return "JobToken - pk: {} token: '{}'".format(self.pk, self.token,)
 
 
 class ShareGroup(models.Model):
@@ -85,8 +91,8 @@ class ShareGroup(models.Model):
     users = models.ManyToManyField(DDSUser, help_text="Users that belong to this group")
     email = models.EmailField(blank=True, help_text="Contact email for this group")
 
-    def __unicode__(self):
-        return 'Share Group: {}'.format(self.name)
+    def __str__(self):
+        return "ShareGroup - pk: {} name: '{}' email: '{}'".format(self.pk, self.name, self.email,)
 
 
 class VMFlavor(models.Model):
@@ -98,8 +104,8 @@ class VMFlavor(models.Model):
     cpus = models.IntegerField(default=1,
                                help_text="How many CPUs are assigned to this flavor")
 
-    def __unicode__(self):
-        return 'Flavor: {}'.format(self.name)
+    def __str__(self):
+        return "VMFlavor - pk: {} name: '{}' cpus: {}".format(self.pk, self.name, self.cpus,)
 
 
 class VMProject(models.Model):
@@ -107,8 +113,8 @@ class VMProject(models.Model):
     name = models.CharField(max_length=255, unique=True,
                             help_text="The name of the project in which to launch instances")
 
-    def __unicode__(self):
-        return 'VM Project: {}'.format(self.name)
+    def __str__(self):
+        return "VMProject - pk: {} name: '{}'".format(self.pk, self.name,)
 
 
 class CloudSettings(models.Model):
@@ -122,8 +128,8 @@ class CloudSettings(models.Model):
     floating_ip_pool_name = models.CharField(max_length=255, blank=True,
                                              help_text='Name of floating IP pool to allocate from')
 
-    def __unicode__(self):
-        return '{}: id {}, Proj: {}'.format(self.name, self.pk, self.vm_project.name)
+    def __str__(self):
+        return "CloudSettings - pk: {} name: '{}'".format(self.pk, self.name,)
 
     class Meta:
         verbose_name_plural = "Cloud Settings Collections"
@@ -142,8 +148,8 @@ class VMSettings(models.Model):
     cwl_pre_process_command = models.TextField(blank=True,
                                                 help_text='JSON-encoded command array to run before cwl_base_command')
 
-    def __unicode__(self):
-        return '{}: id {}, Cloud: {}, Img: {}'.format(self.name, self.pk, self.cloud_settings.name, self.image_name)
+    def __str__(self):
+        return "VMSettings - pk: {} name: '{}' image_name: '{}'".format(self.pk, self.name, self.image_name,)
 
     class Meta:
         verbose_name_plural = "VM Settings Collections"
@@ -247,11 +253,8 @@ class Job(models.Model):
     class Meta:
         ordering = ['created']
 
-    def __unicode__(self):
-        workflow_name = ''
-        if self.workflow_version:
-            workflow_name = self.workflow_version.workflow
-        return '{} ({}) for user {}'.format(workflow_name, self.get_state_display(), self.user)
+    def __str__(self):
+        return "Job - pk: {} user: '{}' state: '{}' workflow_version.pk: {} ".format(self.pk, self.user, self.get_state_display(), self.workflow_version.pk, )
 
 
 class JobActivity(models.Model):
@@ -268,8 +271,8 @@ class JobActivity(models.Model):
     class Meta:
         verbose_name_plural = "Job Activities"
 
-    def __unicode__(self):
-        return 'JobActivity job:{} state:{} step:{} created:{}'.format(self.job, self.state, self.step, self.created)
+    def __str__(self):
+        return "JobActivity - pk: {} job.pk: {} state: '{}' step: '{}' created: '{}'".format(self.pk, self.job.pk, self.state, self.step, self.created,)
 
 
 class JobDDSOutputProject(models.Model):
@@ -281,8 +284,8 @@ class JobDDSOutputProject(models.Model):
     dds_user_credentials = models.ForeignKey(DDSUserCredential, on_delete=models.CASCADE, blank=True)
     readme_file_id = models.CharField(max_length=255, blank=True)
 
-    def __unicode__(self):
-        return 'Project: {}'.format(self.project_id)
+    def __str__(self):
+        return "JobDDSOutputProject - pk: {} job.pk: {} project_id: '{}'".format(self.pk, self.job.pk, self.project_id,)
 
 
 class JobError(models.Model):
@@ -294,6 +297,9 @@ class JobError(models.Model):
     job_step = models.CharField(max_length=1, choices=Job.JOB_STEPS)
     created = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return "JobError - pk: {} job.pk: {} job_step: '{}'".format(self.pk, self.job.pk, self.get_job_step_display())
+
 
 class LandoConnection(models.Model):
     """
@@ -304,15 +310,15 @@ class LandoConnection(models.Model):
     password = models.CharField(max_length=255)
     queue_name = models.CharField(max_length=255)
 
-    def __unicode__(self):
-        return '{} on {}'.format(self.username, self.host)
+    def __str__(self):
+        return "LandoConnection - pk: {} host: '{}'".format(self.pk, self.host,)
 
 
 class JobQuestionnaireType(models.Model):
     tag = models.SlugField(help_text="Unique tag for specifying a questionnaire for a workflow version", unique=True)
 
-    def __unicode__(self):
-        return 'JobQuestionnaireType: {}'.format(self.tag)
+    def __str__(self):
+        return "JobQuestionnaireType - pk: {} tag: '{}'".format(self.pk, self.tag,)
 
 
 class JobQuestionnaire(models.Model):
@@ -363,8 +369,8 @@ class JobQuestionnaire(models.Model):
         version_num = int(version_num_str.replace("v", ""))
         return workflow_tag, version_num, questionnaire_type_tag
 
-    def __unicode__(self):
-        return '{} desc:{}'.format(self.id, self.description)
+    def __str__(self):
+        return "JobQuestionnaire - pk: {} tag: '{}' name: '{}'".format(self.pk, self.make_tag(), self.name, )
 
 
 class JobAnswerSet(models.Model):
@@ -384,13 +390,13 @@ class JobAnswerSet(models.Model):
     fund_code = models.CharField(max_length=255, blank=True,
                                  help_text="Fund code this job will be charged to.")
 
-    def __unicode__(self):
-        return '{} questionnaire:{}'.format(self.id, self.questionnaire.description)
-
     def save(self, *args, **kwargs):
         if self.stage_group is not None and self.stage_group.user != self.user:
             raise ValidationError('stage group user does not match answer set user')
         super(JobAnswerSet, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return "JobAnswerSet - pk: {} user: '{}' questionnaire.pk: {}".format(self.pk, self.user, self.questionnaire.pk,)
 
 
 class DDSJobInputFile(models.Model):
@@ -413,8 +419,9 @@ class DDSJobInputFile(models.Model):
     class Meta:
         unique_together = ('stage_group', 'sequence_group', 'sequence',)
 
-    def __unicode__(self):
-        return 'DDS Job Input File "{}" id:{}'.format(self.destination_path, self.file_id)
+    def __str__(self):
+        return "DDSJobInputFile - pk: {} stage_group.pk: {} destination_path: '{}' size: {}".\
+            format(self.pk, self.stage_group.pk, self.destination_path, self.size,)
 
 
 class URLJobInputFile(models.Model):
@@ -435,8 +442,9 @@ class URLJobInputFile(models.Model):
     class Meta:
         unique_together = ('stage_group', 'sequence_group', 'sequence',)
 
-    def __unicode__(self):
-        return 'URL Job Input File "{}"'.format(self.url)
+    def __str__(self):
+        return "URLJobInputFile - pk {} stage_group.pk: {} url: '{}' destination_path: '{}' size: {}". \
+            format(self.pk, self.stage_group.pk, self.url, self.destination_path, self.size, )
 
 
 class EmailTemplate(models.Model):
@@ -449,10 +457,7 @@ class EmailTemplate(models.Model):
     subject_template = models.TextField(help_text='Template text for the message subject')
 
     def __str__(self):
-        return 'Email Template <{}>, subject: {}'.format(
-            self.name,
-            self.subject_template,
-        )
+        return "EmailTemplate - pk: {} name: '{}'".format(self.pk, self.name)
 
 
 class EmailMessage(models.Model):
@@ -477,11 +482,7 @@ class EmailMessage(models.Model):
     errors = models.TextField(blank=True)
 
     def __str__(self):
-        return 'Email Message <{}>, state {}, subject: {}'.format(
-            self.id,
-            self.state,
-            self.subject
-        )
+        return "EmailMessage - pk: {}: state: '{}' subject: '{}'".format(self.pk, self.get_state_display(), self.subject,)
 
     def mark_sent(self):
         self.state = self.MESSAGE_STATE_SENT
