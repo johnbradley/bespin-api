@@ -41,6 +41,8 @@ class WorkflowVersion(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     version = models.IntegerField()
     url = models.URLField(help_text="URL to packed CWL workflow file.")
+    job_order_types_json = models.TextField(blank=True, default=json.dumps({}),
+                                            help_text="JSON containing dictionary of job order name/type")
 
     class Meta:
         ordering = ['version']
@@ -492,3 +494,41 @@ class EmailMessage(models.Model):
         self.state = self.MESSAGE_STATE_ERROR
         self.errors = errors
         self.save()
+
+
+class VMStrategy(models.Model):
+    """
+    Specifies a VM strategy used to create a job.
+    """
+    vm_settings = models.ForeignKey(VMSettings,
+                                    help_text='Collection of settings to use when launching job VMs for this questionnaire')
+    vm_flavor = models.ForeignKey(VMFlavor,
+                                  help_text='VM Flavor to use when creating VM instances for this questionnaire')
+    volume_size_base = models.IntegerField(default=100,
+                                           help_text='Base size in GB of for determining job volume size')
+    volume_size_factor = models.IntegerField(default=0,
+                                             help_text='Number multiplied by total staged data size for '
+                                                       'determining job volume size')
+    volume_mounts = models.TextField(default=json.dumps({'/dev/vdb1': '/work'}),
+                                     help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
+
+    class Meta:
+        verbose_name_plural = "VM Strategies"
+
+    def __str__(self):
+        return "VMStrategy - pk: {} flavor: '{}' volume_size_base:'{}' volume_size_factor: '{}'".format(
+            self.pk, self.vm_flavor.name, self.volume_size_base, self.volume_size_factor)
+
+
+class ParameterSet(models.Model):
+    """
+    Specifies a set of system-provided answers in JSON format
+    """
+    name = models.CharField(max_length=255, help_text="Short user facing name")
+    workflow_version = models.ManyToManyField(WorkflowVersion, help_text="Workflows that this parameter set is for")
+    system_job_order_json = models.TextField(blank=True,
+                                             help_text="JSON containing the portion of the job order specified by system.")
+    tag = models.SlugField(help_text="Unique tag for specifying this parameter set", unique=True)
+
+    def __str__(self):
+        return "ParameterSet - pk: {}".format(self.pk)
