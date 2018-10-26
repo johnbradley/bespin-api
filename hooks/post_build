@@ -1,6 +1,0 @@
-#!/bin/bash
-
-# After building bespin-api, now build the image based on it
-echo "Building ${IMAGE_NAME}-apache from apache-docker context"
-
-docker build --build-arg BASE_IMAGE=${IMAGE_NAME} -t ${IMAGE_NAME}-apache apache-docker
