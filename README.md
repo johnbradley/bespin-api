@@ -16,20 +16,12 @@ $ python manage.py runserver
 
 # Docker Build Details
 
-Docker Cloud is configured to automatically build the master branch and tags of `bespin-api`, producing docker images that run bespin-api in development mode:
+The [Dockerfile](Dockerfile) in the repo root builds `bespin-api` in a development configuration (running django's web server).
 
-```
-master -> dukegcb/bespin-api:latest
-v1.0.0 -> dukegcb/bespin-api:1.0.0
-```
+    docker build -t bespin-api .
 
-For automated builds of production-ready images, there is a second [Dockerfile](apache-docker/Dockerfile) in   [apache-docker](apache-docker). We use Docker Cloud's [custom build phase hooks](https://docs.docker.com/docker-cloud/builds/advanced/#custom-build-phase-hooks) in the [hooks](hooks) directory build and push `-apache` variations of the bespin-api images.
+To build a production-ready image (Apache with mod\_wsgi), use the [Dockerfile](apache-docker/Dockerfile) in the apache-docker subdirectory, specifying the prior image name as the BASE\_IMAGE argument:
 
-The [post\_build](hooks/post_build) and [post\_push](../hooks/post_push) hooks produce docker images that run bespin-api in production mode:
+    docker build --build-arg BASE_IMAGE=bespin-api -t bespin-api:apache apache-docker
 
-```
-master -> dukegcb/bespin-api:latest-apache
-v1.0.0 -> dukegcb/bespin-api:1.0.0-apache
-```
-
-See [apache-docker](apache-docker) for more details, including
+See [apache-docker](apache-docker) for more details on running the production-ready image.
