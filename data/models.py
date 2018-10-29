@@ -41,8 +41,8 @@ class WorkflowVersion(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     version = models.IntegerField()
     url = models.URLField(help_text="URL to packed CWL workflow file.")
-    job_order_types_json = models.TextField(blank=True, default=json.dumps({}),
-                                            help_text="JSON containing dictionary of job order name/type")
+    fields_json = models.TextField(blank=True,
+                                   help_text="JSON containing the array of fields required by this workflow.")
 
     class Meta:
         ordering = ['version']
@@ -500,6 +500,7 @@ class VMStrategy(models.Model):
     """
     Specifies a VM strategy used to create a job.
     """
+    name = models.CharField(max_length=255, help_text="Short user facing name")
     vm_settings = models.ForeignKey(VMSettings,
                                     help_text='Collection of settings to use when launching job VMs for this questionnaire')
     vm_flavor = models.ForeignKey(VMFlavor,
@@ -516,19 +517,49 @@ class VMStrategy(models.Model):
         verbose_name_plural = "VM Strategies"
 
     def __str__(self):
-        return "VMStrategy - pk: {} flavor: '{}' volume_size_base:'{}' volume_size_factor: '{}'".format(
-            self.pk, self.vm_flavor.name, self.volume_size_base, self.volume_size_factor)
+        return "VMStrategy - pk: {} name: '{}' flavor: '{}' volume_size_base:'{}' volume_size_factor: '{}'".format(
+            self.pk, self.name, self.vm_flavor.name, self.volume_size_base, self.volume_size_factor)
 
 
-class ParameterSet(models.Model):
+class WorkflowConfiguration(models.Model):
     """
     Specifies a set of system-provided answers in JSON format
     """
-    name = models.CharField(max_length=255, help_text="Short user facing name")
-    workflow_version = models.ManyToManyField(WorkflowVersion, help_text="Workflows that this parameter set is for")
+    name = models.SlugField(max_length=255, help_text="Short user facing name")
+    workflow_version = models.ForeignKey(WorkflowVersion)
     system_job_order_json = models.TextField(blank=True,
                                              help_text="JSON containing the portion of the job order specified by system.")
-    tag = models.SlugField(help_text="Unique tag for specifying this parameter set", unique=True)
+    default_vm_strategy = models.ForeignKey(VMStrategy,
+                                            help_text='todo', null=True)
+    share_group = models.ForeignKey(ShareGroup,
+                                    help_text='Users who will have job output shared with them',
+                                    null=True)
+
+    def make_tag(self):
+        workflow_tag = self.workflow_version.workflow.tag
+        workflow_version_num = self.workflow_version.version
+        return '{}/v{}/{}'.format(workflow_tag, workflow_version_num, self.name)
+
+    @staticmethod
+    def split_tag_parts(tag):
+        """
+        Given tag string return tuple of workflow_tag, version_num, configuration_name
+        :param tag: str: tag to split into parts
+        :return: (workflow_tag, version_num, configuration_name)
+        """
+        parts = tag.split("/")
+        if len(parts) != 3:
+            return None
+        workflow_tag, version_num_str, configuration_name = parts
+        version_num = int(version_num_str.replace("v", ""))
+        return workflow_tag, version_num, configuration_name
+
+    class Meta:
+        unique_together = ('workflow_version', 'name', )
 
     def __str__(self):
-        return "ParameterSet - pk: {}".format(self.pk)
+        return "WorkflowConfiguration - pk: {}".format(self.pk)
+
+    # Questions
+    # who can use?
+    # who can edit?
