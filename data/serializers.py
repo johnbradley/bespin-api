@@ -3,9 +3,10 @@ from django.contrib.auth.models import User
 from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, JobDDSOutputProject, URLJobInputFile, JobError, JobAnswerSet, \
     JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, WorkflowMethodsDocument, \
-    EmailTemplate, EmailMessage, VMSettings, CloudSettings, JobActivity
+    EmailTemplate, EmailMessage, VMSettings, CloudSettings, JobActivity, VMStrategy, WorkflowConfiguration
 from data.jobusage import JobUsage
 from rest_framework.authtoken.models import Token
+import json
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
@@ -26,7 +27,7 @@ class WorkflowVersionSerializer(serializers.ModelSerializer):
         model = WorkflowVersion
         resource_name = 'workflow-versions'
         fields = ('id', 'workflow', 'name', 'description', 'object_name', 'created', 'url', 'version',
-                  'methods_document')
+                  'methods_document', 'fields_json', )
 
 
 class WorkflowMethodsDocumentSerializer(serializers.ModelSerializer):
@@ -382,3 +383,33 @@ class AdminImportWorkflowQuestionnaireSerializer(serializers.Serializer):
     share_group_name = serializers.CharField(min_length=1) # must relate to an existing Share Group
     volume_size_base = serializers.IntegerField()
     volume_size_factor = serializers.IntegerField()
+
+
+class VMStrategySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VMStrategy
+        resource_name = 'vm-strategies'
+        fields = '__all__'
+
+
+class WorkflowConfigurationSerializer(serializers.ModelSerializer):
+    tag = serializers.SerializerMethodField()
+    user_fields_json = serializers.SerializerMethodField()
+
+    def get_tag(self, obj):
+        return obj.make_tag()
+
+    def get_user_fields_json(self, obj):
+        fields = json.loads(obj.workflow_version.fields_json)
+        system_order_json = json.loads(obj.system_job_order_json)
+        system_keys = system_order_json.keys()
+        user_fields_json = []
+        for field in fields:
+            if field['name'] not in system_keys:
+                user_fields_json.append(field)
+        return json.dumps(user_fields_json)
+
+    class Meta:
+        model = WorkflowConfiguration
+        resource_name = 'workflow-configuration'
+        fields = '__all__'
