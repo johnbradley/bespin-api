@@ -22,8 +22,6 @@ router.register(r'share-groups', api.ShareGroupViewSet, 'sharegroup')
 router.register(r'workflow-methods-documents', api.WorkflowMethodsDocumentViewSet, 'workflowmethodsdocument')
 router.register(r'users', api.UserViewSet, 'user')
 router.register(r'tokens', api.TokenViewSet, 'token')
-router.register(r'vm-strategies', api.VMStrategyViewSet, 'vmstrategies')
-router.register(r'workflow-configurations', api.WorkflowConfigurationViewSet, 'workflowconfigurations')
 
 # Routes that require admin user
 router.register(r'admin/jobs', api.AdminJobsViewSet, 'admin_job')
