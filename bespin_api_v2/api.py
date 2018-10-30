@@ -1,12 +1,39 @@
 import json
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, mixins
 from rest_framework.response import Response
 from rest_framework.decorators import detail_route
 from django.db import transaction
-from bespin_api_v2.serializers import VMStrategySerializer, WorkflowConfigurationSerializer
+from bespin_api_v2.serializers import AdminWorkflowSerializer, AdminWorkflowVersionSerializer, VMStrategySerializer, \
+    WorkflowConfigurationSerializer
 from data.serializers import JobSerializer
-from data.models import VMStrategy, WorkflowConfiguration, JobFileStageGroup
+from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup
 from data.jobfactory import create_job_factory_for_workflow_configuration, JobOrderData
+from data.exceptions import BespinAPIException
+
+
+class CreateOnlyViewSet(mixins.CreateModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.ListModelMixin,
+                        viewsets.GenericViewSet):
+    pass
+
+
+class AdminWorkflowViewSet(CreateOnlyViewSet):
+    permission_classes = (permissions.IsAdminUser,)
+    serializer_class = AdminWorkflowSerializer
+    queryset = Workflow.objects.all()
+
+
+class AdminWorkflowVersionViewSet(CreateOnlyViewSet):
+    permission_classes = (permissions.IsAdminUser,)
+    serializer_class = AdminWorkflowVersionSerializer
+    queryset = WorkflowVersion.objects.all()
+
+
+class AdminWorkflowConfigurationViewSet(CreateOnlyViewSet):
+    permission_classes = (permissions.IsAdminUser,)
+    serializer_class = WorkflowConfigurationSerializer
+    queryset = WorkflowConfiguration.objects.all()
 
 
 class VMStrategyViewSet(viewsets.ReadOnlyModelViewSet):

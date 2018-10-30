@@ -1,30 +1,45 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from data.models import VMStrategy, WorkflowConfiguration
+from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration
 import json
+
+
+class AdminWorkflowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Workflow
+        resource_name = 'workflows'
+        fields = '__all__'
+
+
+class AdminWorkflowVersionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkflowVersion
+        resource_name = 'workflowversions'
+        fields = '__all__'
+
+
+class JSONStrField(serializers.Field):
+    """
+    Color objects are serialized into 'rgb(#, #, #)' notation.
+    """
+    def to_representation(self, value):
+        return json.loads(value)
+
+    def to_internal_value(self, data):
+        return json.dumps(data)
 
 
 class WorkflowConfigurationSerializer(serializers.ModelSerializer):
     tag = serializers.SerializerMethodField()
-    user_fields_json = serializers.SerializerMethodField()
+    system_job_order = JSONStrField(source="system_job_order_json")
 
     def get_tag(self, obj):
         return obj.make_tag()
 
-    def get_user_fields_json(self, obj):
-        fields = json.loads(obj.workflow_version.fields_json)
-        system_order_json = json.loads(obj.system_job_order_json)
-        system_keys = system_order_json.keys()
-        user_fields_json = []
-        for field in fields:
-            if field['name'] not in system_keys:
-                user_fields_json.append(field)
-        return json.dumps(user_fields_json)
-
     class Meta:
         model = WorkflowConfiguration
         resource_name = 'workflow-configuration'
-        fields = '__all__'
+        fields = ['id', 'name', 'tag', 'workflow_version', 'system_job_order', 'default_vm_strategy', 'share_group']
 
 
 class VMStrategySerializer(serializers.ModelSerializer):

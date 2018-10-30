@@ -15,6 +15,10 @@ router.register(r'url-job-input-files', data_api.URLJobInputFileViewSet, 'urljob
 router.register(r'dds-endpoints', data_api.DDSEndpointViewSet, 'ddsendpoint')
 router.register(r'dds-user-credentials', data_api.DDSUserCredViewSet, 'ddsusercredential')
 
+router.register(r'admin/workflows', api.AdminWorkflowViewSet, 'admin_workflow')
+router.register(r'admin/workflow-versions', api.AdminWorkflowVersionViewSet, 'admin_workflowversion')
+router.register(r'admin/workflow-configurations', api.AdminWorkflowConfigurationViewSet, 'admin_workflowconfiguration')
+
 urlpatterns = [
     url(r'^', include(router.urls)),
 ]

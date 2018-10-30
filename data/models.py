@@ -559,7 +559,3 @@ class WorkflowConfiguration(models.Model):
 
     def __str__(self):
         return "WorkflowConfiguration - pk: {}".format(self.pk)
-
-    # Questions
-    # who can use?
-    # who can edit?
