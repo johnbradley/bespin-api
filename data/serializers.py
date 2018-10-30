@@ -3,10 +3,9 @@ from django.contrib.auth.models import User
 from data.models import Workflow, WorkflowVersion, Job, DDSJobInputFile, JobFileStageGroup, \
     DDSEndpoint, DDSUserCredential, JobDDSOutputProject, URLJobInputFile, JobError, JobAnswerSet, \
     JobQuestionnaire, VMFlavor, VMProject, JobToken, ShareGroup, DDSUser, WorkflowMethodsDocument, \
-    EmailTemplate, EmailMessage, VMSettings, CloudSettings, JobActivity, VMStrategy, WorkflowConfiguration
+    EmailTemplate, EmailMessage, VMSettings, CloudSettings, JobActivity
 from data.jobusage import JobUsage
 from rest_framework.authtoken.models import Token
-import json
 
 
 class WorkflowSerializer(serializers.ModelSerializer):

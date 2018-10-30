@@ -13,12 +13,10 @@ from rest_framework.decorators import detail_route, list_route
 from data.lando import LandoJob
 from django.db.models import Q
 from django.db import transaction
-from data.jobfactory import create_job_factory_for_answer_set, create_job_factory_for_workflow_configuration, \
-    JobOrderData
+from data.jobfactory import create_job_factory_for_answer_set
 from data.mailer import EmailMessageSender, JobMailer
 from data.importers import WorkflowQuestionnaireImporter, ImporterException
 from rest_framework.authtoken.models import Token
-import json
 
 
 class DDSViewSet(viewsets.ReadOnlyModelViewSet):
