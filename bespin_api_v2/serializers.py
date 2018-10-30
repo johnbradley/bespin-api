@@ -4,20 +4,6 @@ from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfigura
 import json
 
 
-class AdminWorkflowSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Workflow
-        resource_name = 'workflows'
-        fields = '__all__'
-
-
-class AdminWorkflowVersionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = WorkflowVersion
-        resource_name = 'workflowversions'
-        fields = '__all__'
-
-
 class JSONStrField(serializers.Field):
     """
     Color objects are serialized into 'rgb(#, #, #)' notation.
@@ -27,6 +13,22 @@ class JSONStrField(serializers.Field):
 
     def to_internal_value(self, data):
         return json.dumps(data)
+
+
+class AdminWorkflowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Workflow
+        resource_name = 'workflows'
+        fields = '__all__'
+
+
+class AdminWorkflowVersionSerializer(serializers.ModelSerializer):
+    fields = JSONStrField(source="fields_json")
+
+    class Meta:
+        model = WorkflowVersion
+        resource_name = 'workflowversions'
+        fields = ['id', 'workflow', 'description', 'object_name', 'created', 'version', 'url', 'fields']
 
 
 class WorkflowConfigurationSerializer(serializers.ModelSerializer):
