@@ -221,7 +221,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         url = reverse('admin_workflowconfiguration-list') + str(workflow_configuration.id) + '/'
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['id'], self.workflow_version.id)
+        self.assertEqual(response.data['id'], workflow_configuration.id)
         self.assertEqual(response.data['name'], 'b37xGen')
         self.assertEqual(response.data['tag'], 'exomeseq/v1/b37xGen')
         self.assertEqual(response.data['workflow_version'], self.workflow_version.id)
@@ -441,7 +441,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         url = reverse('workflowconfigurations-list') + str(workflow_configuration.id) + '/'
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['id'], self.workflow_version.id)
+        self.assertEqual(response.data['id'], workflow_configuration.id)
         self.assertEqual(response.data['name'], 'b37xGen')
         self.assertEqual(response.data['tag'], 'exomeseq/v1/b37xGen')
         self.assertEqual(response.data['workflow_version'], self.workflow_version.id)
