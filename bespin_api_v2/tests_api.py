@@ -1,3 +1,4 @@
+import json
 from django.core.urlresolvers import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -96,7 +97,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
             description='v1 exomeseq',
             version=1,
             url='',
-            fields_json='{"a":"b"}'
+            fields_json='[{"name":"threads", "class": "int"}]',
         )
         self.user_login.become_admin_user()
         url = reverse('admin_workflowversion-list')
@@ -107,7 +108,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
         self.assertEqual(response.data[0]['workflow'], self.workflow.id)
         self.assertEqual(response.data[0]['description'], 'v1 exomeseq')
         self.assertEqual(response.data[0]['version'], 1)
-        self.assertEqual(response.data[0]['fields'], {"a":"b"})
+        self.assertEqual(response.data[0]['fields'], [{"name": "threads", "class": "int"}])
 
     def test_retrieve_with_admin_user(self):
         workflow_version = WorkflowVersion.objects.create(
@@ -115,7 +116,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
             description='v1 exomeseq',
             version=1,
             url='',
-            fields_json='{"a":"b"}'
+            fields_json='[{"name":"threads", "class": "int"}]',
         )
         self.user_login.become_admin_user()
         url = reverse('admin_workflowversion-list') + str(workflow_version.id) + '/'
@@ -124,7 +125,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
         self.assertEqual(response.data['id'], workflow_version.id)
         self.assertEqual(response.data['workflow'], self.workflow.id)
         self.assertEqual(response.data['description'], 'v1 exomeseq')
-        self.assertEqual(response.data['fields'], {"a":"b"})
+        self.assertEqual(response.data['fields'], [{"name": "threads", "class": "int"}])
 
     def test_create_with_admin_user(self):
         self.user_login.become_admin_user()
@@ -134,7 +135,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
             'description': 'v1 exomseq',
             'version': 2,
             'url': 'https://someurl.com',
-            'fields': {"a": "b"},
+            'fields': [{"name":"threads", "class": "int"}],
 
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -142,7 +143,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
         workflow_versions = WorkflowVersion.objects.all()
         self.assertEqual(len(workflow_versions), 1)
         self.assertEqual(workflow_versions[0].version, 2)
-        self.assertEqual(workflow_versions[0].fields_json, '{"a": "b"}')
+        self.assertEqual(json.loads(workflow_versions[0].fields_json), [{"name": "threads", "class": "int"}])
 
     def test_put_fails_with_admin_user(self):
         self.user_login.become_admin_user()
@@ -166,7 +167,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
             description='v1 exomeseq',
             version=1,
             url='',
-            fields_json='{"a":"b"}'
+            fields_json='[{"name":"threads", "class": "int"}]'
         )
         vm_flavor = VMFlavor.objects.create(name='large')
         vm_project = VMProject.objects.create()
@@ -205,7 +206,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         self.assertEqual(response.data[0]['name'], 'b37xGen')
         self.assertEqual(response.data[0]['tag'], 'exomeseq/v1/b37xGen')
         self.assertEqual(response.data[0]['workflow_version'], self.workflow_version.id)
-        self.assertEqual(response.data[0]['system_job_order'], {"A":"B"})
+        self.assertEqual(response.data[0]['system_job_order'], {"A": "B"})
         self.assertEqual(response.data[0]['default_vm_strategy'], self.vm_strategy.id)
         self.assertEqual(response.data[0]['share_group'], self.share_group.id)
 
@@ -225,7 +226,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         self.assertEqual(response.data['name'], 'b37xGen')
         self.assertEqual(response.data['tag'], 'exomeseq/v1/b37xGen')
         self.assertEqual(response.data['workflow_version'], self.workflow_version.id)
-        self.assertEqual(response.data['system_job_order'], {"A":"B"})
+        self.assertEqual(response.data['system_job_order'], {"A": "B"})
         self.assertEqual(response.data['default_vm_strategy'], self.vm_strategy.id)
         self.assertEqual(response.data['share_group'], self.share_group.id)
 
@@ -235,14 +236,14 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         response = self.client.post(url, format='json', data={
             'name': 'b37xGen',
             'workflow_version': self.workflow_version.id,
-            'system_job_order': '{"A":"B"}',
+            'system_job_order': {"A": "B"},
             'default_vm_strategy': self.vm_strategy.id,
             'share_group': self.share_group.id,
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['name'], 'b37xGen')
         self.assertEqual(response.data['tag'], 'exomeseq/v1/b37xGen')
-        self.assertEqual(response.data['system_job_order'], '{"A":"B"}')
+        self.assertEqual(response.data['system_job_order'], {"A": "B"})
         self.assertEqual(response.data['default_vm_strategy'], self.vm_strategy.id)
         self.assertEqual(response.data['share_group'], self.share_group.id)
 
@@ -326,14 +327,14 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
             description='v1 exomeseq',
             version=1,
             url='',
-            fields_json='{"a": "b"}'
+            fields_json='[{"name":"threads", "class": "int"},{"name":"items", "class": "int"}]',
         )
         self.workflow_version2 = WorkflowVersion.objects.create(
             workflow=self.workflow,
             description='v2 exomeseq',
             version=2,
             url='',
-            fields_json='{"a": "c"}'
+            fields_json='[{"name":"threads", "class": "int"}]',
         )
         vm_flavor = VMFlavor.objects.create(name='large')
         vm_project = VMProject.objects.create()
@@ -433,7 +434,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         workflow_configuration = WorkflowConfiguration.objects.create(
             name='b37xGen',
             workflow_version=self.workflow_version,
-            system_job_order_json='{"A": "B"}',
+            system_job_order_json='{"items": 4}',
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
         )
@@ -445,9 +446,10 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         self.assertEqual(response.data['name'], 'b37xGen')
         self.assertEqual(response.data['tag'], 'exomeseq/v1/b37xGen')
         self.assertEqual(response.data['workflow_version'], self.workflow_version.id)
-        self.assertEqual(response.data['system_job_order'], {"A": "B"})
+        self.assertEqual(response.data['system_job_order'], {"items": 4})
         self.assertEqual(response.data['default_vm_strategy'], self.vm_strategy.id)
         self.assertEqual(response.data['share_group'], self.share_group.id)
+        self.assertEqual(response.data['user_fields'], [{'name': 'threads', 'class': 'int'}])
 
     def test_create_with_admin_user(self):
         self.user_login.become_admin_user()
