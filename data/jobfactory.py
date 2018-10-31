@@ -43,7 +43,7 @@ def create_job_factory_for_workflow_configuration(workflow_configuration, user, 
 
 def calculate_volume_size(volume_size_base, volume_size_factor, stage_group):
     """
-    Calculates the volume size needed based on the job_answer_set questionnaire settings and stage group data.
+    Calculates the volume size needed based volume size settings and size of files to be staged.
     :param job_answer_set: JobAnswerSet: contains questionnaire and stage_group used in calculation
     :return: int: size in GB: volume_size_factor * data_size_in_gb + volume_size_base
     """

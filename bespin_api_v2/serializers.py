@@ -5,9 +5,6 @@ import json
 
 
 class JSONStrField(serializers.Field):
-    """
-    Color objects are serialized into 'rgb(#, #, #)' notation.
-    """
     def to_representation(self, value):
         return json.loads(value)
 
