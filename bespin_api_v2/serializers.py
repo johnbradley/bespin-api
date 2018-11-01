@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration
 import json
 
-
+# This field can go away when we switch to JSONField
 class JSONStrField(serializers.Field):
     def to_representation(self, value):
         return json.loads(value)
@@ -37,6 +37,10 @@ class WorkflowConfigurationSerializer(serializers.ModelSerializer):
         return obj.make_tag()
 
     def get_user_fields(self, obj):
+        """
+        Determines user supplied fields by removing those with answers in the system_job_order 
+        from the workflow version's fields. 
+        """
         fields = json.loads(obj.workflow_version.fields_json)
         system_order_json = json.loads(obj.system_job_order_json)
         system_keys = system_order_json.keys()
