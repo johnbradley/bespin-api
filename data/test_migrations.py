@@ -115,4 +115,142 @@ class DDSEndpointAndDDSUserCredentialDataMigrationTestCase(TestMigrations):
         self.assertEqual(credential2.endpoint, endpoint)
 
 
+class JSONFieldMigrationTestCase(TestMigrations):
+    migrate_from = '0058_auto_20181101_1557'
+    migrate_to = '0059_populate_json_fields'
+    django_application = 'data'
 
+    def setUpBeforeMigration(self, apps):
+        # find models for current version of apps
+        User = apps.get_model('auth', 'User')
+        DDSEndpoint = apps.get_model('gcb_web_auth', 'DDSEndpoint')
+        DDSUserCredential = apps.get_model('gcb_web_auth', 'DDSUserCredential')
+        Workflow = apps.get_model('data', 'Workflow')
+        WorkflowVersion = apps.get_model('data', 'WorkflowVersion')
+        VMSettings = apps.get_model('data', 'VMSettings')
+        VMFlavor = apps.get_model('data', 'VMFlavor')
+        ShareGroup = apps.get_model('data', 'ShareGroup')
+        CloudSettings = apps.get_model('data', 'CloudSettings')
+        VMProject = apps.get_model('data', 'VMProject')
+        Job = apps.get_model('data', 'Job')
+        JobQuestionnaire = apps.get_model('data', 'JobQuestionnaire')
+        JobAnswerSet = apps.get_model('data', 'JobAnswerSet')
+        VMStrategy = apps.get_model('data', 'VMStrategy')
+        WorkflowConfiguration = apps.get_model('data', 'WorkflowConfiguration')
+        JobQuestionnaireType = apps.get_model('data', 'JobQuestionnaireType')
+
+        # create data using these models
+        workflow = Workflow.objects.create(name='Copy Files', tag='copyfiles')
+        workflow_version1 = WorkflowVersion.objects.create(
+            workflow=workflow,
+            description='',
+            version=1,
+            url='http://someurl.com',
+            fields_json='{}')
+        workflow_version2 = WorkflowVersion.objects.create(
+            workflow=workflow,
+            description='',
+            version=2,
+            url='http://someurl.com',
+            fields_json='{"color":"red", "data": { "count": 2}}')
+        user = User.objects.create(username='user1')
+        endpoint = DDSEndpoint.objects.create(name='app1', agent_key='abc123')
+        dds_user_cred = DDSUserCredential.objects.create(user=user, token='abc123', endpoint=endpoint)
+        vm_flavor = VMFlavor.objects.create(name='m1.small')
+        vm_project = VMProject.objects.create(name='project1')
+        cloud_settings = CloudSettings.objects.create(vm_project=vm_project)
+        vm_settings = VMSettings.objects.create(
+            name='settings',
+            cloud_settings=cloud_settings,
+            image_name='someimage',
+            cwl_pre_process_command='["touch", "stalefile.txt"]',
+            cwl_base_command='["cwl-runner"]',
+            cwl_post_process_command='["rm", "stalefile.txt"]')
+        vm_strategy = VMStrategy.objects.create(
+            name='large',
+            vm_settings=vm_settings,
+            vm_flavor=vm_flavor,
+            volume_size_base=200,
+            volume_size_factor=10,
+            volume_mounts='{"/dev/vdb1": "/work2"}')
+        share_group = ShareGroup.objects.create(name='somegroup')
+        WorkflowConfiguration.objects.create(
+            name='b37human',
+            workflow_version=workflow_version1,
+            system_job_order_json='{"color":"red", "data": { "count": 2}}',
+            system_job_order=None,
+            default_vm_strategy=vm_strategy,
+            share_group=share_group)
+        Job.objects.create(workflow_version=workflow_version1, user=user,
+                           job_order='{"color":"blue"}',
+                           share_group=share_group,
+                           vm_settings=vm_settings,
+                           vm_flavor=vm_flavor,
+                           vm_volume_mounts='{"/dev/vdb1": "/work"}')
+        Job.objects.create(workflow_version=workflow_version2, user=user,
+                           job_order='{"color":"red"}',
+                           share_group=share_group,
+                           vm_settings=vm_settings,
+                           vm_flavor=vm_flavor,
+                           vm_volume_mounts='{"/dev/vdb1": "/work2"}')
+        questionnaire_type = JobQuestionnaireType.objects.create(tag='human')
+        questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
+                                                        description='Uses reference genome xyz and gene index abc',
+                                                        workflow_version=workflow_version1,
+                                                        system_job_order_json='{"system_input": "foo"}',
+                                                        share_group=share_group,
+                                                        vm_settings=vm_settings,
+                                                        vm_flavor=vm_flavor,
+                                                        volume_size_base=10,
+                                                        volume_size_factor=5,
+                                                        type=questionnaire_type)
+        JobAnswerSet.objects.create(user=user,
+                                    questionnaire=questionnaire,
+                                    job_name='job 1',
+                                    user_job_order_json='{"user_input":"bar"}')
+
+    def test_migrates_workflow_version_fields(self):
+        WorkflowVersion = self.apps.get_model('data', 'WorkflowVersion')
+        items = WorkflowVersion.objects.order_by('version')
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0].fields, {})
+        self.assertEqual(items[1].fields, {"color": "red", "data": {"count": 2}})
+
+    def test_migrates_vm_settings_fields(self):
+        VMSettings = self.apps.get_model('data', 'VMSettings')
+        items = VMSettings.objects.all()
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0].cwl_pre_process_command_new, ["touch", "stalefile.txt"])
+        self.assertEqual(items[0].cwl_base_command_new, ["cwl-runner"])
+        self.assertEqual(items[0].cwl_post_process_command_new, ["rm", "stalefile.txt"])
+
+    def test_migrates_job_fields(self):
+        Job = self.apps.get_model('data', 'Job')
+        items = Job.objects.order_by('workflow_version__version')
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0].vm_volume_mounts_new, {'/dev/vdb1': '/work'})
+        self.assertEqual(items[1].vm_volume_mounts_new, {'/dev/vdb1': '/work2'})
+
+    def test_migrates_vm_strategy_fields(self):
+        VMStrategy = self.apps.get_model('data', 'VMStrategy')
+        items = VMStrategy.objects.all()
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0].volume_mounts_new, {"/dev/vdb1": "/work2"})
+
+    def test_migrates_workflow_configuration_fields(self):
+        WorkflowConfiguration = self.apps.get_model('data', 'WorkflowConfiguration')
+        items = WorkflowConfiguration.objects.all()
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0].system_job_order, {"color": "red", "data": {"count": 2}})
+
+    def test_migrates_job_questionnaire_fields(self):
+        JobQuestionnaire = self.apps.get_model('data', 'JobQuestionnaire')
+        items = JobQuestionnaire.objects.all()
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0].system_job_order, {'system_input': 'foo'})
+
+    def test_migrates_job_answer_set_fields(self):
+        JobAnswerSet = self.apps.get_model('data', 'JobAnswerSet')
+        items = JobAnswerSet.objects.all()
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0].user_job_order, {'user_input': 'bar'})

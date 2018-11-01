@@ -889,7 +889,8 @@ class VMSettingsTests(TestCase):
         error_dict = val.exception.error_dict
         error_keys = set(error_dict.keys())
         expected_error_keys ={'image_name',
-                              'cwl_base_command'}
+                              'cwl_base_command',
+                              'cwl_base_command_new'}
         self.assertEqual(error_keys, expected_error_keys)
 
         # name has a default, should not fail validation

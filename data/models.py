@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.contrib.postgres.fields import JSONField
 from gcb_web_auth.models import DDSUserCredential, DDSEndpoint
 import json
 
@@ -43,6 +44,7 @@ class WorkflowVersion(models.Model):
     url = models.URLField(help_text="URL to packed CWL workflow file.")
     fields_json = models.TextField(blank=True,
                                    help_text="JSON containing the array of fields required by this workflow.")
+    fields = JSONField(help_text="Array of fields required by this workflow.", null=True)
 
     class Meta:
         ordering = ['version']
@@ -149,6 +151,9 @@ class VMSettings(models.Model):
                                                 help_text='JSON-encoded command array to run after workflow completes')
     cwl_pre_process_command = models.TextField(blank=True,
                                                 help_text='JSON-encoded command array to run before cwl_base_command')
+    cwl_base_command_new = JSONField(null=True, help_text='Command array to run the  image\'s installed CWL engine')
+    cwl_post_process_command_new = JSONField(blank=True, null=True, help_text='Command array to run after workflow completes')
+    cwl_pre_process_command_new = JSONField(blank=True, null=True, help_text='Command array to run before cwl_base_command')
 
     def __str__(self):
         return "VMSettings - pk: {} name: '{}' image_name: '{}'".format(self.pk, self.name, self.image_name,)
@@ -233,6 +238,8 @@ class Job(models.Model):
                                      help_text='Should the VM and Volume be deleted upon job completion')
     vm_volume_mounts = models.TextField(default=json.dumps({'/dev/vdb1': '/work'}),
                                         help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
+    vm_volume_mounts_new = JSONField(default={'/dev/vdb1': '/work'}, null=True,
+                                     help_text='Dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
 
     def save(self, *args, **kwargs):
         if self.stage_group is not None and self.stage_group.user != self.user:
@@ -334,9 +341,12 @@ class JobQuestionnaire(models.Model):
                                          help_text="Workflow that this questionaire is for")
     system_job_order_json = models.TextField(blank=True,
                                              help_text="JSON containing the portion of the job order specified by system.")
+    system_job_order = JSONField(blank=True, null=True, help_text="Dictionary portion of the job order specified by system.")
     user_fields_json = models.TextField(blank=True,
                                         help_text="JSON containing the array of fields required by the user when providing "
                                                   "a job answer set.")
+    user_fields = JSONField(blank=True, null=True,
+                            help_text="Array of fields required by the user when providing a job answer set.")
     share_group = models.ForeignKey(ShareGroup,
                                     help_text='Users who will have job output shared with them')
     vm_settings = models.ForeignKey(VMSettings,
@@ -350,6 +360,8 @@ class JobQuestionnaire(models.Model):
                                                        'determining job volume size')
     volume_mounts = models.TextField(default=json.dumps({'/dev/vdb1': '/work'}),
                                      help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
+    volume_mounts_new = JSONField(default={'/dev/vdb1': '/work'}, null=True,
+                                  help_text='Dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
     type = models.ForeignKey(JobQuestionnaireType, help_text='Type of questionnaire')
 
     def make_tag(self):
@@ -387,6 +399,8 @@ class JobAnswerSet(models.Model):
                                 help_text='Name of the job')
     user_job_order_json = models.TextField(blank=True, default=json.dumps({}),
                                            help_text="JSON containing the portion of the job order specified by user")
+    user_job_order = JSONField(blank=True, default={}, null=True,
+                               help_text="Dictionary of the job order specified by user")
     stage_group = models.OneToOneField(JobFileStageGroup, blank=True, null=True,
                                        help_text='Collection of files that must be staged for a job to be run')
     fund_code = models.CharField(max_length=255, blank=True,
@@ -512,6 +526,8 @@ class VMStrategy(models.Model):
                                                        'determining job volume size')
     volume_mounts = models.TextField(default=json.dumps({'/dev/vdb1': '/work'}),
                                      help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
+    volume_mounts_new = JSONField(default={'/dev/vdb1': '/work'}, null=True,
+                                  help_text='Dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
 
     class Meta:
         verbose_name_plural = "VM Strategies"
@@ -529,6 +545,7 @@ class WorkflowConfiguration(models.Model):
     workflow_version = models.ForeignKey(WorkflowVersion)
     system_job_order_json = models.TextField(
         help_text="JSON containing the portion of the job order specified by system.")
+    system_job_order = JSONField(null=True, help_text="Dictionary containing the portion of the job order specified by system.")
     default_vm_strategy = models.ForeignKey(VMStrategy,
                                             help_text='VM setup to use for jobs created with this configuration')
     share_group = models.ForeignKey(ShareGroup,
