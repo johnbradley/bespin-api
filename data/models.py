@@ -527,13 +527,12 @@ class WorkflowConfiguration(models.Model):
     """
     name = models.SlugField(max_length=255, help_text="Short user facing name")
     workflow_version = models.ForeignKey(WorkflowVersion)
-    system_job_order_json = models.TextField(blank=True,
-                                             help_text="JSON containing the portion of the job order specified by system.")
+    system_job_order_json = models.TextField(
+        help_text="JSON containing the portion of the job order specified by system.")
     default_vm_strategy = models.ForeignKey(VMStrategy,
-                                            help_text='todo', null=True)
+                                            help_text='VM setup to use for jobs created with this configuration')
     share_group = models.ForeignKey(ShareGroup,
-                                    help_text='Users who will have job output shared with them',
-                                    null=True)
+                                    help_text='Users who will have job output shared with them')
 
     def make_tag(self):
         workflow_tag = self.workflow_version.workflow.tag
