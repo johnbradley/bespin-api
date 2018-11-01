@@ -20,8 +20,6 @@ class AdminWorkflowSerializer(serializers.ModelSerializer):
 
 
 class AdminWorkflowVersionSerializer(serializers.ModelSerializer):
-    fields = JSONStrField(source="fields_json")
-
     class Meta:
         model = WorkflowVersion
         resource_name = 'workflowversions'
@@ -30,7 +28,6 @@ class AdminWorkflowVersionSerializer(serializers.ModelSerializer):
 
 class WorkflowConfigurationSerializer(serializers.ModelSerializer):
     tag = serializers.SerializerMethodField()
-    system_job_order = JSONStrField(source="system_job_order_json")
     user_fields = serializers.SerializerMethodField()
 
     def get_tag(self, obj):
@@ -41,14 +38,12 @@ class WorkflowConfigurationSerializer(serializers.ModelSerializer):
         Determines user supplied fields by removing those with answers in the system_job_order 
         from the workflow version's fields. 
         """
-        fields = json.loads(obj.workflow_version.fields_json)
-        system_order_json = json.loads(obj.system_job_order_json)
-        system_keys = system_order_json.keys()
-        user_fields_json = []
-        for field in fields:
+        system_keys = obj.system_job_order.keys()
+        user_fields = []
+        for field in obj.workflow_version.fields:
             if field['name'] not in system_keys:
-                user_fields_json.append(field)
-        return user_fields_json
+                user_fields.append(field)
+        return user_fields
 
     class Meta:
         model = WorkflowConfiguration

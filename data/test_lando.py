@@ -18,7 +18,8 @@ class LandoJobTests(TestCase):
         workflow_version = WorkflowVersion.objects.create(workflow=self.workflow,
                                                           object_name='#main',
                                                           version='1',
-                                                          url='')
+                                                          url='',
+                                                          fields=[{}])
         self.stage_group = JobFileStageGroup.objects.create(user=self.user)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         vm_flavor = VMFlavor.objects.create(name='flavor1')

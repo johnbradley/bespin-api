@@ -26,7 +26,7 @@ class WorkflowVersionSerializer(serializers.ModelSerializer):
         model = WorkflowVersion
         resource_name = 'workflow-versions'
         fields = ('id', 'workflow', 'name', 'description', 'object_name', 'created', 'url', 'version',
-                  'methods_document', 'fields_json', )
+                  'methods_document', 'fields', )
 
 
 class WorkflowMethodsDocumentSerializer(serializers.ModelSerializer):
@@ -295,8 +295,8 @@ class JobQuestionnaireSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobQuestionnaire
         resource_name = 'job-questionnaires'
-        fields = ('id', 'name', 'description', 'workflow_version', 'system_job_order_json',
-                  'user_fields_json', 'share_group', 'vm_settings', 'vm_flavor',
+        fields = ('id', 'name', 'description', 'workflow_version', 'system_job_order',
+                  'user_fields', 'share_group', 'vm_settings', 'vm_flavor',
                   'volume_size_base', 'volume_size_factor', 'volume_mounts',
                   'tag')  # Removed 'type' since it is incompatible with ember data
 

@@ -22,8 +22,8 @@ def create_job_factory_for_answer_set(job_answer_set):
     volume_mounts = job_answer_set.questionnaire.volume_mounts
     share_group = job_answer_set.questionnaire.share_group
     fund_code = job_answer_set.fund_code
-    system_job_order = json.loads(job_answer_set.questionnaire.system_job_order_json)
-    user_job_order = json.loads(job_answer_set.user_job_order_json)
+    system_job_order = job_answer_set.questionnaire.system_job_order
+    user_job_order = job_answer_set.user_job_order
     job_order_data = JobOrderData(job_answer_set.stage_group, system_job_order, user_job_order)
     job_vm_strategy = JobVMStrategy(vm_settings, vm_flavor,
                                     job_answer_set.questionnaire.volume_size_base,

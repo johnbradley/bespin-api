@@ -22,7 +22,8 @@ class JobFactoryTests(TestCase):
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                object_name='#main',
                                                                version='1',
-                                                               url=FLY_RNASEQ_URL)
+                                                               url=FLY_RNASEQ_URL,
+                                                               fields=[{}])
         self.stage_group = JobFileStageGroup.objects.create(user=self.user)
         self.share_group = ShareGroup.objects.create(name='result data checkers')
         vm_project = VMProject.objects.create(name='project1')

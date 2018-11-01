@@ -146,13 +146,13 @@ class JSONFieldMigrationTestCase(TestMigrations):
             description='',
             version=1,
             url='http://someurl.com',
-            fields_json='{}')
+            fields={})
         workflow_version2 = WorkflowVersion.objects.create(
             workflow=workflow,
             description='',
             version=2,
             url='http://someurl.com',
-            fields_json='{"color":"red", "data": { "count": 2}}')
+            fields={"color":"red", "data": { "count": 2}})
         user = User.objects.create(username='user1')
         endpoint = DDSEndpoint.objects.create(name='app1', agent_key='abc123')
         dds_user_cred = DDSUserCredential.objects.create(user=user, token='abc123', endpoint=endpoint)
@@ -177,8 +177,7 @@ class JSONFieldMigrationTestCase(TestMigrations):
         WorkflowConfiguration.objects.create(
             name='b37human',
             workflow_version=workflow_version1,
-            system_job_order_json='{"color":"red", "data": { "count": 2}}',
-            system_job_order=None,
+            system_job_order={"color":"red", "data": { "count": 2}},
             default_vm_strategy=vm_strategy,
             share_group=share_group)
         Job.objects.create(workflow_version=workflow_version1, user=user,
@@ -197,13 +196,14 @@ class JSONFieldMigrationTestCase(TestMigrations):
         questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
                                                         description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=workflow_version1,
-                                                        system_job_order_json='{"system_input": "foo"}',
+                                                        system_job_order={"system_input": "foo"},
                                                         share_group=share_group,
                                                         vm_settings=vm_settings,
                                                         vm_flavor=vm_flavor,
                                                         volume_size_base=10,
                                                         volume_size_factor=5,
-                                                        type=questionnaire_type)
+                                                        type=questionnaire_type,
+                                                        user_fields=[])
         JobAnswerSet.objects.create(user=user,
                                     questionnaire=questionnaire,
                                     job_name='job 1',

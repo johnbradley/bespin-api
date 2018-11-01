@@ -79,7 +79,8 @@ class WorkflowVersionTests(TestCase):
         WorkflowVersion.objects.create(workflow=self.workflow,
                                        object_name='#main',
                                        version='1',
-                                       url=CWL_URL)
+                                       url=CWL_URL,
+                                       fields=[{}])
         workflow_version = WorkflowVersion.objects.first()
         self.assertEqual(self.workflow, workflow_version.workflow)
         self.assertEqual('#main', workflow_version.object_name)
@@ -90,25 +91,27 @@ class WorkflowVersionTests(TestCase):
     def test_default_object_name(self):
         WorkflowVersion.objects.create(workflow=self.workflow,
                                        version='1',
-                                       url=CWL_URL)
+                                       url=CWL_URL,
+                                       fields=[{}])
         workflow_version = WorkflowVersion.objects.first()
         self.assertEqual('#main', workflow_version.object_name)
 
     def test_create_with_description(self):
         desc = """This is a detailed description of the job."""
-        WorkflowVersion.objects.create(workflow=self.workflow, description=desc, version=1)
+        WorkflowVersion.objects.create(workflow=self.workflow, description=desc, version=1, fields=[{}])
         wv = WorkflowVersion.objects.first()
         self.assertEqual(desc, wv.description)
 
     def test_version_num_and_workflow_are_unique(self):
-        WorkflowVersion.objects.create(workflow=self.workflow, description="one", version=1)
+        WorkflowVersion.objects.create(workflow=self.workflow, description="one", version=1, fields=[{}])
         with self.assertRaises(IntegrityError):
-            WorkflowVersion.objects.create(workflow=self.workflow, description="two", version=1)
+            WorkflowVersion.objects.create(workflow=self.workflow, description="two", version=1, fields=[{}])
 
     def test_sorted_by_version_num(self):
-        WorkflowVersion.objects.create(workflow=self.workflow, description="two", version=2)
-        a_workflow_version = WorkflowVersion.objects.create(workflow=self.workflow, description="one", version=1)
-        WorkflowVersion.objects.create(workflow=self.workflow, description="three", version=3)
+        WorkflowVersion.objects.create(workflow=self.workflow, description="two", version=2, fields=[{}])
+        a_workflow_version = WorkflowVersion.objects.create(workflow=self.workflow, description="one", version=1,
+                                                            fields=[{}])
+        WorkflowVersion.objects.create(workflow=self.workflow, description="three", version=3, fields=[{}])
         versions = [wv.version for wv in WorkflowVersion.objects.all()]
         self.assertEqual([1, 2, 3], versions)
         a_workflow_version.version = 4
@@ -123,7 +126,8 @@ class JobTests(TestCase):
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                object_name='#main',
                                                                version='1',
-                                                               url=CWL_URL)
+                                                               url=CWL_URL,
+                                                               fields=[{}])
         self.user = User.objects.create_user('test_user')
         self.sample_json = "{'type': 1}"
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
@@ -215,9 +219,10 @@ class JobTests(TestCase):
         obj.user_credentials = DDSUserCredential.objects.create(user=obj.user, token='abc123', endpoint=obj.endpoint)
         workflow = Workflow.objects.create(name='RnaSeq')
         obj.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
-                                                               object_name='#main',
-                                                               version='1',
-                                                               url=CWL_URL)
+                                                              object_name='#main',
+                                                              version='1',
+                                                              url=CWL_URL,
+                                                              fields=[{}])
         obj.sample_json = "{'type': 1}"
 
         vm_flavor = VMFlavor.objects.create(name='flavor1')
@@ -567,7 +572,8 @@ class JobQuestionnaireTests(TestCase):
         obj.workflow_version = WorkflowVersion.objects.create(workflow=obj.workflow,
                                                               object_name='#main',
                                                               version='1',
-                                                              url=CWL_URL)
+                                                              url=CWL_URL,
+                                                              fields=[{}])
         obj.flavor1 = VMFlavor.objects.create(name='flavor1')
         obj.flavor2 = VMFlavor.objects.create(name='flavor2')
         obj.project = VMProject.objects.create(name='bespin-project')
@@ -587,29 +593,29 @@ class JobQuestionnaireTests(TestCase):
         questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
                                                         description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=self.workflow_version,
-                                                        system_job_order_json='{"system_input": "foo"}',
+                                                        system_job_order={"system_input": "foo"},
                                                         share_group=self.share_group,
                                                         vm_settings=self.settings1,
                                                         vm_flavor=self.flavor1,
                                                         volume_size_base=10,
                                                         volume_size_factor=5,
-                                                        type=self.questionnaire_type
-                                                        )
+                                                        type=self.questionnaire_type,
+                                                        user_fields=[])
         questionnaire = JobQuestionnaire.objects.create(name='Human RnaSeq',
                                                         description='Uses reference genome zew and gene index def',
                                                         workflow_version=self.workflow_version,
-                                                        system_job_order_json='{"system_input":"bar"}',
+                                                        system_job_order={"system_input":"bar"},
                                                         share_group=self.share_group,
                                                         vm_settings=self.settings2,
                                                         vm_flavor=self.flavor2,
                                                         volume_size_base=3,
                                                         volume_size_factor=2,
-                                                        type=self.questionnaire_type
-                                                        )
+                                                        type=self.questionnaire_type,
+                                                        user_fields=[])
         ant_questionnaire = JobQuestionnaire.objects.filter(name='Ant RnaSeq').first()
         self.assertEqual('Ant RnaSeq', ant_questionnaire.name)
         self.assertEqual('Uses reference genome xyz and gene index abc', ant_questionnaire.description)
-        self.assertEqual('foo',json.loads(ant_questionnaire.system_job_order_json)['system_input'])
+        self.assertEqual('foo', ant_questionnaire.system_job_order['system_input'])
         self.assertEqual('flavor1', ant_questionnaire.vm_flavor.name)
         self.assertEqual('bespin-project', ant_questionnaire.vm_settings.cloud_settings.vm_project.name)
         self.assertEqual(self.share_group, ant_questionnaire.share_group)
@@ -619,7 +625,7 @@ class JobQuestionnaireTests(TestCase):
         human_questionnaire = JobQuestionnaire.objects.filter(name='Human RnaSeq').first()
         self.assertEqual('Human RnaSeq', human_questionnaire.name)
         self.assertEqual('Uses reference genome zew and gene index def', human_questionnaire.description)
-        self.assertEqual('bar',json.loads(human_questionnaire.system_job_order_json)['system_input'])
+        self.assertEqual('bar', human_questionnaire.system_job_order['system_input'])
         self.assertEqual('flavor2', human_questionnaire.vm_flavor.name)
         self.assertEqual('bespin-project', human_questionnaire.vm_settings.cloud_settings.vm_project.name)
         self.assertEqual(self.share_group, human_questionnaire.share_group)
@@ -630,14 +636,14 @@ class JobQuestionnaireTests(TestCase):
         questionnaire = JobQuestionnaire.objects.create(name='Ant RnaSeq',
                                                         description='Uses reference genome xyz and gene index abc',
                                                         workflow_version=self.workflow_version,
-                                                        system_job_order_json='{"system_input": "foo"}',
+                                                        system_job_order={"system_input": "foo"},
                                                         share_group=self.share_group,
                                                         vm_settings=self.settings1,
                                                         vm_flavor=self.flavor1,
                                                         volume_size_base=10,
                                                         volume_size_factor=5,
-                                                        type=self.questionnaire_type
-                                                        )
+                                                        type=self.questionnaire_type,
+                                                        user_fields=[])
         self.assertEqual(questionnaire.make_tag(), 'rna-seq/v1/human')
         self.assertEqual(JobQuestionnaire.split_tag_parts(questionnaire.make_tag()), ('rna-seq', 1, 'human'))
 
@@ -662,31 +668,31 @@ class JobAnswerSetTests(TestCase):
         self.questionnaire = JobQuestionnaire.objects.create(name='Exome Seq Q',
                                                              description='Uses reference genome xyz and gene index abc',
                                                              workflow_version=self.workflow_version,
-                                                             system_job_order_json='{"system_input": "foo"}',
+                                                             system_job_order={"system_input": "foo"},
                                                              share_group=self.share_group,
                                                              vm_settings=self.vm_settings,
                                                              vm_flavor=self.vm_flavor,
                                                              type=self.questionnaire_type,
-                                                             )
+                                                             user_fields=[])
 
     def test_basic_functionality(self):
         JobAnswerSet.objects.create(user=self.user,
                                     questionnaire=self.questionnaire,
                                     job_name='job 1',
-                                    user_job_order_json='{"user_input":"bar"}'
+                                    user_job_order={"user_input":"bar"}
         )
         job_answer_set = JobAnswerSet.objects.first()
         self.assertEqual(self.user, job_answer_set.user),
         self.assertEqual(self.questionnaire, job_answer_set.questionnaire)
         self.assertEqual('job 1', job_answer_set.job_name)
-        self.assertEqual('{"user_input":"bar"}', job_answer_set.user_job_order_json)
+        self.assertEqual({"user_input":"bar"}, job_answer_set.user_job_order)
 
 
     def test_fails_mismatch_stage_group_user(self):
         job_answer_set = JobAnswerSet.objects.create(user=self.user,
                                                      questionnaire=self.questionnaire,
                                                      job_name='job 2',
-                                                     user_job_order_json='{"user_input":"bar"}'
+                                                     user_job_order={"user_input":"bar"}
         )
         other_user = User.objects.create_user('other_user')
         stage_group = JobFileStageGroup.objects.create(user=other_user)
@@ -758,7 +764,8 @@ class WorkflowMethodsDocumentTests(TestCase):
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                object_name='#main',
                                                                version='1',
-                                                               url=CWL_URL)
+                                                               url=CWL_URL,
+                                                               fields=[{}])
 
     def test_crud(self):
         WorkflowMethodsDocument.objects.create(workflow_version=self.workflow_version,
@@ -889,8 +896,7 @@ class VMSettingsTests(TestCase):
         error_dict = val.exception.error_dict
         error_keys = set(error_dict.keys())
         expected_error_keys ={'image_name',
-                              'cwl_base_command',
-                              'cwl_base_command_new'}
+                              'cwl_base_command',}
         self.assertEqual(error_keys, expected_error_keys)
 
         # name has a default, should not fail validation

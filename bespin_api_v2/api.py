@@ -76,7 +76,7 @@ class WorkflowConfigurationViewSet(viewsets.ReadOnlyModelViewSet):
         user_job_order = request.data.get('user_job_order')
         job_vm_strategy_id = request.data.get('job_vm_strategy')
         workflow_configuration = WorkflowConfiguration.objects.get(pk=pk)
-        system_job_order = json.loads(workflow_configuration.system_job_order_json)
+        system_job_order = workflow_configuration.system_job_order
 
         job_order_data = JobOrderData(
             stage_group=JobFileStageGroup.objects.get(pk=stage_group_id),

@@ -309,9 +309,9 @@ class WorkflowVersionTestCase(APITestCase):
     def testFilterByWorkflow(self):
         workflow1 = Workflow.objects.create(name='RnaSeq', tag='rnaseq1')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
-        WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url)
+        WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url, fields=[{}])
         workflow2 = Workflow.objects.create(name='RnaSeq2', tag='rnaseq2')
-        WorkflowVersion.objects.create(workflow=workflow2, version="30", url=cwl_url)
+        WorkflowVersion.objects.create(workflow=workflow2, version="30", url=cwl_url, fields=[{}])
         self.user_login.become_normal_user()
         url = reverse('workflowversion-list')
 
@@ -343,7 +343,8 @@ class JobsTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[{}])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.vm_flavor = VMFlavor.objects.create(name='flavor1')
         add_vm_settings(self)
@@ -930,7 +931,8 @@ class JobStageGroupTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[{}])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         add_vm_settings(self)
         self.vm_flavor = VMFlavor.objects.create(name='flavor')
@@ -987,7 +989,8 @@ class JobErrorTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[{}])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         add_vm_settings(self)
         self.vm_flavor = VMFlavor.objects.create(name='flavor')
@@ -1062,7 +1065,8 @@ class DDSJobInputFileTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[{}])
         self.other_user = self.user_login.become_other_normal_user()
         self.my_user = self.user_login.become_normal_user()
         self.stage_group = JobFileStageGroup.objects.create(user=self.my_user)
@@ -1135,7 +1139,8 @@ class URLJobInputFileTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[{}])
         self.my_user = self.user_login.become_normal_user()
         self.stage_group = JobFileStageGroup.objects.create(user=self.my_user)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
@@ -1187,7 +1192,8 @@ class JobDDSOutputProjectTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[{}])
         self.other_user = self.user_login.become_other_normal_user()
         self.my_user = self.user_login.become_normal_user()
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
@@ -1317,36 +1323,40 @@ class JobQuestionnaireTestCase(APITestCase):
         self.user_login = UserLogin(self.client)
         workflow = Workflow.objects.create(name='RnaSeq', tag='rnaseq')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
-        self.system_job_order_json1 = json.dumps({'system_input': 1})
-        self.system_job_order_json2 = json.dumps({'system_input': 2})
+        self.system_job_order1 = {'system_input': 1}
+        self.system_job_order2 = {'system_input': 2}
         add_vm_settings(self)
         self.vm_flavor = VMFlavor.objects.create(name='flavor')
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[{}])
         self.workflow_version2 = WorkflowVersion.objects.create(workflow=workflow,
                                                                 version="2",
-                                                                url=cwl_url)
+                                                                url=cwl_url,
+                                                               fields=[{}])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         questionnaire_type1 = JobQuestionnaireType.objects.create(tag='human')
         questionnaire_type2 = JobQuestionnaireType.objects.create(tag='ant')
         self.questionnaire1 = JobQuestionnaire.objects.create(name='Workflow1',
                                                               description='A really large workflow',
                                                               workflow_version=self.workflow_version,
-                                                              system_job_order_json=self.system_job_order_json1,
+                                                              system_job_order=self.system_job_order1,
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
-                                                              type=questionnaire_type1
+                                                              type=questionnaire_type1,
+                                                              user_fields=[]
                                                               )
         self.questionnaire2 = JobQuestionnaire.objects.create(name='Workflow2',
                                                               description='A rather small workflow',
                                                               workflow_version=self.workflow_version2,
-                                                              system_job_order_json=self.system_job_order_json2,
+                                                              system_job_order=self.system_job_order2,
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
-                                                              type=questionnaire_type2
+                                                              type=questionnaire_type2,
+                                                              user_fields=[]
                                                               )
         self.questionnaire2.save()
 
@@ -1363,7 +1373,7 @@ class JobQuestionnaireTestCase(APITestCase):
         self.assertEqual('Workflow1', response.data['name'])
         self.assertEqual('A really large workflow', response.data['description'])
         self.assertEqual(self.workflow_version.id, response.data['workflow_version'])
-        self.assertEqual(self.system_job_order_json1, response.data['system_job_order_json'])
+        self.assertEqual(self.system_job_order1, response.data['system_job_order'])
         self.assertEqual(self.vm_settings.id, response.data['vm_settings'])
 
         url = '{}{}/'.format(reverse('jobquestionnaire-list'), self.questionnaire2.id)
@@ -1372,7 +1382,7 @@ class JobQuestionnaireTestCase(APITestCase):
         self.assertEqual('Workflow2', response.data['name'])
         self.assertEqual('A rather small workflow', response.data['description'])
         self.assertEqual(self.workflow_version2.id, response.data['workflow_version'])
-        self.assertEqual(self.system_job_order_json2, response.data['system_job_order_json'])
+        self.assertEqual(self.system_job_order2, response.data['system_job_order'])
         self.assertEqual(self.vm_settings.id, response.data['vm_settings'])
 
     def test_user_cant_write(self):
@@ -1424,36 +1434,37 @@ class JobAnswerSetTests(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         add_vm_settings(self)
         self.vm_flavor = VMFlavor.objects.create(name='flavor')
-        self.system_job_order_json1 = json.dumps({'system_input': 1})
-        self.system_job_order_json2 = json.dumps({'system_input': 2})
+        self.system_job_order1 = {'system_input': 1}
+        self.system_job_order2 = {'system_input': 2}
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[{}])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.questionnaire_type = JobQuestionnaireType.objects.create(tag='human')
         self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
                                                               workflow_version=self.workflow_version,
-                                                              system_job_order_json=self.system_job_order_json1,
+                                                              system_job_order=self.system_job_order1,
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
                                                               type=self.questionnaire_type,
-                                                              )
+                                                              user_fields=[])
         self.questionnaire2 = JobQuestionnaire.objects.create(description='Workflow1',
                                                               workflow_version=self.workflow_version,
-                                                              system_job_order_json=self.system_job_order_json2,
+                                                              system_job_order=self.system_job_order2,
                                                               share_group=self.share_group,
                                                               vm_settings=self.vm_settings,
                                                               vm_flavor=self.vm_flavor,
                                                               type=self.questionnaire_type,
-                                                              )
+                                                              user_fields=[])
         self.other_user = self.user_login.become_other_normal_user()
         self.user = self.user_login.become_normal_user()
         self.stage_group = JobFileStageGroup.objects.create(user=self.user)
         self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret',
                                                    api_root='https://someserver.com/api')
-        self.user_job_order_json1 = json.dumps({'input1': 'value1'})
-        self.user_job_order_json2 = json.dumps({'input1': 'value1', 'input2': [1, 2, 3]})
+        self.user_job_order1 = {'input1': 'value1'}
+        self.user_job_order2 = {'input1': 'value1', 'input2': [1, 2, 3]}
         # creating a job defaults to the first dds_user_credential
         self.dds_user_credential = DDSUserCredential.objects.create(
             endpoint=self.endpoint,
@@ -1467,26 +1478,26 @@ class JobAnswerSetTests(APITestCase):
         response = self.client.post(url, format='json', data={
             'questionnaire': self.questionnaire1.id,
             'job_name': 'Test job 1',
-            'user_job_order_json' : self.user_job_order_json1,
+            'user_job_order' : self.user_job_order1,
             'stage_group' : self.stage_group.id,
             'fund_code': '123-4'
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(1, len(JobAnswerSet.objects.all()))
         job_answer_set = JobAnswerSet.objects.first()
-        self.assertEqual(job_answer_set.user_job_order_json, self.user_job_order_json1)
+        self.assertEqual(job_answer_set.user_job_order, self.user_job_order1)
 
         url = '{}{}/'.format(reverse('jobanswerset-list'), response.data['id'])
         response = self.client.put(url, format='json', data={
             'questionnaire': self.questionnaire1.id,
             'job_name': 'Test job 2',
-            'user_job_order_json': self.user_job_order_json2,
+            'user_job_order': self.user_job_order2,
             'stage_group': self.stage_group.id,
             'fund_code': '123-5'
         })
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         job_answer_set = JobAnswerSet.objects.first()
-        self.assertEqual(job_answer_set.user_job_order_json, self.user_job_order_json2)
+        self.assertEqual(job_answer_set.user_job_order, self.user_job_order2)
         self.assertEqual(job_answer_set.fund_code, '123-5')
 
         response = self.client.delete(url, format='json')
@@ -1498,12 +1509,12 @@ class JobAnswerSetTests(APITestCase):
         vm_flavor = VMFlavor.objects.create(name='flavor2')
         questionnaire = JobQuestionnaire.objects.create(description='Workflow1',
                                                         workflow_version=self.workflow_version,
-                                                        system_job_order_json=self.system_job_order_json1,
+                                                        system_job_order=self.system_job_order1,
                                                         share_group=self.share_group,
                                                         vm_settings=self.vm_settings,
                                                         vm_flavor=vm_flavor,
                                                         type=self.questionnaire_type,
-                                                        )
+                                                        user_fields=[])
         return questionnaire
 
     @override_settings(REQUIRE_JOB_TOKENS=True)
@@ -1513,7 +1524,7 @@ class JobAnswerSetTests(APITestCase):
         response = self.client.post(url, format='json', data={
             'questionnaire': questionnaire.id,
             'job_name': 'Test job',
-            'user_job_order_json': self.user_job_order_json1,
+            'user_job_order': self.user_job_order1,
             'stage_group': self.stage_group.id,
             'vm_settings': self.vm_settings.id,
             'fund_code': '123-5'
@@ -1531,7 +1542,7 @@ class JobAnswerSetTests(APITestCase):
         response = self.client.post(url, format='json', data={
             'questionnaire': questionnaire.id,
             'job_name': 'Test job with items',
-            'user_job_order_json': self.user_job_order_json1,
+            'user_job_order': self.user_job_order1,
             'stage_group': self.stage_group.id,
             'vm_settings': self.vm_settings.id,
             'fund_code': '123-5'
@@ -1544,8 +1555,8 @@ class JobAnswerSetTests(APITestCase):
         self.assertEqual('Test job with items', response.data['name'])
         self.assertEqual(self.vm_settings.id, response.data['vm_settings'])
         self.assertEqual('123-5', response.data['fund_code'])
-        expected_job_order = json.loads(self.system_job_order_json1).copy()
-        expected_job_order.update(json.loads(self.user_job_order_json1))
+        expected_job_order = self.system_job_order1.copy()
+        expected_job_order.update(self.user_job_order1)
         self.assertEqual(json.dumps(expected_job_order), response.data['job_order'])
         self.assertEqual(1, len(Job.objects.all()))
         self.assertEqual(1, len(JobDDSOutputProject.objects.all()))
@@ -1557,7 +1568,7 @@ class JobAnswerSetTests(APITestCase):
         response = self.client.post(url, format='json', data={
             'questionnaire': questionnaire.id,
             'job_name': 'Test job with items',
-            'user_job_order_json': self.user_job_order_json1,
+            'user_job_order': self.user_job_order1,
             'stage_group': self.stage_group.id,
             'vm_settings': self.vm_settings.id,
             'fund_code': '123-5'
@@ -1577,7 +1588,7 @@ class JobAnswerSetTests(APITestCase):
         response = self.client.post(url, format='json', data={
             'questionnaire': questionnaire.id,
             'job_name': 'Test job with items',
-            'user_job_order_json': self.user_job_order_json1,
+            'user_job_order': self.user_job_order1,
             'stage_group': self.stage_group.id,
             'volume_size': 200
         })
@@ -1749,7 +1760,8 @@ class WorkflowMethodsDocumentTestCase(APITestCase):
         self.user_login = UserLogin(self.client)
         workflow1 = Workflow.objects.create(name='RnaSeq')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
-        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url)
+        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url,
+                                                               fields=[{}])
         self.methods_document = WorkflowMethodsDocument.objects.create(workflow_version=self.workflow_version,
                                                                        content="#One")
 
@@ -2033,7 +2045,8 @@ class JobActivitiesTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[{}])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.vm_flavor = VMFlavor.objects.create(name='flavor1')
         add_vm_settings(self)
