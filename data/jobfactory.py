@@ -10,7 +10,6 @@ BYTES_TO_GB_DIVISOR = 1024 * 1024 * 1024
 def create_job_factory_for_answer_set(job_answer_set):
     """
     Create JobFactory based on questions and answers referenced by job_answer_set.
-    :param user: User: user who's credentials we will use for building the job
     :param job_answer_set: JobAnswerSet: references questions and their answers to use for building a Job.
     :return: JobFactory
     """
@@ -44,7 +43,9 @@ def create_job_factory_for_workflow_configuration(workflow_configuration, user, 
 def calculate_volume_size(volume_size_base, volume_size_factor, stage_group):
     """
     Calculates the volume size needed based volume size settings and size of files to be staged.
-    :param job_answer_set: JobAnswerSet: contains questionnaire and stage_group used in calculation
+    :param volume_size_base: int: base volume size
+    :param volume_size_factor: int: value multipied by the size of the stage group
+    :param stage_group: StageGroup: input files used with a job
     :return: int: size in GB: volume_size_factor * data_size_in_gb + volume_size_base
     """
     base_in_gb = volume_size_base
