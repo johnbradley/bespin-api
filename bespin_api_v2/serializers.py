@@ -29,12 +29,9 @@ class AdminWorkflowVersionSerializer(serializers.ModelSerializer):
 
 
 class WorkflowConfigurationSerializer(serializers.ModelSerializer):
-    tag = serializers.SerializerMethodField()
+    tag = serializers.CharField(source='make_tag', read_only=True)
     system_job_order = JSONStrField(source="system_job_order_json")
     user_fields = serializers.SerializerMethodField()
-
-    def get_tag(self, obj):
-        return obj.make_tag()
 
     def get_user_fields(self, obj):
         """
