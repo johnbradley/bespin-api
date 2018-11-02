@@ -11,26 +11,26 @@ from data.jobfactory import create_job_factory_for_workflow_configuration, JobOr
 from data.exceptions import BespinAPIException
 
 
-class CreateOnlyViewSet(mixins.CreateModelMixin,
-                        mixins.RetrieveModelMixin,
-                        mixins.ListModelMixin,
-                        viewsets.GenericViewSet):
+class CreateListRetrieveModelViewSet(mixins.CreateModelMixin,
+                                     mixins.ListModelMixin,
+                                     mixins.RetrieveModelMixin,
+                                     viewsets.GenericViewSet):
     pass
 
 
-class AdminWorkflowViewSet(CreateOnlyViewSet):
+class AdminWorkflowViewSet(CreateListRetrieveModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
     serializer_class = AdminWorkflowSerializer
     queryset = Workflow.objects.all()
 
 
-class AdminWorkflowVersionViewSet(CreateOnlyViewSet):
+class AdminWorkflowVersionViewSet(CreateListRetrieveModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
     serializer_class = AdminWorkflowVersionSerializer
     queryset = WorkflowVersion.objects.all()
 
 
-class AdminWorkflowConfigurationViewSet(CreateOnlyViewSet):
+class AdminWorkflowConfigurationViewSet(CreateListRetrieveModelViewSet):
     permission_classes = (permissions.IsAdminUser,)
     serializer_class = WorkflowConfigurationSerializer
     queryset = WorkflowConfiguration.objects.all()
