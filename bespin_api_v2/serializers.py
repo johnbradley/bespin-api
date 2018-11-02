@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration
+from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, VMStrategy
+from data.jobfactory import JobOrderData
 import json
 
 # This field can go away when we switch to JSONField
@@ -59,3 +60,14 @@ class VMStrategySerializer(serializers.ModelSerializer):
         model = VMStrategy
         resource_name = 'vm-strategies'
         fields = '__all__'
+
+
+class JobOrderDataSerializer(serializers.Serializer):
+    job_name = serializers.CharField()
+    fund_code = serializers.CharField()
+    stage_group = serializers.PrimaryKeyRelatedField(queryset=JobFileStageGroup.objects.all())
+    user_job_order = serializers.DictField()
+    job_vm_strategy = serializers.PrimaryKeyRelatedField(queryset=VMStrategy.objects.all(), allow_null=True)
+
+    def create(self, validated_data):
+        return JobOrderData(**validated_data)

@@ -24,20 +24,15 @@ def create_job_factory_for_answer_set(job_answer_set):
     fund_code = job_answer_set.fund_code
     system_job_order = json.loads(job_answer_set.questionnaire.system_job_order_json)
     user_job_order = json.loads(job_answer_set.user_job_order_json)
-    job_order_data = JobOrderData(job_answer_set.stage_group, system_job_order, user_job_order)
     job_vm_strategy = JobVMStrategy(vm_settings, vm_flavor,
                                     job_answer_set.questionnaire.volume_size_base,
                                     job_answer_set.questionnaire.volume_size_factor,
                                     volume_mounts)
-    return JobFactory(user, workflow_version, job_name, fund_code, job_order_data, job_vm_strategy, share_group)
+    return JobFactory(user, workflow_version,
+                      job_name, fund_code, job_answer_set.stage_group,
+                      system_job_order, user_job_order,
+                      job_vm_strategy, share_group)
 
-
-def create_job_factory_for_workflow_configuration(workflow_configuration, user, job_name, fund_code, job_order_data,
-                                                  job_vm_strategy=None):
-    if not job_vm_strategy:
-        job_vm_strategy = workflow_configuration.default_vm_strategy
-    return JobFactory(user, workflow_configuration.workflow_version, job_name, fund_code, job_order_data,
-                      job_vm_strategy, workflow_configuration.share_group)
 
 
 def calculate_volume_size(volume_size_base, volume_size_factor, stage_group):
@@ -78,44 +73,58 @@ class JobVMStrategy(object):
 
 
 class JobOrderData(object):
-    def __init__(self, stage_group, system_job_order, user_job_order):
+    def __init__(self, job_name, fund_code, stage_group, user_job_order, job_vm_strategy):
+        self.job_name = job_name
+        self.fund_code = fund_code
         self.stage_group = stage_group
-        self.system_job_order = system_job_order
         self.user_job_order = user_job_order
+        self.job_vm_strategy = job_vm_strategy
 
-    def is_valid(self):
-        return self.system_job_order and self.user_job_order
+    def get_vm_strategy(self, workflow_configuration):
+        if self.job_vm_strategy:
+            return self.job_vm_strategy
+        else:
+            return workflow_configuration.default_vm_strategy
 
-    def get_job_order(self):
-        # Create the job order to be submitted. Begin with the system info and overlay the user order
-        job_order = self.system_job_order.copy()
-        job_order.update(self.user_job_order)
-        return job_order
+    def create_job_factory(self, user, workflow_configuration):
+        workflow_version = workflow_configuration.workflow_version
+        system_job_order = json.loads(workflow_configuration.system_job_order_json)
+        vm_strategy = self.get_vm_strategy(workflow_configuration)
+        share_group = workflow_configuration.share_group
+        return JobFactory(user, workflow_version,
+                          self.job_name, self.fund_code, self.stage_group,
+                          system_job_order, self.user_job_order,
+                          vm_strategy, share_group)
 
 
 class JobFactory(object):
     """
     Creates Job record in the database based on questions their answers.
     """
-    def __init__(self, user, workflow_version, job_name, fund_code, job_order_data, job_vm_strategy, share_group):
+    def __init__(self, user, workflow_version, job_name, fund_code, stage_group, system_job_order, user_job_order,
+                 job_vm_strategy, share_group):
         self.user = user
         self.workflow_version = workflow_version
         self.job_name = job_name
         self.fund_code = fund_code
-        self.job_order_data = job_order_data
+        self.stage_group = stage_group
+        self.system_job_order = system_job_order
+        self.user_job_order = user_job_order
         self.job_vm_strategy = job_vm_strategy
         self.share_group = share_group
+
+    def _get_job_order(self):
+        # Create the job order to be submitted. Begin with the system info and overlay the user order
+        job_order = self.system_job_order.copy()
+        job_order.update(self.user_job_order)
+        return job_order
 
     def create_job(self):
         """
         Create a job based on the workflow_version, system job order and user job order
         :return: Job: job that was inserted into the database along with it's output project and input files.
         """
-        if not self.job_order_data.is_valid():
-            raise JobFactoryException('Attempted to create a job without specifying system job order or user job order')
-
-        job_order = self.job_order_data.get_job_order()
-
+        job_order = self._get_job_order()
         if settings.REQUIRE_JOB_TOKENS:
             job_state = Job.JOB_STATE_NEW
         else:
@@ -124,11 +133,11 @@ class JobFactory(object):
         volume_size = calculate_volume_size(
             volume_size_base=self.job_vm_strategy.volume_size_base,
             volume_size_factor=self.job_vm_strategy.volume_size_factor,
-            stage_group=self.job_order_data.stage_group)
+            stage_group=self.stage_group)
 
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  user=self.user,
-                                 stage_group=self.job_order_data.stage_group,
+                                 stage_group=self.stage_group,
                                  name=self.job_name,
                                  vm_settings=self.job_vm_strategy.vm_settings,
                                  job_order=json.dumps(job_order),
@@ -137,11 +146,10 @@ class JobFactory(object):
                                  vm_flavor=self.job_vm_strategy.vm_flavor,
                                  share_group=self.share_group,
                                  fund_code=self.fund_code,
-                                 state=job_state
-        )
+                                 state=job_state)
+
         # Create output project
         # just taking the first worker user credential for now(there is only one production DukeDS instance)
         worker_user_credentials = DDSUserCredential.objects.first()
         JobDDSOutputProject.objects.create(job=job, dds_user_credentials=worker_user_credentials)
         return job
-

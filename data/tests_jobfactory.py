@@ -34,35 +34,17 @@ class JobFactoryTests(TestCase):
                                              volume_size_base=10, volume_size_factor=0,
                                              volume_mounts=self.volume_mounts)
 
-    # What does job factory do now?
-    # Checks that orders are not none
-    # merges dictionaries
-    # Creates a job
-    # Creates a job output project
-
-    def test_requires_user_order(self):
-        user_job_order = None
-        system_job_order = {}
-        job_order_data = JobOrderData(None, system_job_order, user_job_order)
-        self.job_vm_strategy.volume_size_factor = 0
-        self.job_vm_strategy.volume_size_base = 150
-        job_factory = JobFactory(user=self.user, workflow_version=None, job_name=None, fund_code='123-4',
-                                 job_order_data=job_order_data, job_vm_strategy=self.job_vm_strategy,
-                                 share_group=self.share_group)
-        with self.assertRaises(JobFactoryException):
-            job_factory.create_job()
-
-    def test_requires_system_order(self):
+    def test_creates_job_with_empty_job_order_data(self):
         user_job_order = {}
-        system_job_order = None
+        system_job_order = {}
         self.job_vm_strategy.volume_size_factor = 0
         self.job_vm_strategy.volume_size_base = 150
-        job_order_data = JobOrderData(None, system_job_order, user_job_order)
-        job_factory = JobFactory(user=self.user, workflow_version=None, job_name=None, fund_code='123-4',
-                                 job_order_data=job_order_data, job_vm_strategy=self.job_vm_strategy,
-                                 share_group=self.share_group)
-        with self.assertRaises(JobFactoryException):
-            job_factory.create_job()
+        job_factory = JobFactory(user=self.user, workflow_version=self.workflow_version,
+                                 job_name='Test Job', fund_code='123-4', stage_group=self.stage_group,
+                                 system_job_order=system_job_order, user_job_order=user_job_order,
+                                 job_vm_strategy=self.job_vm_strategy, share_group=self.share_group)
+        job = job_factory.create_job()
+        self.assertEqual(json.loads(job.job_order), {})
 
     @override_settings(REQUIRE_JOB_TOKENS=True)
     def test_creates_job(self):
@@ -70,10 +52,10 @@ class JobFactoryTests(TestCase):
         system_job_order = {'input2': 'system'}
         self.job_vm_strategy.volume_size_factor = 0
         self.job_vm_strategy.volume_size_base = 110
-        job_order_data = JobOrderData(self.stage_group, system_job_order, user_job_order)
-        job_factory = JobFactory(user=self.user, workflow_version=self.workflow_version, job_name='Test Job',
-                                 fund_code='123-4', job_order_data=job_order_data, job_vm_strategy=self.job_vm_strategy,
-                                 share_group=self.share_group)
+        job_factory = JobFactory(user=self.user, workflow_version=self.workflow_version,
+                                 job_name='Test Job', fund_code='123-4', stage_group=self.stage_group,
+                                 system_job_order=system_job_order, user_job_order=user_job_order,
+                                 job_vm_strategy=self.job_vm_strategy, share_group=self.share_group)
         job = job_factory.create_job()
         self.assertEqual(job.user, self.user)
         self.assertEqual(job.workflow_version, self.workflow_version)
@@ -95,10 +77,10 @@ class JobFactoryTests(TestCase):
         system_job_order = {'input2': 'system'}
         self.job_vm_strategy.volume_size_factor = 0
         self.job_vm_strategy.volume_size_base = 110
-        job_order_data = JobOrderData(self.stage_group, system_job_order, user_job_order)
-        job_factory = JobFactory(user=self.user, workflow_version=self.workflow_version, job_name='Test Job',
-                                 fund_code='123-4', job_order_data=job_order_data, job_vm_strategy=self.job_vm_strategy,
-                                 share_group=self.share_group)
+        job_factory = JobFactory(user=self.user, workflow_version=self.workflow_version,
+                                 job_name='Test Job', fund_code='123-4', stage_group=self.stage_group,
+                                 system_job_order=system_job_order, user_job_order=user_job_order,
+                                 job_vm_strategy=self.job_vm_strategy, share_group=self.share_group)
         job = job_factory.create_job()
         self.assertEqual(job.user, self.user)
         self.assertEqual(job.workflow_version, self.workflow_version)
@@ -109,10 +91,10 @@ class JobFactoryTests(TestCase):
         system_job_order = {'input1': 'system'}
         self.job_vm_strategy.volume_size_factor = 0
         self.job_vm_strategy.volume_size_base = 120
-        job_order_data = JobOrderData(self.stage_group, system_job_order, user_job_order)
-        job_factory = JobFactory(user=self.user, workflow_version=self.workflow_version, job_name='Test Job',
-                                 fund_code='123-4', job_order_data=job_order_data, job_vm_strategy=self.job_vm_strategy,
-                                 share_group=self.share_group)
+        job_factory = JobFactory(user=self.user, workflow_version=self.workflow_version,
+                                 job_name='Test Job', fund_code='123-4', stage_group=self.stage_group,
+                                 system_job_order=system_job_order, user_job_order=user_job_order,
+                                 job_vm_strategy=self.job_vm_strategy, share_group=self.share_group)
         job = job_factory.create_job()
         expected_job_order = json.dumps({'input1':'user'})
         self.assertEqual(expected_job_order, job.job_order)

@@ -4,10 +4,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import detail_route
 from django.db import transaction
 from bespin_api_v2.serializers import AdminWorkflowSerializer, AdminWorkflowVersionSerializer, VMStrategySerializer, \
-    WorkflowConfigurationSerializer
+    WorkflowConfigurationSerializer, JobOrderDataSerializer
 from data.serializers import JobSerializer
 from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup
-from data.jobfactory import create_job_factory_for_workflow_configuration, JobOrderData
 from data.exceptions import BespinAPIException
 
 
@@ -70,28 +69,10 @@ class WorkflowConfigurationViewSet(viewsets.ReadOnlyModelViewSet):
         """
         Create a new job based on our JobAnswerSet and return its json.
         """
-        job_name = request.data.get('job_name')
-        fund_code = request.data.get('fund_code')
-        stage_group_id = request.data.get('stage_group')
-        user_job_order = request.data.get('user_job_order')
-        job_vm_strategy_id = request.data.get('job_vm_strategy')
         workflow_configuration = WorkflowConfiguration.objects.get(pk=pk)
-        system_job_order = json.loads(workflow_configuration.system_job_order_json)
-
-        job_order_data = JobOrderData(
-            stage_group=JobFileStageGroup.objects.get(pk=stage_group_id),
-            system_job_order=system_job_order,
-            user_job_order=user_job_order,
-        )
-        try:
-            job_vm_strategy = VMStrategy.objects.get(pk=job_vm_strategy_id)
-        except VMStrategy.DoesNotExist:
-            job_vm_strategy = None
-
-        job_factory = create_job_factory_for_workflow_configuration(workflow_configuration, request.user,
-                                                                    job_name, fund_code, job_order_data,
-                                                                    job_vm_strategy=job_vm_strategy)
-
+        serializer = JobOrderDataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        job_order_data = serializer.save()
+        job_factory = job_order_data.create_job_factory(request.user, workflow_configuration)
         job = job_factory.create_job()
-        serializer = JobSerializer(job)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(JobSerializer(job).data, status=status.HTTP_201_CREATED)
