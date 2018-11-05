@@ -7,10 +7,9 @@ import math
 BYTES_TO_GB_DIVISOR = 1024 * 1024 * 1024
 
 
-def create_job_factory(job_answer_set):
+def create_job_factory_for_answer_set(job_answer_set):
     """
     Create JobFactory based on questions and answers referenced by job_answer_set.
-    :param user: User: user who's credentials we will use for building the job
     :param job_answer_set: JobAnswerSet: references questions and their answers to use for building a Job.
     :return: JobFactory
     """
@@ -18,29 +17,35 @@ def create_job_factory(job_answer_set):
     vm_settings = job_answer_set.questionnaire.vm_settings
     workflow_version = job_answer_set.questionnaire.workflow_version
     stage_group = job_answer_set.stage_group
-    user_job_order_dict = json.loads(job_answer_set.user_job_order_json)
-    system_job_order_dict = json.loads(job_answer_set.questionnaire.system_job_order_json)
     job_name = job_answer_set.job_name
     vm_flavor = job_answer_set.questionnaire.vm_flavor
-    volume_size = calculate_volume_size(job_answer_set)
     volume_mounts = job_answer_set.questionnaire.volume_mounts
     share_group = job_answer_set.questionnaire.share_group
     fund_code = job_answer_set.fund_code
-    factory = JobFactory(user, workflow_version, stage_group, user_job_order_dict, system_job_order_dict, job_name,
-                         vm_settings, vm_flavor, volume_size, volume_mounts, share_group, fund_code)
+    system_job_order = json.loads(job_answer_set.questionnaire.system_job_order_json)
+    user_job_order = json.loads(job_answer_set.user_job_order_json)
+    job_vm_strategy = JobVMStrategy(vm_settings, vm_flavor,
+                                    job_answer_set.questionnaire.volume_size_base,
+                                    job_answer_set.questionnaire.volume_size_factor,
+                                    volume_mounts)
+    return JobFactory(user, workflow_version,
+                      job_name, fund_code, job_answer_set.stage_group,
+                      system_job_order, user_job_order,
+                      job_vm_strategy, share_group)
 
-    return factory
 
 
-def calculate_volume_size(job_answer_set):
+def calculate_volume_size(volume_size_base, volume_size_factor, stage_group):
     """
-    Calculates the volume size needed based on the job_answer_set questionnaire settings and stage group data.
-    :param job_answer_set: JobAnswerSet: contains questionnaire and stage_group used in calculation
+    Calculates the volume size needed based volume size settings and size of files to be staged.
+    :param volume_size_base: int: base volume size
+    :param volume_size_factor: int: value multipied by the size of the stage group
+    :param stage_group: StageGroup: input files used with a job
     :return: int: size in GB: volume_size_factor * data_size_in_gb + volume_size_base
     """
-    base_in_gb = job_answer_set.questionnaire.volume_size_base
-    factor = job_answer_set.questionnaire.volume_size_factor
-    data_size_in_gb = calculate_stage_group_size(job_answer_set.stage_group)
+    base_in_gb = volume_size_base
+    factor = volume_size_factor
+    data_size_in_gb = calculate_stage_group_size(stage_group)
     return int(math.ceil(base_in_gb + float(factor) * data_size_in_gb))
 
 
@@ -58,62 +63,93 @@ def calculate_stage_group_size(stage_group):
     return float(total_size_in_bytes) / BYTES_TO_GB_DIVISOR
 
 
+class JobVMStrategy(object):
+    def __init__(self, vm_settings, vm_flavor, volume_size_base, volume_size_factor, volume_mounts):
+        self.vm_settings = vm_settings
+        self.vm_flavor = vm_flavor
+        self.volume_size_base = volume_size_base
+        self.volume_size_factor = volume_size_factor
+        self.volume_mounts = volume_mounts
+
+
+class JobOrderData(object):
+    def __init__(self, job_name, fund_code, stage_group, user_job_order, job_vm_strategy):
+        self.job_name = job_name
+        self.fund_code = fund_code
+        self.stage_group = stage_group
+        self.user_job_order = user_job_order
+        self.job_vm_strategy = job_vm_strategy
+
+    def get_vm_strategy(self, workflow_configuration):
+        if self.job_vm_strategy:
+            return self.job_vm_strategy
+        else:
+            return workflow_configuration.default_vm_strategy
+
+    def create_job_factory(self, user, workflow_configuration):
+        workflow_version = workflow_configuration.workflow_version
+        system_job_order = json.loads(workflow_configuration.system_job_order_json)
+        vm_strategy = self.get_vm_strategy(workflow_configuration)
+        share_group = workflow_configuration.share_group
+        return JobFactory(user, workflow_version,
+                          self.job_name, self.fund_code, self.stage_group,
+                          system_job_order, self.user_job_order,
+                          vm_strategy, share_group)
+
+
 class JobFactory(object):
     """
     Creates Job record in the database based on questions their answers.
     """
-    def __init__(self, user, workflow_version, stage_group, user_job_order, system_job_order, job_name, vm_settings,
-                 vm_flavor, volume_size, volume_mounts, share_group, fund_code):
-        """
-        Setup factory
-        :param user: User: user we are creating this job for and who's credentials we will use
-        :param workflow_version: WorkflowVersion: which CWL workflow are we building a job for
-        """
-        self.workflow_version = workflow_version
+    def __init__(self, user, workflow_version, job_name, fund_code, stage_group, system_job_order, user_job_order,
+                 job_vm_strategy, share_group):
         self.user = user
-        self.stage_group = stage_group
-        self.user_job_order = user_job_order
-        self.system_job_order = system_job_order
+        self.workflow_version = workflow_version
         self.job_name = job_name
-        self.vm_settings = vm_settings
-        self.vm_flavor = vm_flavor
-        self.volume_size = volume_size
-        self.volume_mounts = volume_mounts
-        self.share_group = share_group
         self.fund_code = fund_code
+        self.stage_group = stage_group
+        self.system_job_order = system_job_order
+        self.user_job_order = user_job_order
+        self.job_vm_strategy = job_vm_strategy
+        self.share_group = share_group
+
+    def _get_job_order(self):
+        # Create the job order to be submitted. Begin with the system info and overlay the user order
+        job_order = self.system_job_order.copy()
+        job_order.update(self.user_job_order)
+        return job_order
 
     def create_job(self):
         """
         Create a job based on the workflow_version, system job order and user job order
         :return: Job: job that was inserted into the database along with it's output project and input files.
         """
-        if self.system_job_order is None or self.user_job_order is None:
-            raise JobFactoryException('Attempted to create a job without specifying system job order or user job order')
-
-        # Create the job order to be submitted. Begin with the system info and overlay the user order
-        job_order = self.system_job_order.copy()
-        job_order.update(self.user_job_order)
-
+        job_order = self._get_job_order()
         if settings.REQUIRE_JOB_TOKENS:
             job_state = Job.JOB_STATE_NEW
         else:
             job_state = Job.JOB_STATE_AUTHORIZED
+
+        volume_size = calculate_volume_size(
+            volume_size_base=self.job_vm_strategy.volume_size_base,
+            volume_size_factor=self.job_vm_strategy.volume_size_factor,
+            stage_group=self.stage_group)
+
         job = Job.objects.create(workflow_version=self.workflow_version,
                                  user=self.user,
                                  stage_group=self.stage_group,
                                  name=self.job_name,
-                                 vm_settings=self.vm_settings,
+                                 vm_settings=self.job_vm_strategy.vm_settings,
                                  job_order=json.dumps(job_order),
-                                 volume_size=self.volume_size,
-                                 vm_volume_mounts=self.volume_mounts,
-                                 vm_flavor=self.vm_flavor,
+                                 volume_size=volume_size,
+                                 vm_volume_mounts=self.job_vm_strategy.volume_mounts,
+                                 vm_flavor=self.job_vm_strategy.vm_flavor,
                                  share_group=self.share_group,
                                  fund_code=self.fund_code,
-                                 state=job_state
-        )
+                                 state=job_state)
+
         # Create output project
         # just taking the first worker user credential for now(there is only one production DukeDS instance)
         worker_user_credentials = DDSUserCredential.objects.first()
         JobDDSOutputProject.objects.create(job=job, dds_user_credentials=worker_user_credentials)
         return job
-

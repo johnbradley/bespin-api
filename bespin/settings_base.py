@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'data',
     'gcb_web_auth',
+    'bespin_api_v2',
 ]
 
 MIDDLEWARE = [
