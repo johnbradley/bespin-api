@@ -309,9 +309,9 @@ class WorkflowVersionTestCase(APITestCase):
     def testFilterByWorkflow(self):
         workflow1 = Workflow.objects.create(name='RnaSeq', tag='rnaseq1')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
-        WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url)
+        WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url, fields=[])
         workflow2 = Workflow.objects.create(name='RnaSeq2', tag='rnaseq2')
-        WorkflowVersion.objects.create(workflow=workflow2, version="30", url=cwl_url)
+        WorkflowVersion.objects.create(workflow=workflow2, version="30", url=cwl_url, fields=[])
         self.user_login.become_normal_user()
         url = reverse('workflowversion-list')
 
@@ -343,7 +343,8 @@ class JobsTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.vm_flavor = VMFlavor.objects.create(name='flavor1')
         add_vm_settings(self)
@@ -930,7 +931,8 @@ class JobStageGroupTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         add_vm_settings(self)
         self.vm_flavor = VMFlavor.objects.create(name='flavor')
@@ -987,7 +989,8 @@ class JobErrorTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         add_vm_settings(self)
         self.vm_flavor = VMFlavor.objects.create(name='flavor')
@@ -1062,7 +1065,8 @@ class DDSJobInputFileTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[])
         self.other_user = self.user_login.become_other_normal_user()
         self.my_user = self.user_login.become_normal_user()
         self.stage_group = JobFileStageGroup.objects.create(user=self.my_user)
@@ -1135,7 +1139,8 @@ class URLJobInputFileTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[])
         self.my_user = self.user_login.become_normal_user()
         self.stage_group = JobFileStageGroup.objects.create(user=self.my_user)
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
@@ -1187,7 +1192,8 @@ class JobDDSOutputProjectTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[])
         self.other_user = self.user_login.become_other_normal_user()
         self.my_user = self.user_login.become_normal_user()
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
@@ -1323,10 +1329,12 @@ class JobQuestionnaireTestCase(APITestCase):
         self.vm_flavor = VMFlavor.objects.create(name='flavor')
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[])
         self.workflow_version2 = WorkflowVersion.objects.create(workflow=workflow,
                                                                 version="2",
-                                                                url=cwl_url)
+                                                                url=cwl_url,
+                                                                fields=[])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         questionnaire_type1 = JobQuestionnaireType.objects.create(tag='human')
         questionnaire_type2 = JobQuestionnaireType.objects.create(tag='ant')
@@ -1428,7 +1436,8 @@ class JobAnswerSetTests(APITestCase):
         self.system_job_order_json2 = json.dumps({'system_input': 2})
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.questionnaire_type = JobQuestionnaireType.objects.create(tag='human')
         self.questionnaire1 = JobQuestionnaire.objects.create(description='Workflow1',
@@ -1749,7 +1758,7 @@ class WorkflowMethodsDocumentTestCase(APITestCase):
         self.user_login = UserLogin(self.client)
         workflow1 = Workflow.objects.create(name='RnaSeq')
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
-        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url)
+        self.workflow_version = WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url,fields=[])
         self.methods_document = WorkflowMethodsDocument.objects.create(workflow_version=self.workflow_version,
                                                                        content="#One")
 
@@ -2033,7 +2042,8 @@ class JobActivitiesTestCase(APITestCase):
         cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                version="1",
-                                                               url=cwl_url)
+                                                               url=cwl_url,
+                                                               fields=[])
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
         self.vm_flavor = VMFlavor.objects.create(name='flavor1')
         add_vm_settings(self)

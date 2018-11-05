@@ -79,7 +79,8 @@ class WorkflowVersionTests(TestCase):
         WorkflowVersion.objects.create(workflow=self.workflow,
                                        object_name='#main',
                                        version='1',
-                                       url=CWL_URL)
+                                       url=CWL_URL,
+                                       fields=[])
         workflow_version = WorkflowVersion.objects.first()
         self.assertEqual(self.workflow, workflow_version.workflow)
         self.assertEqual('#main', workflow_version.object_name)
@@ -90,25 +91,27 @@ class WorkflowVersionTests(TestCase):
     def test_default_object_name(self):
         WorkflowVersion.objects.create(workflow=self.workflow,
                                        version='1',
-                                       url=CWL_URL)
+                                       url=CWL_URL,
+                                       fields=[])
         workflow_version = WorkflowVersion.objects.first()
         self.assertEqual('#main', workflow_version.object_name)
 
     def test_create_with_description(self):
         desc = """This is a detailed description of the job."""
-        WorkflowVersion.objects.create(workflow=self.workflow, description=desc, version=1)
+        WorkflowVersion.objects.create(workflow=self.workflow, description=desc, version=1, fields=[])
         wv = WorkflowVersion.objects.first()
         self.assertEqual(desc, wv.description)
 
     def test_version_num_and_workflow_are_unique(self):
-        WorkflowVersion.objects.create(workflow=self.workflow, description="one", version=1)
+        WorkflowVersion.objects.create(workflow=self.workflow, description="one", version=1, fields=[])
         with self.assertRaises(IntegrityError):
             WorkflowVersion.objects.create(workflow=self.workflow, description="two", version=1)
 
     def test_sorted_by_version_num(self):
-        WorkflowVersion.objects.create(workflow=self.workflow, description="two", version=2)
-        a_workflow_version = WorkflowVersion.objects.create(workflow=self.workflow, description="one", version=1)
-        WorkflowVersion.objects.create(workflow=self.workflow, description="three", version=3)
+        WorkflowVersion.objects.create(workflow=self.workflow, description="two", version=2, fields=[])
+        a_workflow_version = WorkflowVersion.objects.create(workflow=self.workflow, description="one", version=1,
+                                                            fields=[])
+        WorkflowVersion.objects.create(workflow=self.workflow, description="three", version=3, fields=[])
         versions = [wv.version for wv in WorkflowVersion.objects.all()]
         self.assertEqual([1, 2, 3], versions)
         a_workflow_version.version = 4
@@ -123,7 +126,8 @@ class JobTests(TestCase):
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                object_name='#main',
                                                                version='1',
-                                                               url=CWL_URL)
+                                                               url=CWL_URL,
+                                                               fields=[])
         self.user = User.objects.create_user('test_user')
         self.sample_json = "{'type': 1}"
         self.share_group = ShareGroup.objects.create(name='Results Checkers')
@@ -215,9 +219,10 @@ class JobTests(TestCase):
         obj.user_credentials = DDSUserCredential.objects.create(user=obj.user, token='abc123', endpoint=obj.endpoint)
         workflow = Workflow.objects.create(name='RnaSeq')
         obj.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
-                                                               object_name='#main',
-                                                               version='1',
-                                                               url=CWL_URL)
+                                                              object_name='#main',
+                                                              version='1',
+                                                              url=CWL_URL,
+                                                              fields=[])
         obj.sample_json = "{'type': 1}"
 
         vm_flavor = VMFlavor.objects.create(name='flavor1')
@@ -567,7 +572,8 @@ class JobQuestionnaireTests(TestCase):
         obj.workflow_version = WorkflowVersion.objects.create(workflow=obj.workflow,
                                                               object_name='#main',
                                                               version='1',
-                                                              url=CWL_URL)
+                                                              url=CWL_URL,
+                                                              fields=[])
         obj.flavor1 = VMFlavor.objects.create(name='flavor1')
         obj.flavor2 = VMFlavor.objects.create(name='flavor2')
         obj.project = VMProject.objects.create(name='bespin-project')
@@ -758,7 +764,8 @@ class WorkflowMethodsDocumentTests(TestCase):
         self.workflow_version = WorkflowVersion.objects.create(workflow=workflow,
                                                                object_name='#main',
                                                                version='1',
-                                                               url=CWL_URL)
+                                                               url=CWL_URL,
+                                                               fields=[])
 
     def test_crud(self):
         WorkflowMethodsDocument.objects.create(workflow_version=self.workflow_version,
