@@ -1,8 +1,9 @@
 # bespin-api
 
-Web application for running workflows in the cloud
+Web application for running workflows in the cloud.
 
 ## Development Usage
+This application uses postgres-specific features, so you'll need a postgres server.
 
 ```
 $ virtualenv env

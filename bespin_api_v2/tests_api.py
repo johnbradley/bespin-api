@@ -97,7 +97,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
             description='v1 exomeseq',
             version=1,
             url='',
-            fields_json='[{"name":"threads", "class": "int"}]',
+            fields=[{"name":"threads", "class": "int"}],
         )
         self.user_login.become_admin_user()
         url = reverse('admin_workflowversion-list')
@@ -116,7 +116,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
             description='v1 exomeseq',
             version=1,
             url='',
-            fields_json='[{"name":"threads", "class": "int"}]',
+            fields=[{"name":"threads", "class": "int"}],
         )
         self.user_login.become_admin_user()
         url = reverse('admin_workflowversion-list') + str(workflow_version.id) + '/'
@@ -143,7 +143,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
         workflow_versions = WorkflowVersion.objects.all()
         self.assertEqual(len(workflow_versions), 1)
         self.assertEqual(workflow_versions[0].version, 2)
-        self.assertEqual(json.loads(workflow_versions[0].fields_json), [{"name": "threads", "class": "int"}])
+        self.assertEqual(workflow_versions[0].fields, [{"name": "threads", "class": "int"}])
 
     def test_put_fails_with_admin_user(self):
         self.user_login.become_admin_user()
@@ -167,7 +167,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
             description='v1 exomeseq',
             version=1,
             url='',
-            fields_json='[{"name":"threads", "class": "int"}]'
+            fields=[{"name": "threads", "class": "int"}]
         )
         vm_flavor = VMFlavor.objects.create(name='large')
         vm_project = VMProject.objects.create()
@@ -193,7 +193,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         workflow_configuration = WorkflowConfiguration.objects.create(
             name='b37xGen',
             workflow_version=self.workflow_version,
-            system_job_order_json='{"A":"B"}',
+            system_job_order={"A":"B"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
         )
@@ -214,7 +214,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         workflow_configuration = WorkflowConfiguration.objects.create(
             name='b37xGen',
             workflow_version=self.workflow_version,
-            system_job_order_json='{"A":"B"}',
+            system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
         )
@@ -327,14 +327,14 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
             description='v1 exomeseq',
             version=1,
             url='',
-            fields_json='[{"name":"threads", "class": "int"},{"name":"items", "class": "int"}]',
+            fields=[{"name":"threads", "class": "int"},{"name":"items", "class": "int"}],
         )
         self.workflow_version2 = WorkflowVersion.objects.create(
             workflow=self.workflow,
             description='v2 exomeseq',
             version=2,
             url='',
-            fields_json='[{"name":"threads", "class": "int"}]',
+            fields=[{"name":"threads", "class": "int"}],
         )
         vm_flavor = VMFlavor.objects.create(name='large')
         vm_project = VMProject.objects.create()
@@ -356,7 +356,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         workflow_configuration = WorkflowConfiguration.objects.create(
             name='b37xGen',
             workflow_version=self.workflow_version,
-            system_job_order_json='{"A": "B"}',
+            system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
         )
@@ -376,14 +376,14 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         workflow_configuration1 = WorkflowConfiguration.objects.create(
             name='b37xGen',
             workflow_version=self.workflow_version,
-            system_job_order_json='{"A": "B"}',
+            system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
         )
         workflow_configuration2 = WorkflowConfiguration.objects.create(
             name='b37other',
             workflow_version=self.workflow_version2,
-            system_job_order_json='{"A": "C"}',
+            system_job_order={"A": "C"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
         )
@@ -406,7 +406,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         workflow_configuration1 = WorkflowConfiguration.objects.create(
             name='b37xGen',
             workflow_version=self.workflow_version,
-            system_job_order_json='{"A": "B"}',
+            system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
         )
@@ -434,7 +434,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         workflow_configuration = WorkflowConfiguration.objects.create(
             name='b37xGen',
             workflow_version=self.workflow_version,
-            system_job_order_json='{"items": 4}',
+            system_job_order={"items": 4},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
         )

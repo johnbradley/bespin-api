@@ -4,14 +4,6 @@ from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfigura
 from data.jobfactory import JobOrderData
 import json
 
-# This field can go away when we switch to JSONField
-class JSONStrField(serializers.Field):
-    def to_representation(self, value):
-        return json.loads(value)
-
-    def to_internal_value(self, data):
-        return json.dumps(data)
-
 
 class AdminWorkflowSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,8 +13,6 @@ class AdminWorkflowSerializer(serializers.ModelSerializer):
 
 
 class AdminWorkflowVersionSerializer(serializers.ModelSerializer):
-    fields = JSONStrField(source="fields_json")
-
     class Meta:
         model = WorkflowVersion
         resource_name = 'workflowversions'
@@ -31,7 +21,6 @@ class AdminWorkflowVersionSerializer(serializers.ModelSerializer):
 
 class WorkflowConfigurationSerializer(serializers.ModelSerializer):
     tag = serializers.CharField(source='make_tag', read_only=True)
-    system_job_order = JSONStrField(source="system_job_order_json")
     user_fields = serializers.SerializerMethodField()
 
     def get_user_fields(self, obj):
@@ -39,11 +28,9 @@ class WorkflowConfigurationSerializer(serializers.ModelSerializer):
         Determines user supplied fields by removing those with answers in the system_job_order 
         from the workflow version's fields. 
         """
-        fields = json.loads(obj.workflow_version.fields_json)
-        system_order_json = json.loads(obj.system_job_order_json)
-        system_keys = system_order_json.keys()
+        system_keys = obj.system_job_order.keys()
         user_fields_json = []
-        for field in fields:
+        for field in obj.workflow_version.fields:
             if field['name'] not in system_keys:
                 user_fields_json.append(field)
         return user_fields_json

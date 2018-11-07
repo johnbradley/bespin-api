@@ -88,7 +88,7 @@ class JobOrderData(object):
 
     def create_job_factory(self, user, workflow_configuration):
         workflow_version = workflow_configuration.workflow_version
-        system_job_order = json.loads(workflow_configuration.system_job_order_json)
+        system_job_order = workflow_configuration.system_job_order
         vm_strategy = self.get_vm_strategy(workflow_configuration)
         share_group = workflow_configuration.share_group
         return JobFactory(user, workflow_version,

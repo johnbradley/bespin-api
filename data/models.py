@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.contrib.postgres.fields import JSONField
 from gcb_web_auth.models import DDSUserCredential, DDSEndpoint
 import json
 
@@ -41,8 +42,7 @@ class WorkflowVersion(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     version = models.IntegerField()
     url = models.URLField(help_text="URL to packed CWL workflow file.")
-    fields_json = models.TextField(blank=True,
-                                   help_text="JSON containing the array of fields required by this workflow.")
+    fields = JSONField(help_text="Array of fields required by this workflow.")
 
     class Meta:
         ordering = ['version']
@@ -527,8 +527,7 @@ class WorkflowConfiguration(models.Model):
     """
     name = models.SlugField(max_length=255, help_text="Short user facing name")
     workflow_version = models.ForeignKey(WorkflowVersion)
-    system_job_order_json = models.TextField(
-        help_text="JSON containing the portion of the job order specified by system.")
+    system_job_order = JSONField(help_text="Dictionary containing the portion of the job order specified by system.")
     default_vm_strategy = models.ForeignKey(VMStrategy,
                                             help_text='VM setup to use for jobs created with this configuration')
     share_group = models.ForeignKey(ShareGroup,
