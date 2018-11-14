@@ -44,6 +44,20 @@ class WorkflowVersion(models.Model):
     url = models.URLField(help_text="URL to packed CWL workflow file.")
     fields = JSONField(help_text="Array of fields required by this workflow.")
 
+    @staticmethod
+    def split_tag_parts(tag):
+        """
+        Given tag string return tuple of workflow_tag, version_num, configuration_name
+        :param tag: str: tag to split into parts
+        :return: (workflow_tag, version_num, configuration_name)
+        """
+        parts = tag.split("/")
+        if len(parts) != 2:
+            return None
+        workflow_tag, version_num_str = parts
+        version_num = int(version_num_str.replace("v", ""))
+        return workflow_tag, version_num
+
     class Meta:
         ordering = ['version']
         unique_together = ('workflow', 'version',)
@@ -513,6 +527,7 @@ class VMStrategy(models.Model):
     volume_mounts = models.TextField(default=json.dumps({'/dev/vdb1': '/work'}),
                                      help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
 
+
     class Meta:
         verbose_name_plural = "VM Strategies"
 
@@ -526,34 +541,15 @@ class WorkflowConfiguration(models.Model):
     Specifies a set of system-provided answers in JSON format
     """
     name = models.SlugField(max_length=255, help_text="Short user facing name")
-    workflow_version = models.ForeignKey(WorkflowVersion)
+    workflow = models.ForeignKey(Workflow, null=True)
     system_job_order = JSONField(help_text="Dictionary containing the portion of the job order specified by system.")
     default_vm_strategy = models.ForeignKey(VMStrategy,
                                             help_text='VM setup to use for jobs created with this configuration')
     share_group = models.ForeignKey(ShareGroup,
                                     help_text='Users who will have job output shared with them')
 
-    def make_tag(self):
-        workflow_tag = self.workflow_version.workflow.tag
-        workflow_version_num = self.workflow_version.version
-        return '{}/v{}/{}'.format(workflow_tag, workflow_version_num, self.name)
-
-    @staticmethod
-    def split_tag_parts(tag):
-        """
-        Given tag string return tuple of workflow_tag, version_num, configuration_name
-        :param tag: str: tag to split into parts
-        :return: (workflow_tag, version_num, configuration_name)
-        """
-        parts = tag.split("/")
-        if len(parts) != 3:
-            return None
-        workflow_tag, version_num_str, configuration_name = parts
-        version_num = int(version_num_str.replace("v", ""))
-        return workflow_tag, version_num, configuration_name
-
     class Meta:
-        unique_together = ('workflow_version', 'name', )
+        unique_together = ('workflow', 'name', )
 
     def __str__(self):
         return "WorkflowConfiguration - pk: {}".format(self.pk)

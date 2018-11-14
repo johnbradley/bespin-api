@@ -192,7 +192,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
     def test_list_with_admin_user(self):
         workflow_configuration = WorkflowConfiguration.objects.create(
             name='b37xGen',
-            workflow_version=self.workflow_version,
+            workflow=self.workflow,
             system_job_order={"A":"B"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
@@ -204,8 +204,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], workflow_configuration.id)
         self.assertEqual(response.data[0]['name'], 'b37xGen')
-        self.assertEqual(response.data[0]['tag'], 'exomeseq/v1/b37xGen')
-        self.assertEqual(response.data[0]['workflow_version'], self.workflow_version.id)
+        self.assertEqual(response.data[0]['workflow'], self.workflow.id)
         self.assertEqual(response.data[0]['system_job_order'], {"A": "B"})
         self.assertEqual(response.data[0]['default_vm_strategy'], self.vm_strategy.id)
         self.assertEqual(response.data[0]['share_group'], self.share_group.id)
@@ -213,7 +212,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
     def test_retrieve_with_admin_user(self):
         workflow_configuration = WorkflowConfiguration.objects.create(
             name='b37xGen',
-            workflow_version=self.workflow_version,
+            workflow=self.workflow,
             system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
@@ -224,8 +223,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], workflow_configuration.id)
         self.assertEqual(response.data['name'], 'b37xGen')
-        self.assertEqual(response.data['tag'], 'exomeseq/v1/b37xGen')
-        self.assertEqual(response.data['workflow_version'], self.workflow_version.id)
+        self.assertEqual(response.data['workflow'], self.workflow.id)
         self.assertEqual(response.data['system_job_order'], {"A": "B"})
         self.assertEqual(response.data['default_vm_strategy'], self.vm_strategy.id)
         self.assertEqual(response.data['share_group'], self.share_group.id)
@@ -235,14 +233,14 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         url = reverse('admin_workflowconfiguration-list')
         response = self.client.post(url, format='json', data={
             'name': 'b37xGen',
-            'workflow_version': self.workflow_version.id,
+            'workflow': self.workflow.id,
             'system_job_order': {"A": "B"},
             'default_vm_strategy': self.vm_strategy.id,
             'share_group': self.share_group.id,
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['name'], 'b37xGen')
-        self.assertEqual(response.data['tag'], 'exomeseq/v1/b37xGen')
+        self.assertEqual(response.data['workflow'], self.workflow.id)
         self.assertEqual(response.data['system_job_order'], {"A": "B"})
         self.assertEqual(response.data['default_vm_strategy'], self.vm_strategy.id)
         self.assertEqual(response.data['share_group'], self.share_group.id)
@@ -322,6 +320,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
         self.workflow = Workflow.objects.create(name='Exome Seq', tag='exomeseq')
+        self.workflow2 = Workflow.objects.create(name='Microbiome', tag='microbiome')
         self.workflow_version = WorkflowVersion.objects.create(
             workflow=self.workflow,
             description='v1 exomeseq',
@@ -355,7 +354,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
     def test_list_normal_user(self):
         workflow_configuration = WorkflowConfiguration.objects.create(
             name='b37xGen',
-            workflow_version=self.workflow_version,
+            workflow=self.workflow,
             system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
@@ -366,8 +365,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], workflow_configuration.id)
         self.assertEqual(response.data[0]['name'], 'b37xGen')
-        self.assertEqual(response.data[0]['tag'], 'exomeseq/v1/b37xGen')
-        self.assertEqual(response.data[0]['workflow_version'], self.workflow_version.id)
+        self.assertEqual(response.data[0]['workflow'], self.workflow.id)
         self.assertEqual(response.data[0]['system_job_order'], {"A": "B"})
         self.assertEqual(response.data[0]['default_vm_strategy'], self.vm_strategy.id)
         self.assertEqual(response.data[0]['share_group'], self.share_group.id)
@@ -375,14 +373,14 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
     def test_list_normal_user_with_filtering(self):
         workflow_configuration1 = WorkflowConfiguration.objects.create(
             name='b37xGen',
-            workflow_version=self.workflow_version,
+            workflow=self.workflow,
             system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
         )
         workflow_configuration2 = WorkflowConfiguration.objects.create(
             name='b37other',
-            workflow_version=self.workflow_version2,
+            workflow=self.workflow2,
             system_job_order={"A": "C"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
@@ -392,20 +390,15 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(len(response.data), 2)
 
-        url = reverse('workflowconfigurations-list') + "?tag=exomeseq/v2/b37other"
+        url = reverse('workflowconfigurations-list') + "?workflow_tag=microbiome"
         response = self.client.get(url, format='json')
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['name'], 'b37other')
 
-        url = reverse('workflowconfigurations-list') + "?workflow_version={}".format(self.workflow_version.id)
-        response = self.client.get(url, format='json')
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['name'], 'b37xGen')
-
     def test_create_job(self):
         workflow_configuration1 = WorkflowConfiguration.objects.create(
             name='b37xGen',
-            workflow_version=self.workflow_version,
+            workflow=self.workflow,
             system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
@@ -415,6 +408,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         stage_group = JobFileStageGroup.objects.create(user=user)
         url = reverse('workflowconfigurations-list') + "{}/create-job/".format(workflow_configuration1.id)
         response = self.client.post(url, format='json', data={
+            'workflow_version': self.workflow_version.id,
             'job_name': 'My Job',
             'fund_code': '001',
             'stage_group': stage_group.id,
@@ -433,7 +427,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
     def test_retrieve_normal_user(self):
         workflow_configuration = WorkflowConfiguration.objects.create(
             name='b37xGen',
-            workflow_version=self.workflow_version,
+            workflow=self.workflow,
             system_job_order={"items": 4},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
@@ -444,12 +438,10 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], workflow_configuration.id)
         self.assertEqual(response.data['name'], 'b37xGen')
-        self.assertEqual(response.data['tag'], 'exomeseq/v1/b37xGen')
-        self.assertEqual(response.data['workflow_version'], self.workflow_version.id)
+        self.assertEqual(response.data['workflow'], self.workflow.id)
         self.assertEqual(response.data['system_job_order'], {"items": 4})
         self.assertEqual(response.data['default_vm_strategy'], self.vm_strategy.id)
         self.assertEqual(response.data['share_group'], self.share_group.id)
-        self.assertEqual(response.data['user_fields'], [{'name': 'threads', 'class': 'int'}])
 
     def test_create_with_admin_user(self):
         self.user_login.become_admin_user()

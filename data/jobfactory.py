@@ -73,7 +73,8 @@ class JobVMStrategy(object):
 
 
 class JobOrderData(object):
-    def __init__(self, job_name, fund_code, stage_group, user_job_order, job_vm_strategy):
+    def __init__(self, workflow_version, job_name, fund_code, stage_group, user_job_order, job_vm_strategy):
+        self.workflow_version = workflow_version
         self.job_name = job_name
         self.fund_code = fund_code
         self.stage_group = stage_group
@@ -87,11 +88,10 @@ class JobOrderData(object):
             return workflow_configuration.default_vm_strategy
 
     def create_job_factory(self, user, workflow_configuration):
-        workflow_version = workflow_configuration.workflow_version
         system_job_order = workflow_configuration.system_job_order
         vm_strategy = self.get_vm_strategy(workflow_configuration)
         share_group = workflow_configuration.share_group
-        return JobFactory(user, workflow_version,
+        return JobFactory(user, self.workflow_version,
                           self.job_name, self.fund_code, self.stage_group,
                           system_job_order, self.user_job_order,
                           vm_strategy, share_group)

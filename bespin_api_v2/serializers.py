@@ -20,26 +20,10 @@ class AdminWorkflowVersionSerializer(serializers.ModelSerializer):
 
 
 class WorkflowConfigurationSerializer(serializers.ModelSerializer):
-    tag = serializers.CharField(source='make_tag', read_only=True)
-    user_fields = serializers.SerializerMethodField()
-
-    def get_user_fields(self, obj):
-        """
-        Determines user supplied fields by removing those with answers in the system_job_order 
-        from the workflow version's fields. 
-        """
-        system_keys = obj.system_job_order.keys()
-        user_fields_json = []
-        for field in obj.workflow_version.fields:
-            if field['name'] not in system_keys:
-                user_fields_json.append(field)
-        return user_fields_json
-
     class Meta:
         model = WorkflowConfiguration
         resource_name = 'workflow-configuration'
-        fields = ['id', 'name', 'tag', 'workflow_version', 'user_fields', 'system_job_order',
-                  'default_vm_strategy', 'share_group', ]
+        fields = '__all__'
 
 
 class VMStrategySerializer(serializers.ModelSerializer):
@@ -50,6 +34,7 @@ class VMStrategySerializer(serializers.ModelSerializer):
 
 
 class JobOrderDataSerializer(serializers.Serializer):
+    workflow_version = serializers.PrimaryKeyRelatedField(queryset=WorkflowVersion.objects.all())
     job_name = serializers.CharField()
     fund_code = serializers.CharField()
     stage_group = serializers.PrimaryKeyRelatedField(queryset=JobFileStageGroup.objects.all())

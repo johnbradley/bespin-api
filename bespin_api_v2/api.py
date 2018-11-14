@@ -47,21 +47,10 @@ class WorkflowConfigurationViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = WorkflowConfiguration.objects.all()
-        workflow_version_id = self.request.query_params.get('workflow_version', None)
-        if workflow_version_id:
-           queryset = queryset.filter(workflow_version__id=workflow_version_id)
-        tag = self.request.query_params.get('tag', None)
-        if tag:
-            parts = WorkflowConfiguration.split_tag_parts(tag)
-            if parts:
-                workflow_tag, version_num, configuration_name = parts
-                return queryset.filter(workflow_version__workflow__tag=workflow_tag,
-                                       workflow_version__version=version_num,
-                                       name=configuration_name)
-            else:
-                return WorkflowConfiguration.objects.none()
-        else:
-            return queryset
+        workflow_tag = self.request.query_params.get('workflow_tag', None)
+        if workflow_tag:
+            queryset =  queryset.filter(workflow__tag=workflow_tag)
+        return queryset
 
     @transaction.atomic
     @detail_route(methods=['post'], serializer_class=JobSerializer, url_path='create-job')
