@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, VMStrategy
-from data.jobfactory import JobOrderData
-from bespin_api_v2.jobfile import JobFile
+from bespin_api_v2.joborder import JobOrderData, JobFile
 import json
 
 
