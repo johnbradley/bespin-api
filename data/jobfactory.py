@@ -1,4 +1,5 @@
-from data.models import Job, JobDDSOutputProject, DDSJobInputFile, DDSUserCredential
+from data.models import Job, JobDDSOutputProject, DDSJobInputFile, DDSUserCredential, WorkflowVersion, \
+    WorkflowConfiguration
 from data.exceptions import JobFactoryException
 from django.conf import settings
 import json
@@ -73,12 +74,12 @@ class JobVMStrategy(object):
 
 
 class JobOrderData(object):
-    def __init__(self, workflow_version, job_name, fund_code, stage_group, user_job_order, job_vm_strategy):
-        self.workflow_version = workflow_version
-        self.job_name = job_name
+    def __init__(self, workflow_tag, name, fund_code, stage_group, job_order, job_vm_strategy):
+        self.workflow_tag = workflow_tag
+        self.name = name
         self.fund_code = fund_code
         self.stage_group = stage_group
-        self.user_job_order = user_job_order
+        self.job_order = job_order
         self.job_vm_strategy = job_vm_strategy
 
     def get_vm_strategy(self, workflow_configuration):
@@ -87,14 +88,19 @@ class JobOrderData(object):
         else:
             return workflow_configuration.default_vm_strategy
 
-    def create_job_factory(self, user, workflow_configuration):
-        system_job_order = workflow_configuration.system_job_order
-        vm_strategy = self.get_vm_strategy(workflow_configuration)
-        share_group = workflow_configuration.share_group
-        return JobFactory(user, self.workflow_version,
-                          self.job_name, self.fund_code, self.stage_group,
-                          system_job_order, self.user_job_order,
+    def create_job_factory(self, user):
+        workflow_version_configuration = WorkflowVersionConfiguration(self.workflow_tag)
+        system_job_order = workflow_version_configuration.workflow_configuration.system_job_order
+        vm_strategy = self.get_vm_strategy(workflow_version_configuration.workflow_configuration)
+        share_group = workflow_version_configuration.workflow_configuration.share_group
+        return JobFactory(user, workflow_version_configuration.workflow_version,
+                          self.name, self.fund_code, self.stage_group,
+                          system_job_order, self.job_order,
                           vm_strategy, share_group)
+
+    def create_job(self, user):
+        job_factory = self.create_job_factory(user)
+        return job_factory.create_job()
 
 
 class JobFactory(object):
@@ -153,3 +159,36 @@ class JobFactory(object):
         worker_user_credentials = DDSUserCredential.objects.first()
         JobDDSOutputProject.objects.create(job=job, dds_user_credentials=worker_user_credentials)
         return job
+
+
+class WorkflowVersionConfiguration(object):
+    def __init__(self, tag):
+        workflow_tag, version_num, configuration_name = self.split_workflow_tag_parts(tag)
+        self.workflow_version = WorkflowVersion.objects.get(
+            version=version_num,
+            workflow__tag=workflow_tag)
+        self.workflow_configuration = WorkflowConfiguration.objects.get(
+            workflow=self.workflow_version.workflow,
+            name=configuration_name)
+
+    @staticmethod
+    def split_workflow_tag_parts(tag):
+        """
+        Based on our tag return tuple of base_workflow_tag, version_num, configuration_name
+        :param tag: str: tag to split into parts
+        :return: (workflow_tag, version_num, configuration_name)
+        """
+        parts = tag.split("/")
+        if len(parts) != 3:
+            return None
+        workflow_tag, version_num_str, configuration_name = parts
+        version_num = int(version_num_str.replace("v", ""))
+        return workflow_tag, version_num, configuration_name
+
+    def user_job_fields(self):
+        system_keys = self.workflow_configuration.system_job_order.keys()
+        user_fields_json = []
+        for field in self.workflow_version.fields:
+            if field['name'] not in system_keys:
+                user_fields_json.append(field)
+        return user_fields_json

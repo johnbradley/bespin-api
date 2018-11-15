@@ -1,13 +1,15 @@
 import json
 from rest_framework import viewsets, permissions, status, mixins
 from rest_framework.response import Response
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import detail_route, list_route
 from django.db import transaction
+from django_filters.rest_framework import DjangoFilterBackend
 from bespin_api_v2.serializers import AdminWorkflowSerializer, AdminWorkflowVersionSerializer, VMStrategySerializer, \
-    WorkflowConfigurationSerializer, JobOrderDataSerializer
+    WorkflowConfigurationSerializer, JobOrderDataSerializer, JobFileSerializer, WorkflowVersionSerializer
 from data.serializers import JobSerializer
 from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup
 from data.exceptions import BespinAPIException
+import data.api as v1_api
 
 
 class CreateListRetrieveModelViewSet(mixins.CreateModelMixin,
@@ -41,6 +43,35 @@ class VMStrategyViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = VMStrategy.objects.all()
 
 
+class JobsViewSet(v1_api.JobsViewSet):
+    @list_route(methods=['post'], serializer_class=JobFileSerializer, url_path='init-job-file')
+    def init_job_file(self, request):
+        serializer = JobFileSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        job_file = serializer.save()
+        return Response(JobFileSerializer(job_file).data, status=status.HTTP_201_CREATED)
+
+    @transaction.atomic
+    @list_route(methods=['post'], serializer_class=JobOrderDataSerializer, url_path='create-job')
+    def create_job(self, request):
+        """
+        Create a new job based on our JobAnswerSet and return its json.
+        """
+        serializer = JobOrderDataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        job_order_data = serializer.save()
+        job = job_order_data.create_job(request.user)
+        return Response(JobSerializer(job).data, status=status.HTTP_201_CREATED)
+
+
+class WorkflowVersionsViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = WorkflowVersion.objects.all()
+    serializer_class = WorkflowVersionSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('workflow',)
+
+
 class WorkflowConfigurationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WorkflowConfigurationSerializer
@@ -51,17 +82,3 @@ class WorkflowConfigurationViewSet(viewsets.ReadOnlyModelViewSet):
         if workflow_tag:
             queryset =  queryset.filter(workflow__tag=workflow_tag)
         return queryset
-
-    @transaction.atomic
-    @detail_route(methods=['post'], serializer_class=JobSerializer, url_path='create-job')
-    def create_job(self, request, pk=None):
-        """
-        Create a new job based on our JobAnswerSet and return its json.
-        """
-        workflow_configuration = WorkflowConfiguration.objects.get(pk=pk)
-        serializer = JobOrderDataSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        job_order_data = serializer.save()
-        job_factory = job_order_data.create_job_factory(request.user, workflow_configuration)
-        job = job_factory.create_job()
-        return Response(JobSerializer(job).data, status=status.HTTP_201_CREATED)

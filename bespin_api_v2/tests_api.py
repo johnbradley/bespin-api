@@ -5,6 +5,7 @@ from rest_framework import status
 from data.tests_api import UserLogin
 from data.models import Workflow, WorkflowVersion, WorkflowConfiguration, VMStrategy, ShareGroup, VMFlavor, VMSettings, \
     CloudSettings, VMProject, JobFileStageGroup, DDSUserCredential, DDSEndpoint, Job
+from bespin_api_v2.jobfile import STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER
 
 
 class AdminWorkflowViewSetTestCase(APITestCase):
@@ -232,8 +233,8 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         self.user_login.become_admin_user()
         url = reverse('admin_workflowconfiguration-list')
         response = self.client.post(url, format='json', data={
-            'name': 'b37xGen',
             'workflow': self.workflow.id,
+            'name': 'b37xGen',
             'system_job_order': {"A": "B"},
             'default_vm_strategy': self.vm_strategy.id,
             'share_group': self.share_group.id,
@@ -326,14 +327,14 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
             description='v1 exomeseq',
             version=1,
             url='',
-            fields=[{"name":"threads", "class": "int"},{"name":"items", "class": "int"}],
+            fields=[{"name":"threads", "type": "int"},{"name":"items", "type": "int"}],
         )
         self.workflow_version2 = WorkflowVersion.objects.create(
             workflow=self.workflow,
             description='v2 exomeseq',
             version=2,
             url='',
-            fields=[{"name":"threads", "class": "int"}],
+            fields=[{"name":"threads", "type": "int"}],
         )
         vm_flavor = VMFlavor.objects.create(name='large')
         vm_project = VMProject.objects.create()
@@ -395,35 +396,6 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['name'], 'b37other')
 
-    def test_create_job(self):
-        workflow_configuration1 = WorkflowConfiguration.objects.create(
-            name='b37xGen',
-            workflow=self.workflow,
-            system_job_order={"A": "B"},
-            default_vm_strategy=self.vm_strategy,
-            share_group=self.share_group,
-        )
-        user = self.user_login.become_normal_user()
-        DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
-        stage_group = JobFileStageGroup.objects.create(user=user)
-        url = reverse('workflowconfigurations-list') + "{}/create-job/".format(workflow_configuration1.id)
-        response = self.client.post(url, format='json', data={
-            'workflow_version': self.workflow_version.id,
-            'job_name': 'My Job',
-            'fund_code': '001',
-            'stage_group': stage_group.id,
-            'user_job_order': {'color': 'red'},
-            'job_vm_strategy': self.vm_strategy.id,
-        })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['name'], 'My Job')
-
-        jobs = Job.objects.all()
-        self.assertEqual(len(jobs), 1)
-        self.assertEqual(jobs[0].name, 'My Job')
-        self.assertEqual(jobs[0].fund_code, '001')
-        self.assertEqual(jobs[0].job_order, '{"A": "B", "color": "red"}')
-
     def test_retrieve_normal_user(self):
         workflow_configuration = WorkflowConfiguration.objects.create(
             name='b37xGen',
@@ -466,3 +438,70 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         url = reverse('workflowconfigurations-list')
         response = self.client.post(url, format='json', data={})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class JobsViewSetTestCase(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+        self.workflow = Workflow.objects.create(name='Exome Seq', tag='exomeseq')
+        self.workflow2 = Workflow.objects.create(name='Microbiome', tag='microbiome')
+        self.workflow_version = WorkflowVersion.objects.create(
+            workflow=self.workflow,
+            description='v1 exomeseq',
+            version=1,
+            url='',
+            fields=[{"name": "threads", "type": "int"}, {"name": "items", "type": "string"}],
+        )
+        vm_flavor = VMFlavor.objects.create(name='large')
+        vm_project = VMProject.objects.create()
+        cloud_settings = CloudSettings.objects.create(vm_project=vm_project)
+        vm_settings = VMSettings.objects.create(cloud_settings=cloud_settings)
+
+        self.vm_strategy = VMStrategy.objects.create(name='default', vm_flavor=vm_flavor, vm_settings=vm_settings)
+        self.share_group = ShareGroup.objects.create()
+        self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret',
+                                                   api_root='https://someserver.com/api')
+        workflow_configuration1 = WorkflowConfiguration.objects.create(
+            name='b37xGen',
+            workflow=self.workflow,
+            system_job_order={"A": "B"},
+            default_vm_strategy=self.vm_strategy,
+            share_group=self.share_group,
+        )
+
+    def test_init_job_file(self):
+        user = self.user_login.become_normal_user()
+        DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
+        stage_group = JobFileStageGroup.objects.create(user=user)
+        url = reverse('job-list') + "init-job-file/"
+        response = self.client.post(url, format='json', data={
+            'workflow_tag': 'exomeseq/v1/b37xGen'
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['workflow_tag'], 'exomeseq/v1/b37xGen')
+        self.assertEqual(response.data['name'], STRING_VALUE_PLACEHOLDER)
+        self.assertEqual(response.data['fund_code'], STRING_VALUE_PLACEHOLDER)
+        self.assertEqual(response.data['job_order'],
+                         {'threads': INT_VALUE_PLACEHOLDER, 'items': STRING_VALUE_PLACEHOLDER})
+
+    def test_create_job(self):
+        user = self.user_login.become_normal_user()
+        DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
+        stage_group = JobFileStageGroup.objects.create(user=user)
+        url = reverse('job-list') + "create-job/"
+        response = self.client.post(url, format='json', data={
+            'workflow_tag': 'exomeseq/v1/b37xGen',
+            'name': 'My Job',
+            'fund_code': '001',
+            'stage_group': stage_group.id,
+            'job_order': {'color': 'red'},
+            'job_vm_strategy': self.vm_strategy.id,
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['name'], 'My Job')
+
+        jobs = Job.objects.all()
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].name, 'My Job')
+        self.assertEqual(jobs[0].fund_code, '001')
+        self.assertEqual(jobs[0].job_order, '{"A": "B", "color": "red"}')
