@@ -5,7 +5,7 @@ from rest_framework import status
 from data.tests_api import UserLogin
 from data.models import Workflow, WorkflowVersion, WorkflowConfiguration, VMStrategy, ShareGroup, VMFlavor, VMSettings, \
     CloudSettings, VMProject, JobFileStageGroup, DDSUserCredential, DDSEndpoint, Job
-from bespin_api_v2.jobfile import STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER
+from bespin_api_v2.joborder import STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER
 
 
 class AdminWorkflowViewSetTestCase(APITestCase):

@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from unittest.mock import MagicMock, patch, Mock
 from data.models import DDSEndpoint, DDSUserCredential, Workflow, WorkflowVersion, JobFileStageGroup, ShareGroup, \
     DDSJobInputFile, URLJobInputFile, VMFlavor, VMProject, VMSettings, CloudSettings, Job
-from data.jobfactory import JobFactory, JobFactoryException, JobOrderData, JobVMStrategy, calculate_stage_group_size, \
+from data.jobfactory import JobFactory, JobFactoryException, JobVMStrategy, calculate_stage_group_size, \
     calculate_volume_size
 import json
 
