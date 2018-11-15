@@ -44,20 +44,6 @@ class WorkflowVersion(models.Model):
     url = models.URLField(help_text="URL to packed CWL workflow file.")
     fields = JSONField(help_text="Array of fields required by this workflow.")
 
-    @staticmethod
-    def split_tag_parts(tag):
-        """
-        Given tag string return tuple of workflow_tag, version_num, configuration_name
-        :param tag: str: tag to split into parts
-        :return: (workflow_tag, version_num, configuration_name)
-        """
-        parts = tag.split("/")
-        if len(parts) != 2:
-            return None
-        workflow_tag, version_num_str = parts
-        version_num = int(version_num_str.replace("v", ""))
-        return workflow_tag, version_num
-
     class Meta:
         ordering = ['version']
         unique_together = ('workflow', 'version',)
