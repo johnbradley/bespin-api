@@ -14,20 +14,20 @@ class AdminWorkflowViewSetTestCase(APITestCase):
 
     def test_list_fails_unauthenticated(self):
         self.user_login.become_unauthorized()
-        url = reverse('admin_workflow-list')
+        url = reverse('v2-admin_workflow-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_fails_not_admin_user(self):
         self.user_login.become_normal_user()
-        url = reverse('admin_workflow-list')
+        url = reverse('v2-admin_workflow-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_list_with_admin_user(self):
         workflow = Workflow.objects.create(name='Exome Seq', tag='exomeseq')
         self.user_login.become_admin_user()
-        url = reverse('admin_workflow-list')
+        url = reverse('v2-admin_workflow-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -38,7 +38,7 @@ class AdminWorkflowViewSetTestCase(APITestCase):
     def test_retrieve_with_admin_user(self):
         workflow = Workflow.objects.create(name='Exome Seq', tag='exomeseq')
         self.user_login.become_admin_user()
-        url = reverse('admin_workflow-list') + str(workflow.id) + '/'
+        url = reverse('v2-admin_workflow-list') + str(workflow.id) + '/'
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], workflow.id)
@@ -47,7 +47,7 @@ class AdminWorkflowViewSetTestCase(APITestCase):
 
     def test_create_with_admin_user(self):
         self.user_login.become_admin_user()
-        url = reverse('admin_workflow-list')
+        url = reverse('v2-admin_workflow-list')
         response = self.client.post(url, format='json', data={
             'name': 'Exome Seq',
             'tag': 'exomeseq',
@@ -63,14 +63,14 @@ class AdminWorkflowViewSetTestCase(APITestCase):
     def test_put_fails_with_admin_user(self):
         workflow = Workflow.objects.create(name='Exome Seq', tag='exomeseq')
         self.user_login.become_admin_user()
-        url = reverse('admin_workflow-list') + str(workflow.id) + '/'
+        url = reverse('v2-admin_workflow-list') + str(workflow.id) + '/'
         response = self.client.post(url, format='json', data={})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_delete_fails_with_admin_user(self):
         workflow = Workflow.objects.create(name='Exome Seq', tag='exomeseq')
         self.user_login.become_admin_user()
-        url = reverse('admin_workflow-list') + str(workflow.id) + '/'
+        url = reverse('v2-admin_workflow-list') + str(workflow.id) + '/'
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -82,13 +82,13 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
 
     def test_list_fails_unauthenticated(self):
         self.user_login.become_unauthorized()
-        url = reverse('admin_workflowversion-list')
+        url = reverse('v2-admin_workflowversion-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_fails_not_admin_user(self):
         self.user_login.become_normal_user()
-        url = reverse('admin_workflowversion-list')
+        url = reverse('v2-admin_workflowversion-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -101,7 +101,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
             fields=[{"name":"threads", "class": "int"}],
         )
         self.user_login.become_admin_user()
-        url = reverse('admin_workflowversion-list')
+        url = reverse('v2-admin_workflowversion-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -120,7 +120,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
             fields=[{"name":"threads", "class": "int"}],
         )
         self.user_login.become_admin_user()
-        url = reverse('admin_workflowversion-list') + str(workflow_version.id) + '/'
+        url = reverse('v2-admin_workflowversion-list') + str(workflow_version.id) + '/'
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], workflow_version.id)
@@ -130,7 +130,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
 
     def test_create_with_admin_user(self):
         self.user_login.become_admin_user()
-        url = reverse('admin_workflowversion-list')
+        url = reverse('v2-admin_workflowversion-list')
         response = self.client.post(url, format='json', data={
             'workflow': self.workflow.id,
             'description': 'v1 exomseq',
@@ -148,13 +148,13 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
 
     def test_put_fails_with_admin_user(self):
         self.user_login.become_admin_user()
-        url = reverse('admin_workflowversion-list') + '1/'
+        url = reverse('v2-admin_workflowversion-list') + '1/'
         response = self.client.put(url, format='json', data={})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_delete_fails_with_admin_user(self):
         self.user_login.become_admin_user()
-        url = reverse('admin_workflowversion-list') + '1/'
+        url = reverse('v2-admin_workflowversion-list') + '1/'
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -180,13 +180,13 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
 
     def test_list_fails_unauthenticated(self):
         self.user_login.become_unauthorized()
-        url = reverse('admin_workflowconfiguration-list')
+        url = reverse('v2-admin_workflowconfiguration-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_fails_not_admin_user(self):
         self.user_login.become_normal_user()
-        url = reverse('admin_workflowconfiguration-list')
+        url = reverse('v2-admin_workflowconfiguration-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -199,7 +199,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
             share_group=self.share_group,
         )
         self.user_login.become_admin_user()
-        url = reverse('admin_workflowconfiguration-list')
+        url = reverse('v2-admin_workflowconfiguration-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -219,7 +219,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
             share_group=self.share_group,
         )
         self.user_login.become_admin_user()
-        url = reverse('admin_workflowconfiguration-list') + str(workflow_configuration.id) + '/'
+        url = reverse('v2-admin_workflowconfiguration-list') + str(workflow_configuration.id) + '/'
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], workflow_configuration.id)
@@ -231,7 +231,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
 
     def test_create_with_admin_user(self):
         self.user_login.become_admin_user()
-        url = reverse('admin_workflowconfiguration-list')
+        url = reverse('v2-admin_workflowconfiguration-list')
         response = self.client.post(url, format='json', data={
             'workflow': self.workflow.id,
             'name': 'b37xGen',
@@ -248,13 +248,13 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
 
     def test_put_fails_with_admin_user(self):
         self.user_login.become_admin_user()
-        url = reverse('admin_workflowconfiguration-list') + '1/'
+        url = reverse('v2-admin_workflowconfiguration-list') + '1/'
         response = self.client.put(url, format='json', data={})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_delete_fails_with_admin_user(self):
         self.user_login.become_admin_user()
-        url = reverse('admin_workflowconfiguration-list') + '1/'
+        url = reverse('v2-admin_workflowconfiguration-list') + '1/'
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -269,7 +269,7 @@ class VMStrategyViewSetTestCase(APITestCase):
 
     def test_list_fails_unauthenticated(self):
         self.user_login.become_unauthorized()
-        url = reverse('vmstrategies-list')
+        url = reverse('v2-vmstrategies-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -277,42 +277,42 @@ class VMStrategyViewSetTestCase(APITestCase):
         self.vm_strategy = VMStrategy.objects.create(name='default', vm_flavor=self.vm_flavor,
                                                      vm_settings=self.vm_settings)
         self.user_login.become_normal_user()
-        url = reverse('vmstrategies-list')
+        url = reverse('v2-vmstrategies-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], self.vm_strategy.id)
         self.assertEqual(response.data[0]['name'], 'default')
-        self.assertEqual(response.data[0]['vm_flavor'], self.vm_flavor.id)
+        self.assertEqual(response.data[0]['vm_flavor']['name'], 'large')
         self.assertEqual(response.data[0]['vm_settings'], self.vm_settings.id)
 
     def test_retrieve_with_normal_user(self):
         self.vm_strategy = VMStrategy.objects.create(name='default', vm_flavor=self.vm_flavor,
                                                      vm_settings=self.vm_settings)
         self.user_login.become_normal_user()
-        url = reverse('vmstrategies-list') + str(self.vm_strategy.id) + '/'
+        url = reverse('v2-vmstrategies-list') + str(self.vm_strategy.id) + '/'
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.vm_strategy.id)
         self.assertEqual(response.data['name'], 'default')
-        self.assertEqual(response.data['vm_flavor'], self.vm_flavor.id)
+        self.assertEqual(response.data['vm_flavor']['id'], self.vm_flavor.id)
         self.assertEqual(response.data['vm_settings'], self.vm_settings.id)
 
     def test_post_fails_with_normal_user(self):
         self.user_login.become_normal_user()
-        url = reverse('vmstrategies-list') + '1/'
+        url = reverse('v2-vmstrategies-list') + '1/'
         response = self.client.post(url, format='json', data={})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_put_fails_with_normal_user(self):
         self.user_login.become_normal_user()
-        url = reverse('vmstrategies-list') + '1/'
+        url = reverse('v2-vmstrategies-list') + '1/'
         response = self.client.put(url, format='json', data={})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_delete_fails_with_normal_user(self):
         self.user_login.become_normal_user()
-        url = reverse('vmstrategies-list') + '1/'
+        url = reverse('v2-vmstrategies-list') + '1/'
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -348,7 +348,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
 
     def test_list_fails_unauthenticated(self):
         self.user_login.become_unauthorized()
-        url = reverse('workflowconfigurations-list')
+        url = reverse('v2-workflowconfigurations-list')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -361,7 +361,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
             share_group=self.share_group,
         )
         self.user_login.become_normal_user()
-        url = reverse('workflowconfigurations-list')
+        url = reverse('v2-workflowconfigurations-list')
         response = self.client.get(url, format='json')
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], workflow_configuration.id)
@@ -387,11 +387,11 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
             share_group=self.share_group,
         )
         self.user_login.become_normal_user()
-        url = reverse('workflowconfigurations-list')
+        url = reverse('v2-workflowconfigurations-list')
         response = self.client.get(url, format='json')
         self.assertEqual(len(response.data), 2)
 
-        url = reverse('workflowconfigurations-list') + "?workflow_tag=microbiome"
+        url = reverse('v2-workflowconfigurations-list') + "?workflow_tag=microbiome"
         response = self.client.get(url, format='json')
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['name'], 'b37other')
@@ -405,7 +405,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
             share_group=self.share_group,
         )
         self.user_login.become_normal_user()
-        url = reverse('workflowconfigurations-list') + str(workflow_configuration.id) + '/'
+        url = reverse('v2-workflowconfigurations-list') + str(workflow_configuration.id) + '/'
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], workflow_configuration.id)
@@ -417,25 +417,25 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
 
     def test_create_with_admin_user(self):
         self.user_login.become_admin_user()
-        url = reverse('workflowconfigurations-list')
+        url = reverse('v2-workflowconfigurations-list')
         response = self.client.post(url, format='json', data={})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_put_fails_with_normal_user(self):
         self.user_login.become_normal_user()
-        url = reverse('workflowconfigurations-list') + '1/'
+        url = reverse('v2-workflowconfigurations-list') + '1/'
         response = self.client.put(url, format='json', data={})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_delete_fails_with_admin_user(self):
         self.user_login.become_normal_user()
-        url = reverse('workflowconfigurations-list') + '1/'
+        url = reverse('v2-workflowconfigurations-list') + '1/'
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_create_with_admin_user(self):
         self.user_login.become_admin_user()
-        url = reverse('workflowconfigurations-list')
+        url = reverse('v2-workflowconfigurations-list')
         response = self.client.post(url, format='json', data={})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -473,7 +473,7 @@ class JobsViewSetTestCase(APITestCase):
         user = self.user_login.become_normal_user()
         DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
         stage_group = JobFileStageGroup.objects.create(user=user)
-        url = reverse('job-list') + "init-job-file/"
+        url = reverse('v2-job-list') + "init-job-file/"
         response = self.client.post(url, format='json', data={
             'workflow_tag': 'exomeseq/v1/b37xGen'
         })
@@ -488,13 +488,36 @@ class JobsViewSetTestCase(APITestCase):
         user = self.user_login.become_normal_user()
         DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
         stage_group = JobFileStageGroup.objects.create(user=user)
-        url = reverse('job-list') + "create-job/"
+        url = reverse('v2-job-list') + "create-job/"
         response = self.client.post(url, format='json', data={
             'workflow_tag': 'exomeseq/v1/b37xGen',
             'name': 'My Job',
             'fund_code': '001',
             'stage_group': stage_group.id,
             'job_order': {'color': 'red'},
+            'share_group': self.share_group.id
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['name'], 'My Job')
+
+        jobs = Job.objects.all()
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0].name, 'My Job')
+        self.assertEqual(jobs[0].fund_code, '001')
+        self.assertEqual(jobs[0].job_order, '{"A": "B", "color": "red"}')
+
+    def test_create_job_with_vm_strategy(self):
+        user = self.user_login.become_normal_user()
+        DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
+        stage_group = JobFileStageGroup.objects.create(user=user)
+        url = reverse('v2-job-list') + "create-job/"
+        response = self.client.post(url, format='json', data={
+            'workflow_tag': 'exomeseq/v1/b37xGen',
+            'name': 'My Job',
+            'fund_code': '001',
+            'stage_group': stage_group.id,
+            'job_order': {'color': 'red'},
+            'share_group': self.share_group.id,
             'job_vm_strategy': self.vm_strategy.id,
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -505,3 +528,4 @@ class JobsViewSetTestCase(APITestCase):
         self.assertEqual(jobs[0].name, 'My Job')
         self.assertEqual(jobs[0].fund_code, '001')
         self.assertEqual(jobs[0].job_order, '{"A": "B", "color": "red"}')
+git

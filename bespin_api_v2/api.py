@@ -5,12 +5,13 @@ from rest_framework.decorators import detail_route, list_route
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from bespin_api_v2.serializers import AdminWorkflowSerializer, AdminWorkflowVersionSerializer, VMStrategySerializer, \
-    WorkflowConfigurationSerializer, JobOrderDataSerializer, JobFileSerializer, WorkflowVersionSerializer
+    WorkflowConfigurationSerializer, JobOrderDataSerializer, JobFileSerializer, WorkflowVersionSerializer, \
+    ShareGroupSerializer
 from data.serializers import JobSerializer
-from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup
+from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, ShareGroup
 from data.exceptions import BespinAPIException
 import data.api as v1_api
-
+4
 
 class CreateListRetrieveModelViewSet(mixins.CreateModelMixin,
                                      mixins.ListModelMixin,
@@ -82,3 +83,11 @@ class WorkflowConfigurationViewSet(viewsets.ReadOnlyModelViewSet):
         if workflow_tag:
             queryset =  queryset.filter(workflow__tag=workflow_tag)
         return queryset
+
+
+class ShareGroupViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = (permissions.IsAuthenticated, )
+    queryset = ShareGroup.objects.all()
+    serializer_class = ShareGroupSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('name', 'email', )

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, VMStrategy
+from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, VMStrategy, \
+    ShareGroup, VMFlavor
 from bespin_api_v2.joborder import JobOrderData, JobFile
 import json
 
@@ -44,7 +45,15 @@ class WorkflowConfigurationSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class VMFlavorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VMFlavor
+        resource_name = 'vm-flavors'
+        fields = '__all__'
+
+
 class VMStrategySerializer(serializers.ModelSerializer):
+    vm_flavor = VMFlavorSerializer(read_only=True)
     class Meta:
         model = VMStrategy
         resource_name = 'vm-strategies'
@@ -67,8 +76,16 @@ class JobOrderDataSerializer(serializers.Serializer):
     fund_code = serializers.CharField()
     job_order = serializers.DictField()
     stage_group = serializers.PrimaryKeyRelatedField(queryset=JobFileStageGroup.objects.all())
-    job_vm_strategy = serializers.PrimaryKeyRelatedField(queryset=VMStrategy.objects.all(), allow_null=True)
+    job_vm_strategy = serializers.PrimaryKeyRelatedField(
+        queryset=VMStrategy.objects.all(), required=False)
+    share_group = serializers.PrimaryKeyRelatedField(queryset=ShareGroup.objects.all())
 
     def create(self, validated_data):
         return JobOrderData(**validated_data)
 
+
+class ShareGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShareGroup
+        resource_name = 'share-group'
+        fields = '__all__'
