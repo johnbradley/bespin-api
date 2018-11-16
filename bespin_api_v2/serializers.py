@@ -28,7 +28,7 @@ class WorkflowVersionSerializer(serializers.ModelSerializer):
         return obj.workflow.name
 
     def get_tag(self, obj):
-        return "v{}".format(obj.version)
+        return "{}/v{}".format(obj.workflow.tag, obj.version)
 
     class Meta:
         model = WorkflowVersion

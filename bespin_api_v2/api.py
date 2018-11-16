@@ -76,6 +76,8 @@ class WorkflowVersionsViewSet(viewsets.ReadOnlyModelViewSet):
 class WorkflowConfigurationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WorkflowConfigurationSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('workflow',)
 
     def get_queryset(self):
         queryset = WorkflowConfiguration.objects.all()
