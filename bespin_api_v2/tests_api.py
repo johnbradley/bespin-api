@@ -528,4 +528,4 @@ class JobsViewSetTestCase(APITestCase):
         self.assertEqual(jobs[0].name, 'My Job')
         self.assertEqual(jobs[0].fund_code, '001')
         self.assertEqual(jobs[0].job_order, '{"A": "B", "color": "red"}')
-git
+
