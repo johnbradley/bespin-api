@@ -11,7 +11,7 @@ from data.serializers import JobSerializer
 from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, ShareGroup
 from data.exceptions import BespinAPIException
 import data.api as v1_api
-4
+
 
 class CreateListRetrieveModelViewSet(mixins.CreateModelMixin,
                                      mixins.ListModelMixin,
