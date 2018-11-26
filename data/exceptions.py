@@ -47,3 +47,7 @@ class EmailAlreadySentException(APIException):
     status_code = 400
     default_detail = 'Email message has already been sent'
 
+
+class InvalidWorkflowTagException(APIException):
+    status_code = 400
+    default_detail = 'Invalid workflow tag'

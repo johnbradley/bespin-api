@@ -1,4 +1,5 @@
 from data.jobfactory import JobFactory
+from data.exceptions import InvalidWorkflowTagException
 from data.models import WorkflowVersion, WorkflowConfiguration
 
 STRING_VALUE_PLACEHOLDER = "<String Value>"
@@ -56,7 +57,7 @@ class WorkflowVersionConfiguration(object):
         """
         parts = tag.split("/")
         if len(parts) != 3:
-            return None
+            raise InvalidWorkflowTagException("Invalid workflow tag {}".format(tag))
         workflow_tag, version_num_str, configuration_name = parts
         version_num = int(version_num_str.replace("v", ""))
         return workflow_tag, version_num, configuration_name
@@ -78,9 +79,9 @@ class JobFile(object):
         if job_order:
             self.job_order = job_order
         else:
-            self.job_order = self._create_job_order()
+            self.job_order = self.create_job_order()
 
-    def _create_job_order(self):
+    def create_job_order(self):
         workflow_version_config = WorkflowVersionConfiguration(self.workflow_tag)
         formatted_user_fields = {}
         for user_field in workflow_version_config.user_job_fields():
