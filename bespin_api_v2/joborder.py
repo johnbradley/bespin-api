@@ -115,6 +115,7 @@ class JobOrderData(object):
         self.job_order = job_order
         self.share_group = share_group
         self.job_vm_strategy = job_vm_strategy
+        self.job = None
 
     def get_vm_strategy(self, workflow_configuration):
         if self.job_vm_strategy:
@@ -133,4 +134,5 @@ class JobOrderData(object):
 
     def create_job(self, user):
         job_factory = self.create_job_factory(user)
-        return job_factory.create_job()
+        self.job = job_factory.create_job()
+        return self.job

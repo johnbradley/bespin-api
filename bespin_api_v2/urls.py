@@ -9,7 +9,7 @@ router.register(r'workflow-versions', api.WorkflowVersionsViewSet, 'v2-workflowv
 router.register(r'workflow-configurations', api.WorkflowConfigurationViewSet, 'v2-workflowconfigurations')
 router.register(r'vm-strategies', api.VMStrategyViewSet, 'v2-vmstrategies')
 router.register(r'share-groups', api.ShareGroupViewSet, 'v2-sharegroup')
-router.register(r'jobs', api.JobsViewSet, 'v2-job')
+router.register(r'jobs', data_api.JobsViewSet, 'v2-job')
 router.register(r'job-file-stage-groups', data_api.JobFileStageGroupViewSet, 'v2-jobfilestagegroup')
 router.register(r'dds-job-input-files', data_api.DDSJobInputFileViewSet, 'v2-ddsjobinputfile')
 router.register(r'url-job-input-files', data_api.URLJobInputFileViewSet, 'v2-urljobinputfile')
@@ -22,4 +22,6 @@ router.register(r'admin/workflow-configurations', api.AdminWorkflowConfiguration
 
 urlpatterns = [
     url(r'^', include(router.urls)),
+    url(r'job-templates/init-job-file', api.JobTemplateInitView.as_view(), name='v2-jobtemplate_initjobfile'),
+    url(r'job-templates/create-job', api.JobTemplateCreateJobView.as_view(), name='v2-jobtemplate_createjob'),
 ]

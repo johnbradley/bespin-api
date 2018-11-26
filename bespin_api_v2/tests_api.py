@@ -440,7 +440,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-class JobsViewSetTestCase(APITestCase):
+class JobTemplatesViewSetTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
         self.workflow = Workflow.objects.create(name='Exome Seq', tag='exomeseq')
@@ -473,7 +473,7 @@ class JobsViewSetTestCase(APITestCase):
         user = self.user_login.become_normal_user()
         DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
         stage_group = JobFileStageGroup.objects.create(user=user)
-        url = reverse('v2-job-list') + "init-job-file/"
+        url = reverse('v2-jobtemplate_initjobfile')
         response = self.client.post(url, format='json', data={
             'workflow_tag': 'exomeseq/v1/b37xGen'
         })
@@ -488,7 +488,7 @@ class JobsViewSetTestCase(APITestCase):
         user = self.user_login.become_normal_user()
         DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
         stage_group = JobFileStageGroup.objects.create(user=user)
-        url = reverse('v2-job-list') + "create-job/"
+        url = reverse('v2-jobtemplate_createjob')
         response = self.client.post(url, format='json', data={
             'workflow_tag': 'exomeseq/v1/b37xGen',
             'name': 'My Job',
@@ -510,7 +510,7 @@ class JobsViewSetTestCase(APITestCase):
         user = self.user_login.become_normal_user()
         DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
         stage_group = JobFileStageGroup.objects.create(user=user)
-        url = reverse('v2-job-list') + "create-job/"
+        url = reverse('v2-jobtemplate_createjob')
         response = self.client.post(url, format='json', data={
             'workflow_tag': 'exomeseq/v1/b37xGen',
             'name': 'My Job',

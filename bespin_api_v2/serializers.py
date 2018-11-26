@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, VMStrategy, \
-    ShareGroup, VMFlavor
+    ShareGroup, VMFlavor, Job
 from bespin_api_v2.joborder import JobOrderData, JobFile
 import json
 
@@ -79,6 +79,7 @@ class JobOrderDataSerializer(serializers.Serializer):
     job_vm_strategy = serializers.PrimaryKeyRelatedField(
         queryset=VMStrategy.objects.all(), required=False)
     share_group = serializers.PrimaryKeyRelatedField(queryset=ShareGroup.objects.all())
+    job = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
 
     def create(self, validated_data):
         return JobOrderData(**validated_data)
