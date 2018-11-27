@@ -71,17 +71,19 @@ class WorkflowVersionConfiguration(object):
         return user_fields_json
 
 
-class JobFile(object):
-    def __init__(self, workflow_tag, name=STRING_VALUE_PLACEHOLDER, fund_code=STRING_VALUE_PLACEHOLDER, job_order=None):
+class JobTemplate(object):
+    def __init__(self, workflow_tag, name=STRING_VALUE_PLACEHOLDER, fund_code=STRING_VALUE_PLACEHOLDER,
+                 stage_group=None, job_order=None, share_group=None, job_vm_strategy=None):
         self.workflow_tag = workflow_tag
         self.name = name
         self.fund_code = fund_code
-        if job_order:
-            self.job_order = job_order
-        else:
-            self.job_order = self.create_job_order()
+        self.stage_group = stage_group
+        self.job_order = job_order
+        self.share_group = share_group
+        self.job_vm_strategy = job_vm_strategy
+        self.job = None
 
-    def create_job_order(self):
+    def populate_job_order(self):
         workflow_version_config = WorkflowVersionConfiguration(self.workflow_tag)
         formatted_user_fields = {}
         for user_field in workflow_version_config.user_job_fields():
@@ -95,7 +97,7 @@ class JobFile(object):
             else:
                 value = self.create_placeholder_value(field_type, is_array=False)
             formatted_user_fields[field_name] = value
-        return formatted_user_fields
+        self.job_order = formatted_user_fields
 
     def create_placeholder_value(self, type_name, is_array):
         if is_array:
@@ -105,18 +107,6 @@ class JobFile(object):
             if not placeholder:
                 return STRING_VALUE_PLACEHOLDER
             return placeholder
-
-
-class JobOrderData(object):
-    def __init__(self, workflow_tag, name, fund_code, stage_group, job_order, share_group, job_vm_strategy=None):
-        self.workflow_tag = workflow_tag
-        self.name = name
-        self.fund_code = fund_code
-        self.stage_group = stage_group
-        self.job_order = job_order
-        self.share_group = share_group
-        self.job_vm_strategy = job_vm_strategy
-        self.job = None
 
     def get_vm_strategy(self, workflow_configuration):
         if self.job_vm_strategy:

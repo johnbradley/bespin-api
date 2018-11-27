@@ -5,7 +5,7 @@ from rest_framework.decorators import detail_route
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from bespin_api_v2.serializers import AdminWorkflowSerializer, AdminWorkflowVersionSerializer, VMStrategySerializer, \
-    WorkflowConfigurationSerializer, JobOrderDataSerializer, JobFileSerializer, WorkflowVersionSerializer, \
+    WorkflowConfigurationSerializer, JobTemplateMinimalSerializer, JobTemplateSerializer, WorkflowVersionSerializer, \
     ShareGroupSerializer
 from data.serializers import JobSerializer
 from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, ShareGroup
@@ -76,26 +76,17 @@ class ShareGroupViewSet(viewsets.ReadOnlyModelViewSet):
 
 class JobTemplateInitView(generics.CreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = JobFileSerializer
+    serializer_class = JobTemplateMinimalSerializer
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        job_file = serializer.save()
-        serializer = self.get_serializer(instance=job_file)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    def perform_create(self, serializer):
+        job_template = serializer.save()
+        job_template.populate_job_order()
 
 
 class JobTemplateCreateJobView(generics.CreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = JobOrderDataSerializer
+    serializer_class = JobTemplateSerializer
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        job_order_data = serializer.save()
-        job_order_data.create_job(request.user)
-        serializer = self.get_serializer(instance=job_order_data)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    def perform_create(self, serializer):
+        job_template = serializer.save()
+        job_template.create_job(self.request.user)

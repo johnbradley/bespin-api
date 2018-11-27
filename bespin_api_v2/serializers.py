@@ -1,9 +1,9 @@
+import json
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, VMStrategy, \
     ShareGroup, VMFlavor, Job
-from bespin_api_v2.joborder import JobOrderData, JobFile
-import json
+from bespin_api_v2.jobtemplate import JobTemplate
 
 
 class AdminWorkflowSerializer(serializers.ModelSerializer):
@@ -60,17 +60,17 @@ class VMStrategySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class JobFileSerializer(serializers.Serializer):
+class JobTemplateMinimalSerializer(serializers.Serializer):
     workflow_tag = serializers.CharField()
     name = serializers.CharField(required=False)
     fund_code = serializers.CharField(required=False)
     job_order = serializers.DictField(required=False)
 
     def create(self, validated_data):
-        return JobFile(**validated_data)
+        return JobTemplate(**validated_data)
 
 
-class JobOrderDataSerializer(serializers.Serializer):
+class JobTemplateSerializer(serializers.Serializer):
     workflow_tag = serializers.CharField()
     name = serializers.CharField()
     fund_code = serializers.CharField()
@@ -82,7 +82,7 @@ class JobOrderDataSerializer(serializers.Serializer):
     job = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
 
     def create(self, validated_data):
-        return JobOrderData(**validated_data)
+        return JobTemplate(**validated_data)
 
 
 class ShareGroupSerializer(serializers.ModelSerializer):

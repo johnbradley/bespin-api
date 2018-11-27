@@ -22,6 +22,6 @@ router.register(r'admin/workflow-configurations', api.AdminWorkflowConfiguration
 
 urlpatterns = [
     url(r'^', include(router.urls)),
-    url(r'job-templates/init-job-file', api.JobTemplateInitView.as_view(), name='v2-jobtemplate_initjobfile'),
+    url(r'job-templates/init', api.JobTemplateInitView.as_view(), name='v2-jobtemplate_init'),
     url(r'job-templates/create-job', api.JobTemplateCreateJobView.as_view(), name='v2-jobtemplate_createjob'),
 ]

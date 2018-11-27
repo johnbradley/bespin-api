@@ -3,9 +3,9 @@ from django.core.urlresolvers import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from data.tests_api import UserLogin
-from data.models import Workflow, WorkflowVersion, WorkflowConfiguration, VMStrategy, ShareGroup, VMFlavor, VMSettings, \
-    CloudSettings, VMProject, JobFileStageGroup, DDSUserCredential, DDSEndpoint, Job
-from bespin_api_v2.joborder import STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER
+from data.models import Workflow, WorkflowVersion, WorkflowConfiguration, VMStrategy, ShareGroup, VMFlavor, \
+    VMSettings, CloudSettings, VMProject, JobFileStageGroup, DDSUserCredential, DDSEndpoint, Job
+from bespin_api_v2.jobtemplate import STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER
 
 
 class AdminWorkflowViewSetTestCase(APITestCase):
@@ -469,11 +469,11 @@ class JobTemplatesViewSetTestCase(APITestCase):
             share_group=self.share_group,
         )
 
-    def test_init_job_file(self):
+    def test_init(self):
         user = self.user_login.become_normal_user()
         DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
         stage_group = JobFileStageGroup.objects.create(user=user)
-        url = reverse('v2-jobtemplate_initjobfile')
+        url = reverse('v2-jobtemplate_init')
         response = self.client.post(url, format='json', data={
             'workflow_tag': 'exomeseq/v1/b37xGen'
         })
