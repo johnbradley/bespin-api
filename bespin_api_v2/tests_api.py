@@ -529,3 +529,49 @@ class JobTemplatesViewSetTestCase(APITestCase):
         self.assertEqual(jobs[0].fund_code, '001')
         self.assertEqual(jobs[0].job_order, '{"A": "B", "color": "red"}')
 
+
+class ShareGroupViewSetTestCase(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+        self.share_group = ShareGroup.objects.create(name="somegroup")
+
+    def test_list_fails_unauthenticated(self):
+        self.user_login.become_unauthorized()
+        url = reverse('v2-sharegroup-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_list_normal_user(self):
+        self.user_login.become_normal_user()
+        url = reverse('v2-sharegroup-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], self.share_group.id)
+        self.assertEqual(response.data[0]['name'], 'somegroup')
+
+    def test_retrieve_with_normal_user(self):
+        self.user_login.become_normal_user()
+        url = reverse('v2-sharegroup-list') + str(self.share_group.id) + '/'
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.share_group.id)
+        self.assertEqual(response.data['name'], 'somegroup')
+
+    def test_post_fails_with_normal_user(self):
+        self.user_login.become_normal_user()
+        url = reverse('v2-sharegroup-list') + '1/'
+        response = self.client.post(url, format='json', data={})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_put_fails_with_normal_user(self):
+        self.user_login.become_normal_user()
+        url = reverse('v2-sharegroup-list') + '1/'
+        response = self.client.put(url, format='json', data={})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_delete_fails_with_normal_user(self):
+        self.user_login.become_normal_user()
+        url = reverse('v2-sharegroup-list') + '1/'
+        response = self.client.delete(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
