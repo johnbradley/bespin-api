@@ -89,4 +89,4 @@ class JobTemplateCreateJobView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         job_template = serializer.save()
-        job_template.create_job(self.request.user)
+        job_template.create_and_populate_job(self.request.user)

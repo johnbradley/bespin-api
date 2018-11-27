@@ -123,7 +123,6 @@ class JobTemplate(object):
                           system_job_order, self.job_order,
                           vm_strategy, self.share_group)
 
-    def create_job(self, user):
+    def create_and_populate_job(self, user):
         job_factory = self.create_job_factory(user)
         self.job = job_factory.create_job()
-        return self.job
