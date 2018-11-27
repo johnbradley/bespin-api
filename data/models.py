@@ -527,7 +527,7 @@ class WorkflowConfiguration(models.Model):
     Specifies a set of system-provided answers in JSON format
     """
     name = models.SlugField(max_length=255, help_text="Short user facing name")
-    workflow = models.ForeignKey(Workflow, null=True)
+    workflow = models.ForeignKey(Workflow)
     system_job_order = JSONField(help_text="Dictionary containing the portion of the job order specified by system.")
     default_vm_strategy = models.ForeignKey(VMStrategy,
                                             help_text='VM setup to use for jobs created with this configuration')
