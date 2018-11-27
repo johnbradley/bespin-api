@@ -513,7 +513,6 @@ class VMStrategy(models.Model):
     volume_mounts = models.TextField(default=json.dumps({'/dev/vdb1': '/work'}),
                                      help_text='JSON-encoded dictionary of volume mounts, e.g. {"/dev/vdb1": "/work"}')
 
-
     class Meta:
         verbose_name_plural = "VM Strategies"
 
