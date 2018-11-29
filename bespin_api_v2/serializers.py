@@ -77,7 +77,6 @@ class JobTemplateSerializer(serializers.Serializer):
     stage_group = serializers.PrimaryKeyRelatedField(queryset=JobFileStageGroup.objects.all())
     job_vm_strategy = serializers.PrimaryKeyRelatedField(
         queryset=VMStrategy.objects.all(), required=False)
-    share_group = serializers.PrimaryKeyRelatedField(queryset=ShareGroup.objects.all())
     job = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
 
     def create(self, validated_data):

@@ -102,29 +102,30 @@ class JobTemplateTestCase(TestCase):
     def test_get_vm_strategy(self):
         mock_workflow_configuration = Mock(default_vm_strategy='good')
         job_order_data = JobTemplate(workflow_tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
-                                      share_group=None, job_vm_strategy=None)
+                                     job_vm_strategy=None)
         self.assertEqual(job_order_data.get_vm_strategy(mock_workflow_configuration), 'good')
         job_order_data = JobTemplate(workflow_tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
-                                      share_group=None, job_vm_strategy='special')
+                                     job_vm_strategy='special')
         self.assertEqual(job_order_data.get_vm_strategy(mock_workflow_configuration), 'special')
 
     @patch('bespin_api_v2.jobtemplate.JobFactory')
     @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
     def test_create_job_factory(self, mock_workflow_version_configuration, mock_job_factory):
         job_template = JobTemplate(workflow_tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
-                                      share_group=None, job_vm_strategy=None)
+                                   job_vm_strategy=None)
         self.assertEqual(job_template.create_job_factory(user=None), mock_job_factory.return_value)
-        workflow_version =  mock_workflow_version_configuration.return_value.workflow_version
+        workflow_version = mock_workflow_version_configuration.return_value.workflow_version
         workflow_configuration = mock_workflow_version_configuration.return_value.workflow_configuration
         mock_job_factory.assert_called_with(None, workflow_version, None, None, None,
                                             workflow_configuration.system_job_order, None,
-                                            workflow_configuration.default_vm_strategy, None)
+                                            workflow_configuration.default_vm_strategy,
+                                            workflow_configuration.share_group)
 
     @patch('bespin_api_v2.jobtemplate.JobFactory')
     @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
     def test_create_job(self, mock_workflow_version_configuration, mock_job_factory):
         job_template = JobTemplate(workflow_tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
-                                      share_group=None, job_vm_strategy=None)
+                                   job_vm_strategy=None)
         self.assertEqual(job_template.job, None)
         job_template.create_and_populate_job(Mock())
         self.assertEqual(job_template.job, mock_job_factory.return_value.create_job.return_value)

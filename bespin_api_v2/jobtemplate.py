@@ -73,13 +73,12 @@ class WorkflowVersionConfiguration(object):
 
 class JobTemplate(object):
     def __init__(self, workflow_tag, name=STRING_VALUE_PLACEHOLDER, fund_code=STRING_VALUE_PLACEHOLDER,
-                 stage_group=None, job_order=None, share_group=None, job_vm_strategy=None):
+                 stage_group=None, job_order=None, job_vm_strategy=None):
         self.workflow_tag = workflow_tag
         self.name = name
         self.fund_code = fund_code
         self.stage_group = stage_group
         self.job_order = job_order
-        self.share_group = share_group
         self.job_vm_strategy = job_vm_strategy
         self.job = None
 
@@ -116,12 +115,13 @@ class JobTemplate(object):
 
     def create_job_factory(self, user):
         workflow_version_configuration = WorkflowVersionConfiguration(self.workflow_tag)
-        system_job_order = workflow_version_configuration.workflow_configuration.system_job_order
-        vm_strategy = self.get_vm_strategy(workflow_version_configuration.workflow_configuration)
+        workflow_configuration = workflow_version_configuration.workflow_configuration
+        system_job_order = workflow_configuration.system_job_order
+        vm_strategy = self.get_vm_strategy(workflow_configuration)
         return JobFactory(user, workflow_version_configuration.workflow_version,
                           self.name, self.fund_code, self.stage_group,
                           system_job_order, self.job_order,
-                          vm_strategy, self.share_group)
+                          vm_strategy, workflow_configuration.share_group)
 
     def create_and_populate_job(self, user):
         job_factory = self.create_job_factory(user)
