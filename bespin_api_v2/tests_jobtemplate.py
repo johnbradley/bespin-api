@@ -16,7 +16,7 @@ class WorkflowVersionConfigurationTestCase(TestCase):
     @patch('bespin_api_v2.jobtemplate.WorkflowConfiguration')
     def test_constructor(self, mock_workflow_configuration, mock_workflow_version):
         item = WorkflowVersionConfiguration("exome/v1/human")
-        mock_workflow_configuration.objects.get.assert_called_with(name='human', workflow=ANY)
+        mock_workflow_configuration.objects.get.assert_called_with(tag='human', workflow=ANY)
         mock_workflow_version.objects.get.assert_called_with(version=1, workflow__tag='exome')
         self.assertEqual(item.workflow_version, mock_workflow_version.objects.get.return_value)
         self.assertEqual(item.workflow_configuration, mock_workflow_configuration.objects.get.return_value)

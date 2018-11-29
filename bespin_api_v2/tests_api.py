@@ -192,7 +192,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
 
     def test_list_with_admin_user(self):
         workflow_configuration = WorkflowConfiguration.objects.create(
-            name='b37xGen',
+            tag='b37xGen',
             workflow=self.workflow,
             system_job_order={"A":"B"},
             default_vm_strategy=self.vm_strategy,
@@ -204,7 +204,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], workflow_configuration.id)
-        self.assertEqual(response.data[0]['name'], 'b37xGen')
+        self.assertEqual(response.data[0]['tag'], 'b37xGen')
         self.assertEqual(response.data[0]['workflow'], self.workflow.id)
         self.assertEqual(response.data[0]['system_job_order'], {"A": "B"})
         self.assertEqual(response.data[0]['default_vm_strategy'], self.vm_strategy.id)
@@ -212,7 +212,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
 
     def test_retrieve_with_admin_user(self):
         workflow_configuration = WorkflowConfiguration.objects.create(
-            name='b37xGen',
+            tag='b37xGen',
             workflow=self.workflow,
             system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,
@@ -223,7 +223,7 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], workflow_configuration.id)
-        self.assertEqual(response.data['name'], 'b37xGen')
+        self.assertEqual(response.data['tag'], 'b37xGen')
         self.assertEqual(response.data['workflow'], self.workflow.id)
         self.assertEqual(response.data['system_job_order'], {"A": "B"})
         self.assertEqual(response.data['default_vm_strategy'], self.vm_strategy.id)
@@ -234,13 +234,13 @@ class AdminWorkflowConfigurationViewSetTestCase(APITestCase):
         url = reverse('v2-admin_workflowconfiguration-list')
         response = self.client.post(url, format='json', data={
             'workflow': self.workflow.id,
-            'name': 'b37xGen',
+            'tag': 'b37xGen',
             'system_job_order': {"A": "B"},
             'default_vm_strategy': self.vm_strategy.id,
             'share_group': self.share_group.id,
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['name'], 'b37xGen')
+        self.assertEqual(response.data['tag'], 'b37xGen')
         self.assertEqual(response.data['workflow'], self.workflow.id)
         self.assertEqual(response.data['system_job_order'], {"A": "B"})
         self.assertEqual(response.data['default_vm_strategy'], self.vm_strategy.id)
@@ -354,7 +354,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
 
     def test_list_normal_user(self):
         workflow_configuration = WorkflowConfiguration.objects.create(
-            name='b37xGen',
+            tag='b37xGen',
             workflow=self.workflow,
             system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,
@@ -365,7 +365,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], workflow_configuration.id)
-        self.assertEqual(response.data[0]['name'], 'b37xGen')
+        self.assertEqual(response.data[0]['tag'], 'b37xGen')
         self.assertEqual(response.data[0]['workflow'], self.workflow.id)
         self.assertEqual(response.data[0]['system_job_order'], {"A": "B"})
         self.assertEqual(response.data[0]['default_vm_strategy'], self.vm_strategy.id)
@@ -373,14 +373,14 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
 
     def test_list_normal_user_with_filtering(self):
         workflow_configuration1 = WorkflowConfiguration.objects.create(
-            name='b37xGen',
+            tag='b37xGen',
             workflow=self.workflow,
             system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group,
         )
         workflow_configuration2 = WorkflowConfiguration.objects.create(
-            name='b37other',
+            tag='b37other',
             workflow=self.workflow2,
             system_job_order={"A": "C"},
             default_vm_strategy=self.vm_strategy,
@@ -394,11 +394,11 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         url = reverse('v2-workflowconfigurations-list') + "?workflow_tag=microbiome"
         response = self.client.get(url, format='json')
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['name'], 'b37other')
+        self.assertEqual(response.data[0]['tag'], 'b37other')
 
     def test_retrieve_normal_user(self):
         workflow_configuration = WorkflowConfiguration.objects.create(
-            name='b37xGen',
+            tag='b37xGen',
             workflow=self.workflow,
             system_job_order={"items": 4},
             default_vm_strategy=self.vm_strategy,
@@ -409,7 +409,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], workflow_configuration.id)
-        self.assertEqual(response.data['name'], 'b37xGen')
+        self.assertEqual(response.data['tag'], 'b37xGen')
         self.assertEqual(response.data['workflow'], self.workflow.id)
         self.assertEqual(response.data['system_job_order'], {"items": 4})
         self.assertEqual(response.data['default_vm_strategy'], self.vm_strategy.id)
@@ -462,7 +462,7 @@ class JobTemplatesViewSetTestCase(APITestCase):
         self.endpoint = DDSEndpoint.objects.create(name='DukeDS', agent_key='secret',
                                                    api_root='https://someserver.com/api')
         workflow_configuration1 = WorkflowConfiguration.objects.create(
-            name='b37xGen',
+            tag='b37xGen',
             workflow=self.workflow,
             system_job_order={"A": "B"},
             default_vm_strategy=self.vm_strategy,

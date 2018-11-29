@@ -525,7 +525,7 @@ class WorkflowConfiguration(models.Model):
     """
     Specifies a set of system-provided answers in JSON format
     """
-    name = models.SlugField(max_length=255, help_text="Short user facing name")
+    tag = models.SlugField(help_text="Unique tag to represent this workflow")
     workflow = models.ForeignKey(Workflow)
     system_job_order = JSONField(help_text="Dictionary containing the portion of the job order specified by system.")
     default_vm_strategy = models.ForeignKey(VMStrategy,
@@ -534,7 +534,7 @@ class WorkflowConfiguration(models.Model):
                                     help_text='Users who will have job output shared with them')
 
     class Meta:
-        unique_together = ('workflow', 'name', )
+        unique_together = ('workflow', 'tag', )
 
     def __str__(self):
         return "WorkflowConfiguration - pk: {}".format(self.pk)

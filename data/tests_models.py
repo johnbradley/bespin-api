@@ -956,23 +956,23 @@ class WorkflowConfigurationTestCase(TestCase):
             vm_flavor=self.vm_flavor
         )
 
-    def test_workflow_and_name_unique(self):
+    def test_workflow_and_tag_unique(self):
         WorkflowConfiguration.objects.create(
-            name='human',
+            tag='human',
             workflow=self.workflow,
             system_job_order={},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group
         )
         WorkflowConfiguration.objects.create(
-            name='rat',
+            tag='rat',
             workflow=self.workflow,
             system_job_order={},
             default_vm_strategy=self.vm_strategy,
             share_group=self.share_group
         )
         WorkflowConfiguration.objects.create(
-            name='human',
+            tag='human',
             workflow=self.workflow2,
             system_job_order={},
             default_vm_strategy=self.vm_strategy,
@@ -980,7 +980,7 @@ class WorkflowConfigurationTestCase(TestCase):
         )
         with self.assertRaises(IntegrityError):
             WorkflowConfiguration.objects.create(
-                name='human',
+                tag='human',
                 workflow=self.workflow,
                 system_job_order={},
                 default_vm_strategy=self.vm_strategy,

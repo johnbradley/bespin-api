@@ -46,7 +46,7 @@ class WorkflowVersionConfiguration(object):
             workflow__tag=workflow_tag)
         self.workflow_configuration = WorkflowConfiguration.objects.get(
             workflow=self.workflow_version.workflow,
-            name=configuration_name)
+            tag=configuration_name)
 
     @staticmethod
     def split_workflow_tag_parts(tag):

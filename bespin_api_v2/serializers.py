@@ -38,7 +38,6 @@ class WorkflowVersionSerializer(serializers.ModelSerializer):
 
 
 class WorkflowConfigurationSerializer(serializers.ModelSerializer):
-    tag = serializers.CharField(source='name', required=False)
     class Meta:
         model = WorkflowConfiguration
         resource_name = 'workflow-configuration'
