@@ -60,7 +60,7 @@ class VMStrategySerializer(serializers.ModelSerializer):
 
 
 class JobTemplateMinimalSerializer(serializers.Serializer):
-    workflow_tag = serializers.CharField()
+    tag = serializers.CharField()
     name = serializers.CharField(required=False)
     fund_code = serializers.CharField(required=False)
     job_order = serializers.DictField(required=False)
@@ -70,7 +70,7 @@ class JobTemplateMinimalSerializer(serializers.Serializer):
 
 
 class JobTemplateSerializer(serializers.Serializer):
-    workflow_tag = serializers.CharField()
+    tag = serializers.CharField()
     name = serializers.CharField()
     fund_code = serializers.CharField()
     job_order = serializers.DictField()

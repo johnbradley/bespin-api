@@ -475,10 +475,10 @@ class JobTemplatesViewSetTestCase(APITestCase):
         stage_group = JobFileStageGroup.objects.create(user=user)
         url = reverse('v2-jobtemplate_init')
         response = self.client.post(url, format='json', data={
-            'workflow_tag': 'exomeseq/v1/b37xGen'
+            'tag': 'exomeseq/v1/b37xGen'
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['workflow_tag'], 'exomeseq/v1/b37xGen')
+        self.assertEqual(response.data['tag'], 'exomeseq/v1/b37xGen')
         self.assertEqual(response.data['name'], STRING_VALUE_PLACEHOLDER)
         self.assertEqual(response.data['fund_code'], STRING_VALUE_PLACEHOLDER)
         self.assertEqual(response.data['job_order'],
@@ -490,7 +490,7 @@ class JobTemplatesViewSetTestCase(APITestCase):
         stage_group = JobFileStageGroup.objects.create(user=user)
         url = reverse('v2-jobtemplate_createjob')
         response = self.client.post(url, format='json', data={
-            'workflow_tag': 'exomeseq/v1/b37xGen',
+            'tag': 'exomeseq/v1/b37xGen',
             'name': 'My Job',
             'fund_code': '001',
             'stage_group': stage_group.id,
@@ -512,7 +512,7 @@ class JobTemplatesViewSetTestCase(APITestCase):
         stage_group = JobFileStageGroup.objects.create(user=user)
         url = reverse('v2-jobtemplate_createjob')
         response = self.client.post(url, format='json', data={
-            'workflow_tag': 'exomeseq/v1/b37xGen',
+            'tag': 'exomeseq/v1/b37xGen',
             'name': 'My Job',
             'fund_code': '001',
             'stage_group': stage_group.id,

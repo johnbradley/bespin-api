@@ -42,7 +42,7 @@ class JobTemplateTestCase(TestCase):
             {"type": "string", "name": "mystr"},
             {"type": {"type": "array",  "items": "int"}, "name": "intary"}
         ]
-        job_template = JobTemplate(workflow_tag="exome/v1/human", job_order={})
+        job_template = JobTemplate(tag="exome/v1/human", job_order={})
         mock_workflow_version_configuration.return_value.user_job_fields.return_value = user_fields
         job_template.populate_job_order()
         self.assertEqual(job_template.job_order, {
@@ -50,7 +50,7 @@ class JobTemplateTestCase(TestCase):
         })
 
     def test_create_placeholder_value(self):
-        job_template = JobTemplate(workflow_tag="exome/v1/human", job_order={"A": "B"})
+        job_template = JobTemplate(tag="exome/v1/human", job_order={"A": "B"})
         self.assertEqual(
             job_template.create_placeholder_value(type_name='string', is_array=False),
             STRING_VALUE_PLACEHOLDER)
@@ -101,17 +101,17 @@ class JobTemplateTestCase(TestCase):
 
     def test_get_vm_strategy(self):
         mock_workflow_configuration = Mock(default_vm_strategy='good')
-        job_order_data = JobTemplate(workflow_tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
+        job_order_data = JobTemplate(tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
                                      job_vm_strategy=None)
         self.assertEqual(job_order_data.get_vm_strategy(mock_workflow_configuration), 'good')
-        job_order_data = JobTemplate(workflow_tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
+        job_order_data = JobTemplate(tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
                                      job_vm_strategy='special')
         self.assertEqual(job_order_data.get_vm_strategy(mock_workflow_configuration), 'special')
 
     @patch('bespin_api_v2.jobtemplate.JobFactory')
     @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
     def test_create_job_factory(self, mock_workflow_version_configuration, mock_job_factory):
-        job_template = JobTemplate(workflow_tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
+        job_template = JobTemplate(tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
                                    job_vm_strategy=None)
         self.assertEqual(job_template.create_job_factory(user=None), mock_job_factory.return_value)
         workflow_version = mock_workflow_version_configuration.return_value.workflow_version
@@ -124,7 +124,7 @@ class JobTemplateTestCase(TestCase):
     @patch('bespin_api_v2.jobtemplate.JobFactory')
     @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
     def test_create_job(self, mock_workflow_version_configuration, mock_job_factory):
-        job_template = JobTemplate(workflow_tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
+        job_template = JobTemplate(tag=None, name=None, fund_code=None, stage_group=None, job_order=None,
                                    job_vm_strategy=None)
         self.assertEqual(job_template.job, None)
         job_template.create_and_populate_job(Mock())

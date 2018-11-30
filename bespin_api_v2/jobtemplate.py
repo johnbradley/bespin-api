@@ -72,9 +72,9 @@ class WorkflowVersionConfiguration(object):
 
 
 class JobTemplate(object):
-    def __init__(self, workflow_tag, name=STRING_VALUE_PLACEHOLDER, fund_code=STRING_VALUE_PLACEHOLDER,
+    def __init__(self, tag, name=STRING_VALUE_PLACEHOLDER, fund_code=STRING_VALUE_PLACEHOLDER,
                  stage_group=None, job_order=None, job_vm_strategy=None):
-        self.workflow_tag = workflow_tag
+        self.tag = tag
         self.name = name
         self.fund_code = fund_code
         self.stage_group = stage_group
@@ -83,7 +83,7 @@ class JobTemplate(object):
         self.job = None
 
     def populate_job_order(self):
-        workflow_version_config = WorkflowVersionConfiguration(self.workflow_tag)
+        workflow_version_config = WorkflowVersionConfiguration(self.tag)
         formatted_user_fields = {}
         for user_field in workflow_version_config.user_job_fields():
             field_type = user_field.get('type')
@@ -114,7 +114,7 @@ class JobTemplate(object):
             return workflow_configuration.default_vm_strategy
 
     def create_job_factory(self, user):
-        workflow_version_configuration = WorkflowVersionConfiguration(self.workflow_tag)
+        workflow_version_configuration = WorkflowVersionConfiguration(self.tag)
         workflow_configuration = workflow_version_configuration.workflow_configuration
         system_job_order = workflow_configuration.system_job_order
         vm_strategy = self.get_vm_strategy(workflow_configuration)
