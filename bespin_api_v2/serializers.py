@@ -1,8 +1,9 @@
+import json
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, VMStrategy
-from data.jobfactory import JobOrderData
-import json
+from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, VMStrategy, \
+    ShareGroup, VMFlavor, Job
+from bespin_api_v2.jobtemplate import JobTemplate
 
 
 class AdminWorkflowSerializer(serializers.ModelSerializer):
@@ -19,42 +20,71 @@ class AdminWorkflowVersionSerializer(serializers.ModelSerializer):
         fields = ['id', 'workflow', 'description', 'object_name', 'created', 'version', 'url', 'fields']
 
 
+class WorkflowVersionSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    tag = serializers.SerializerMethodField(required=False)
+
+    def get_name(self, obj):
+        return obj.workflow.name
+
+    def get_tag(self, obj):
+        return "{}/v{}".format(obj.workflow.tag, obj.version)
+
+    class Meta:
+        model = WorkflowVersion
+        resource_name = 'workflow-versions'
+        fields = ('id', 'workflow', 'name', 'description', 'object_name', 'created', 'url', 'version',
+                  'methods_document', 'fields', 'tag')
+
+
 class WorkflowConfigurationSerializer(serializers.ModelSerializer):
-    tag = serializers.CharField(source='make_tag', read_only=True)
-    user_fields = serializers.SerializerMethodField()
-
-    def get_user_fields(self, obj):
-        """
-        Determines user supplied fields by removing those with answers in the system_job_order 
-        from the workflow version's fields. 
-        """
-        system_keys = obj.system_job_order.keys()
-        user_fields_json = []
-        for field in obj.workflow_version.fields:
-            if field['name'] not in system_keys:
-                user_fields_json.append(field)
-        return user_fields_json
-
     class Meta:
         model = WorkflowConfiguration
         resource_name = 'workflow-configuration'
-        fields = ['id', 'name', 'tag', 'workflow_version', 'user_fields', 'system_job_order',
-                  'default_vm_strategy', 'share_group', ]
+        fields = '__all__'
+
+
+class VMFlavorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VMFlavor
+        resource_name = 'vm-flavors'
+        fields = '__all__'
 
 
 class VMStrategySerializer(serializers.ModelSerializer):
+    vm_flavor = VMFlavorSerializer(read_only=True)
     class Meta:
         model = VMStrategy
         resource_name = 'vm-strategies'
         fields = '__all__'
 
 
-class JobOrderDataSerializer(serializers.Serializer):
-    job_name = serializers.CharField()
-    fund_code = serializers.CharField()
-    stage_group = serializers.PrimaryKeyRelatedField(queryset=JobFileStageGroup.objects.all())
-    user_job_order = serializers.DictField()
-    job_vm_strategy = serializers.PrimaryKeyRelatedField(queryset=VMStrategy.objects.all(), allow_null=True)
+class JobTemplateMinimalSerializer(serializers.Serializer):
+    tag = serializers.CharField()
+    name = serializers.CharField(required=False)
+    fund_code = serializers.CharField(required=False)
+    job_order = serializers.DictField(required=False)
 
     def create(self, validated_data):
-        return JobOrderData(**validated_data)
+        return JobTemplate(**validated_data)
+
+
+class JobTemplateSerializer(serializers.Serializer):
+    tag = serializers.CharField()
+    name = serializers.CharField()
+    fund_code = serializers.CharField()
+    job_order = serializers.DictField()
+    stage_group = serializers.PrimaryKeyRelatedField(queryset=JobFileStageGroup.objects.all())
+    job_vm_strategy = serializers.PrimaryKeyRelatedField(
+        queryset=VMStrategy.objects.all(), required=False)
+    job = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
+
+    def create(self, validated_data):
+        return JobTemplate(**validated_data)
+
+
+class ShareGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShareGroup
+        resource_name = 'share-group'
+        fields = '__all__'

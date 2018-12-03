@@ -1,4 +1,5 @@
-from data.models import Job, JobDDSOutputProject, DDSJobInputFile, DDSUserCredential
+from data.models import Job, JobDDSOutputProject, DDSJobInputFile, DDSUserCredential, WorkflowVersion, \
+    WorkflowConfiguration
 from data.exceptions import JobFactoryException
 from django.conf import settings
 import json
@@ -70,31 +71,6 @@ class JobVMStrategy(object):
         self.volume_size_base = volume_size_base
         self.volume_size_factor = volume_size_factor
         self.volume_mounts = volume_mounts
-
-
-class JobOrderData(object):
-    def __init__(self, job_name, fund_code, stage_group, user_job_order, job_vm_strategy):
-        self.job_name = job_name
-        self.fund_code = fund_code
-        self.stage_group = stage_group
-        self.user_job_order = user_job_order
-        self.job_vm_strategy = job_vm_strategy
-
-    def get_vm_strategy(self, workflow_configuration):
-        if self.job_vm_strategy:
-            return self.job_vm_strategy
-        else:
-            return workflow_configuration.default_vm_strategy
-
-    def create_job_factory(self, user, workflow_configuration):
-        workflow_version = workflow_configuration.workflow_version
-        system_job_order = workflow_configuration.system_job_order
-        vm_strategy = self.get_vm_strategy(workflow_configuration)
-        share_group = workflow_configuration.share_group
-        return JobFactory(user, workflow_version,
-                          self.job_name, self.fund_code, self.stage_group,
-                          system_job_order, self.user_job_order,
-                          vm_strategy, share_group)
 
 
 class JobFactory(object):

@@ -525,35 +525,16 @@ class WorkflowConfiguration(models.Model):
     """
     Specifies a set of system-provided answers in JSON format
     """
-    name = models.SlugField(max_length=255, help_text="Short user facing name")
-    workflow_version = models.ForeignKey(WorkflowVersion)
+    tag = models.SlugField(help_text="Unique tag to represent this workflow")
+    workflow = models.ForeignKey(Workflow)
     system_job_order = JSONField(help_text="Dictionary containing the portion of the job order specified by system.")
     default_vm_strategy = models.ForeignKey(VMStrategy,
                                             help_text='VM setup to use for jobs created with this configuration')
     share_group = models.ForeignKey(ShareGroup,
                                     help_text='Users who will have job output shared with them')
 
-    def make_tag(self):
-        workflow_tag = self.workflow_version.workflow.tag
-        workflow_version_num = self.workflow_version.version
-        return '{}/v{}/{}'.format(workflow_tag, workflow_version_num, self.name)
-
-    @staticmethod
-    def split_tag_parts(tag):
-        """
-        Given tag string return tuple of workflow_tag, version_num, configuration_name
-        :param tag: str: tag to split into parts
-        :return: (workflow_tag, version_num, configuration_name)
-        """
-        parts = tag.split("/")
-        if len(parts) != 3:
-            return None
-        workflow_tag, version_num_str, configuration_name = parts
-        version_num = int(version_num_str.replace("v", ""))
-        return workflow_tag, version_num, configuration_name
-
     class Meta:
-        unique_together = ('workflow_version', 'name', )
+        unique_together = ('workflow', 'tag', )
 
     def __str__(self):
         return "WorkflowConfiguration - pk: {}".format(self.pk)

@@ -8,7 +8,7 @@ from data.models import JobToken
 from data.models import DDSUser, ShareGroup, WorkflowMethodsDocument
 from data.models import EmailTemplate, EmailMessage
 from data.models import JobActivity
-
+from data.models import VMStrategy, WorkflowConfiguration
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
@@ -939,3 +939,50 @@ class VMFlavorTests(TestCase):
         self.assertEqual(len(flavors), 1)
         self.assertEqual(flavors[0].name, 'm1.xxlarge')
         self.assertEqual(flavors[0].cpus, 32)
+
+
+class WorkflowConfigurationTestCase(TestCase):
+    def setUp(self):
+        self.workflow = Workflow.objects.create(name='exomeseq', tag='exomeseq')
+        self.workflow2 = Workflow.objects.create(name='exomeseq2', tag='exomseq2')
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
+        self.vm_flavor = VMFlavor.objects.create(name='flavor1')
+        vm_project = VMProject.objects.create(name='project1')
+        cloud_settings = CloudSettings.objects.create(vm_project=vm_project)
+        self.vm_settings = VMSettings.objects.create(cloud_settings=cloud_settings)
+        self.vm_strategy = VMStrategy.objects.create(
+            name='default',
+            vm_settings=self.vm_settings,
+            vm_flavor=self.vm_flavor
+        )
+
+    def test_workflow_and_tag_unique(self):
+        WorkflowConfiguration.objects.create(
+            tag='human',
+            workflow=self.workflow,
+            system_job_order={},
+            default_vm_strategy=self.vm_strategy,
+            share_group=self.share_group
+        )
+        WorkflowConfiguration.objects.create(
+            tag='rat',
+            workflow=self.workflow,
+            system_job_order={},
+            default_vm_strategy=self.vm_strategy,
+            share_group=self.share_group
+        )
+        WorkflowConfiguration.objects.create(
+            tag='human',
+            workflow=self.workflow2,
+            system_job_order={},
+            default_vm_strategy=self.vm_strategy,
+            share_group=self.share_group
+        )
+        with self.assertRaises(IntegrityError):
+            WorkflowConfiguration.objects.create(
+                tag='human',
+                workflow=self.workflow,
+                system_job_order={},
+                default_vm_strategy=self.vm_strategy,
+                share_group=self.share_group
+            )
