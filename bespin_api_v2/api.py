@@ -41,29 +41,24 @@ class VMStrategyViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = VMStrategySerializer
     queryset = VMStrategy.objects.all()
-
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('name',)
 
 
 class WorkflowVersionsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    queryset = WorkflowVersion.objects.all()
+    queryset = WorkflowVersion.objects.order_by('workflow', 'version')
     serializer_class = WorkflowVersionSerializer
     filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('workflow',)
+    filter_fields = ('workflow', 'workflow__tag')
 
 
 class WorkflowConfigurationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = WorkflowConfigurationSerializer
+    queryset = WorkflowConfiguration.objects.all()
     filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('workflow',)
-
-    def get_queryset(self):
-        queryset = WorkflowConfiguration.objects.all()
-        workflow_tag = self.request.query_params.get('workflow_tag', None)
-        if workflow_tag:
-            queryset =  queryset.filter(workflow__tag=workflow_tag)
-        return queryset
+    filter_fields = ('tag', 'workflow', 'workflow__tag')
 
 
 class ShareGroupViewSet(viewsets.ReadOnlyModelViewSet):
