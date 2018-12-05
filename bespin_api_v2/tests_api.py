@@ -286,6 +286,21 @@ class VMStrategyViewSetTestCase(APITestCase):
         self.assertEqual(response.data[0]['vm_flavor']['name'], 'large')
         self.assertEqual(response.data[0]['vm_settings'], self.vm_settings.id)
 
+    def test_list_filtering(self):
+        VMStrategy.objects.create(name='default', vm_flavor=self.vm_flavor, vm_settings=self.vm_settings)
+        VMStrategy.objects.create(name='better', vm_flavor=self.vm_flavor, vm_settings=self.vm_settings)
+        self.user_login.become_normal_user()
+        url = reverse('v2-vmstrategies-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(set([item['name'] for item in response.data]), set(['default', 'better']))
+        url = reverse('v2-vmstrategies-list') + "?name=better"
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(set([item['name'] for item in response.data]), set(['better']))
+
     def test_retrieve_with_normal_user(self):
         self.vm_strategy = VMStrategy.objects.create(name='default', vm_flavor=self.vm_flavor,
                                                      vm_settings=self.vm_settings)
@@ -371,7 +386,7 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         self.assertEqual(response.data[0]['default_vm_strategy'], self.vm_strategy.id)
         self.assertEqual(response.data[0]['share_group'], self.share_group.id)
 
-    def test_list_normal_user_with_filtering(self):
+    def test_list_normal_user_with_workflow_tag_filtering(self):
         workflow_configuration1 = WorkflowConfiguration.objects.create(
             tag='b37xGen',
             workflow=self.workflow,
@@ -391,7 +406,32 @@ class WorkflowConfigurationViewSetTestCase(APITestCase):
         response = self.client.get(url, format='json')
         self.assertEqual(len(response.data), 2)
 
-        url = reverse('v2-workflowconfigurations-list') + "?workflow_tag=microbiome"
+        url = reverse('v2-workflowconfigurations-list') + "?workflow__tag=microbiome"
+        response = self.client.get(url, format='json')
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['tag'], 'b37other')
+
+    def test_list_normal_user_with_tag_filtering(self):
+        workflow_configuration1 = WorkflowConfiguration.objects.create(
+            tag='b37xGen',
+            workflow=self.workflow,
+            system_job_order={"A": "B"},
+            default_vm_strategy=self.vm_strategy,
+            share_group=self.share_group,
+        )
+        workflow_configuration2 = WorkflowConfiguration.objects.create(
+            tag='b37other',
+            workflow=self.workflow2,
+            system_job_order={"A": "C"},
+            default_vm_strategy=self.vm_strategy,
+            share_group=self.share_group,
+        )
+        self.user_login.become_normal_user()
+        url = reverse('v2-workflowconfigurations-list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(len(response.data), 2)
+
+        url = reverse('v2-workflowconfigurations-list') + "?tag=b37other"
         response = self.client.get(url, format='json')
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['tag'], 'b37other')
@@ -550,6 +590,20 @@ class ShareGroupViewSetTestCase(APITestCase):
         self.assertEqual(response.data[0]['id'], self.share_group.id)
         self.assertEqual(response.data[0]['name'], 'somegroup')
 
+    def test_list_with_filtering(self):
+        self.user_login.become_normal_user()
+        url = reverse('v2-sharegroup-list')
+        ShareGroup.objects.create(name="somegroup2")
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(set([item['name'] for item in response.data]), set(["somegroup", "somegroup2"]))
+        url = reverse('v2-sharegroup-list') + "?name=somegroup2"
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(set([item['name'] for item in response.data]), set(["somegroup2"]))
+
     def test_retrieve_with_normal_user(self):
         self.user_login.become_normal_user()
         url = reverse('v2-sharegroup-list') + str(self.share_group.id) + '/'
@@ -575,3 +629,43 @@ class ShareGroupViewSetTestCase(APITestCase):
         url = reverse('v2-sharegroup-list') + '1/'
         response = self.client.delete(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class WorkflowVersionsViewSet(APITestCase):
+    def setUp(self):
+        self.user_login = UserLogin(self.client)
+        self.workflow = Workflow.objects.create(name='Exome Seq', tag='exomeseq')
+        self.workflow2 = Workflow.objects.create(name='Microbiome', tag='microbiome')
+        WorkflowVersion.objects.create(
+            workflow=self.workflow,
+            description='v1 exomeseq',
+            version=1,
+            url='',
+            fields=[{"name": "threads", "type": "int"}, {"name": "items", "type": "string"}],
+        )
+        WorkflowVersion.objects.create(
+            workflow=self.workflow,
+            description='v2 exomeseq',
+            version=2,
+            url='',
+            fields=[{"name": "threads", "type": "int"}, {"name": "items", "type": "string"}],
+        )
+        WorkflowVersion.objects.create(
+            workflow=self.workflow2,
+            description='v1 other',
+            version=1,
+            url='',
+            fields=[{"name": "threads", "type": "int"}, {"name": "items", "type": "string"}],
+        )
+
+    def test_list_filtering(self):
+        user = self.user_login.become_normal_user()
+        url = reverse('v2-workflowversion-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+        url = reverse('v2-workflowversion-list') + '?workflow__tag=exomeseq'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(set([item['description'] for item in response.data]), set(['v1 exomeseq', 'v2 exomeseq']))

@@ -59,13 +59,6 @@ class WorkflowConfigurationViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('tag', 'workflow', 'workflow__tag')
 
-    def get_queryset(self):
-        queryset = WorkflowConfiguration.objects.all()
-        workflow_tag = self.request.query_params.get('workflow_tag', None)
-        if workflow_tag:
-            queryset =  queryset.filter(workflow__tag=workflow_tag)
-        return queryset
-
 
 class ShareGroupViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated, )
