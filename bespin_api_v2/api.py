@@ -47,7 +47,7 @@ class VMStrategyViewSet(viewsets.ReadOnlyModelViewSet):
 
 class WorkflowVersionsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    queryset = WorkflowVersion.objects.all()
+    queryset = WorkflowVersion.objects.order_by('workflow', 'version')
     serializer_class = WorkflowVersionSerializer
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('workflow', 'workflow__tag')
@@ -60,7 +60,7 @@ class WorkflowConfigurationViewSet(viewsets.ReadOnlyModelViewSet):
     filter_fields = ('tag', 'workflow', 'workflow__tag')
 
     def get_queryset(self):
-        queryset = WorkflowConfiguration.objects.order_by('workflow', 'version')
+        queryset = WorkflowConfiguration.objects.all()
         workflow_tag = self.request.query_params.get('workflow_tag', None)
         if workflow_tag:
             queryset =  queryset.filter(workflow__tag=workflow_tag)
