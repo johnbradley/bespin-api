@@ -29,7 +29,7 @@ class JobUsage(object):
         :return: [JobActivity]: pairs of job activities
         """
         filtered_activity_pairs = []
-        activities = list(self.job.job_activities.all())
+        activities = list(self.job.job_activities.order_by('created'))
         for activity_pair in self._zip_job_activity_pairs(activities):
             activity, next_activity = activity_pair
             if activity.state == state and activity.step in steps_to_include:
