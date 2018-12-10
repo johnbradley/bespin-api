@@ -289,6 +289,9 @@ class WorkflowTestCase(APITestCase):
 class WorkflowVersionTestCase(APITestCase):
     def setUp(self):
         self.user_login = UserLogin(self.client)
+        self.share_group = ShareGroup.objects.create(name='Results Checkers')
+        add_vm_settings(self)
+        self.vm_flavor = VMFlavor.objects.create(name='flavor')
 
     def testNoPermissionsWithoutAuth(self):
         self.user_login.become_unauthorized()
@@ -326,6 +329,28 @@ class WorkflowVersionTestCase(APITestCase):
         response = self.client.get('{}?workflow={}'.format(url, 202020), format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
+
+    def test_get_response_questionnaires_array(self):
+        self.user_login.become_normal_user()
+        workflow1 = Workflow.objects.create(name='RnaSeq', tag='rnaseq1')
+        cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/" \
+                  "predict-workflow-packed.cwl"
+        wfv = WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url, fields=[])
+        questionnaire_type = JobQuestionnaireType.objects.create(tag='human')
+        questionnaire1 = JobQuestionnaire.objects.create(name='Workflow1',
+                                                         description='A really large workflow',
+                                                         workflow_version=wfv,
+                                                         system_job_order_json={},
+                                                         share_group=self.share_group,
+                                                         vm_settings=self.vm_settings,
+                                                         vm_flavor=self.vm_flavor,
+                                                         type=questionnaire_type
+                                                         )
+        url = reverse('workflowversion-list') + '{}/'.format(wfv.id)
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['url'], cwl_url)
+        self.assertEqual(response.data['questionnaires'], [questionnaire1.id])
 
 
 def add_vm_settings(obj, project_name='project1',
