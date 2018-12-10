@@ -141,6 +141,7 @@ class AdminWorkflowVersionViewSetTestCase(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['description'], 'v1 exomseq')
+        self.assertEqual(response.data['enable_ui'], False)
         workflow_versions = WorkflowVersion.objects.all()
         self.assertEqual(len(workflow_versions), 1)
         self.assertEqual(workflow_versions[0].version, 2)
@@ -636,21 +637,22 @@ class WorkflowVersionsViewSet(APITestCase):
         self.user_login = UserLogin(self.client)
         self.workflow = Workflow.objects.create(name='Exome Seq', tag='exomeseq')
         self.workflow2 = Workflow.objects.create(name='Microbiome', tag='microbiome')
-        WorkflowVersion.objects.create(
+        self.workflow_version1 = WorkflowVersion.objects.create(
             workflow=self.workflow,
             description='v1 exomeseq',
             version=1,
             url='',
             fields=[{"name": "threads", "type": "int"}, {"name": "items", "type": "string"}],
         )
-        WorkflowVersion.objects.create(
+        self.workflow_version2 = WorkflowVersion.objects.create(
             workflow=self.workflow,
             description='v2 exomeseq',
             version=2,
             url='',
             fields=[{"name": "threads", "type": "int"}, {"name": "items", "type": "string"}],
+            enable_ui=False,
         )
-        WorkflowVersion.objects.create(
+        self.workflow_version3 = WorkflowVersion.objects.create(
             workflow=self.workflow2,
             description='v1 other',
             version=1,
@@ -669,3 +671,15 @@ class WorkflowVersionsViewSet(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(set([item['description'] for item in response.data]), set(['v1 exomeseq', 'v2 exomeseq']))
+
+    def test_get_details_enable_ui(self):
+        self.user_login.become_normal_user()
+        url = reverse('v2-workflowversion-list') + '{}/'.format(self.workflow_version1.id)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['enable_ui'], True)
+
+        url = reverse('v2-workflowversion-list') + '{}/'.format(self.workflow_version2.id)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['enable_ui'], False)

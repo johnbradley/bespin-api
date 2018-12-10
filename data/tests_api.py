@@ -352,6 +352,30 @@ class WorkflowVersionTestCase(APITestCase):
         self.assertEqual(response.data['url'], cwl_url)
         self.assertEqual(response.data['questionnaires'], [questionnaire1.id])
 
+    def test_filter_by_enable_ui(self):
+        workflow1 = Workflow.objects.create(name='RnaSeq', tag='rnaseq1')
+        cwl_url = "https://raw.githubusercontent.com/johnbradley/iMADS-worker/master/predict_service/predict-workflow-packed.cwl"
+        WorkflowVersion.objects.create(workflow=workflow1, version="1", url=cwl_url, fields=[], enable_ui=True)
+        workflow2 = Workflow.objects.create(name='RnaSeq2', tag='rnaseq2')
+        WorkflowVersion.objects.create(workflow=workflow2, version="30", url=cwl_url, fields=[], enable_ui=False)
+        self.user_login.become_normal_user()
+        url = reverse('workflowversion-list')
+
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(set([item['enable_ui'] for item in response.data]), set([True, False]))
+
+        response = self.client.get('{}?enable_ui={}'.format(url, 'true'), format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['enable_ui'], True)
+
+        response = self.client.get('{}?enable_ui={}'.format(url, 'false'), format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['enable_ui'], False)
+
 
 def add_vm_settings(obj, project_name='project1',
                     cloud_name='cloud1',

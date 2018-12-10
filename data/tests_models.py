@@ -87,6 +87,17 @@ class WorkflowVersionTests(TestCase):
         self.assertEqual(1, workflow_version.version)
         self.assertEqual(CWL_URL, workflow_version.url)
         self.assertIsNotNone(workflow_version.created)
+        self.assertEqual(workflow_version.enable_ui, True)
+
+    def test_create_disable_ui(self):
+        WorkflowVersion.objects.create(workflow=self.workflow,
+                                       object_name='#main',
+                                       version='1',
+                                       url=CWL_URL,
+                                       fields=[],
+                                       enable_ui=False)
+        workflow_version = WorkflowVersion.objects.first()
+        self.assertEqual(workflow_version.enable_ui, False)
 
     def test_default_object_name(self):
         WorkflowVersion.objects.create(workflow=self.workflow,

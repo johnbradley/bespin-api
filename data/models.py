@@ -43,6 +43,8 @@ class WorkflowVersion(models.Model):
     version = models.IntegerField()
     url = models.URLField(help_text="URL to packed CWL workflow file.")
     fields = JSONField(help_text="Array of fields required by this workflow.")
+    enable_ui = models.BooleanField(default=True,
+                                    help_text="Should this workflow version be enabled in the web portal.")
 
     class Meta:
         ordering = ['version']
