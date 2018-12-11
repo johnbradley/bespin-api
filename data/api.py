@@ -74,6 +74,13 @@ class WorkflowsViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('tag',)
 
+    def get_queryset(self):
+        queryset = Workflow.objects.all()
+        ui_enabled_workflow_versions = self.request.query_params.get('ui_enabled_workflow_versions', False)
+        if ui_enabled_workflow_versions:
+            queryset = queryset.filter(versions__enable_ui=True).distinct()
+        return queryset
+
 
 class WorkflowVersionsViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)

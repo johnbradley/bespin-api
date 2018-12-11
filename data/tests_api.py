@@ -285,6 +285,19 @@ class WorkflowTestCase(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['name'], 'workflow2')
 
+    def test_filter_by_ui_enabled_workflow_versions(self):
+        workflow1 = Workflow.objects.create(name='RnaSeq', tag='rnaseq1')
+        WorkflowVersion.objects.create(workflow=workflow1, version="1", url='someurl', fields=[], enable_ui=True)
+        workflow2 = Workflow.objects.create(name='RnaSeq2', tag='rnaseq2')
+        WorkflowVersion.objects.create(workflow=workflow2, version="30", url='someurl', fields=[], enable_ui=False)
+        self.user_login.become_normal_user()
+        url = reverse('workflow-list') + '?ui_enabled_workflow_versions=true'
+
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], workflow1.id)
+
 
 class WorkflowVersionTestCase(APITestCase):
     def setUp(self):
