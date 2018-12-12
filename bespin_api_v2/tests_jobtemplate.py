@@ -191,7 +191,7 @@ class JobOrderWalkerTestCase(TestCase):
             self.assertEqual(JobOrderWalker.format_file_path(input_val), expected_val)
 
 
-class JobOrderPlaceholderCheckTestCase(TestCase):
+class JobOrderValuesCheckTestCase(TestCase):
     def test_walk(self):
         job_order = {
             'good_str': 'a',
@@ -238,7 +238,8 @@ class JobOrderPlaceholderCheckTestCase(TestCase):
             },
         }
         expected_keys = [
-            'bad_str', 'bad_int', 'bad_file', 'bad_str_ary', 'bad_file_ary', 'bad_file_dict', 'missing_field',
+            'job_order.bad_str', 'job_order.bad_int', 'job_order.bad_file', 'job_order.bad_str_ary',
+            'job_order.bad_file_ary', 'job_order.bad_file_dict', 'job_order.missing_field',
         ]
 
         checker = JobOrderValuesCheck(user_job_fields=[{'name': 'missing_field'}])
