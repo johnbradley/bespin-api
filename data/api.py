@@ -80,7 +80,7 @@ class WorkflowVersionsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = WorkflowVersion.objects.all()
     serializer_class = WorkflowVersionSerializer
     filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('workflow',)
+    filter_fields = ('workflow', 'enable_ui', )
 
 
 class WorkflowMethodsDocumentViewSet(viewsets.ReadOnlyModelViewSet):

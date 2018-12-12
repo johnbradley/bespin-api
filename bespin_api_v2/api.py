@@ -30,6 +30,9 @@ class AdminWorkflowVersionViewSet(CreateListRetrieveModelViewSet):
     serializer_class = AdminWorkflowVersionSerializer
     queryset = WorkflowVersion.objects.all()
 
+    def perform_create(self, serializer):
+        serializer.save(enable_ui=False)
+
 
 class AdminWorkflowConfigurationViewSet(CreateListRetrieveModelViewSet):
     permission_classes = (permissions.IsAdminUser,)

@@ -17,7 +17,8 @@ class AdminWorkflowVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowVersion
         resource_name = 'workflowversions'
-        fields = ['id', 'workflow', 'description', 'object_name', 'created', 'version', 'url', 'fields']
+        fields = ['id', 'workflow', 'description', 'object_name', 'created', 'version', 'url', 'fields', 'enable_ui']
+        read_only_fields = ('enable_ui', )
 
 
 class WorkflowVersionSerializer(serializers.ModelSerializer):
@@ -34,7 +35,7 @@ class WorkflowVersionSerializer(serializers.ModelSerializer):
         model = WorkflowVersion
         resource_name = 'workflow-versions'
         fields = ('id', 'workflow', 'name', 'description', 'object_name', 'created', 'url', 'version',
-                  'methods_document', 'fields', 'tag')
+                  'methods_document', 'fields', 'tag', 'enable_ui')
 
 
 class WorkflowConfigurationSerializer(serializers.ModelSerializer):

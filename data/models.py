@@ -43,6 +43,8 @@ class WorkflowVersion(models.Model):
     version = models.IntegerField()
     url = models.URLField(help_text="URL to packed CWL workflow file.")
     fields = JSONField(help_text="Array of fields required by this workflow.")
+    enable_ui = models.BooleanField(default=True,
+                                    help_text="Should this workflow version be enabled in the web portal.")
 
     class Meta:
         ordering = ['version']
@@ -331,7 +333,8 @@ class JobQuestionnaire(models.Model):
                             help_text="Short user facing name")
     description = models.TextField(help_text="Detailed user facing description")
     workflow_version = models.ForeignKey(WorkflowVersion, on_delete=models.CASCADE,
-                                         help_text="Workflow that this questionaire is for")
+                                         help_text="Workflow that this questionaire is for",
+                                         related_name='questionnaires')
     system_job_order_json = models.TextField(blank=True,
                                              help_text="JSON containing the portion of the job order specified by system.")
     user_fields_json = models.TextField(blank=True,
