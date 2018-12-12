@@ -1,7 +1,8 @@
 from data.jobfactory import JobFactory
-from data.exceptions import InvalidWorkflowTagException
+from data.exceptions import InvalidWorkflowTagException, InvalidJobTemplateException
 from data.models import WorkflowVersion, WorkflowConfiguration
 
+DUKEDS_PATH_PREFIX = "dds://"
 STRING_VALUE_PLACEHOLDER = "<String Value>"
 INT_VALUE_PLACEHOLDER = "<Integer Value>"
 FILE_PLACEHOLDER = "dds://<Project Name>/<File Path>"
@@ -126,3 +127,109 @@ class JobTemplate(object):
     def create_and_populate_job(self, user):
         job_factory = self.create_job_factory(user)
         self.job = job_factory.create_job()
+
+    def validate(self):
+        user_job_fields = WorkflowVersionConfiguration(self.tag).user_job_fields()
+        JobTemplateValidator().run(job_template=self, user_job_fields=user_job_fields)
+
+
+class JobTemplateValidator(object):
+    def __init__(self):
+        self.keys_with_missing_values = []
+        self.keys_with_placeholders = []
+
+    def run(self, job_template, user_job_fields):
+        self.validate_required_field('name', job_template.name)
+        self.validate_required_field('fund_code', job_template.fund_code)
+        if job_template.job_order:
+            job_order_checker = JobOrderValuesCheck(user_job_fields)
+            job_order_checker.walk(job_template.job_order)
+            self.keys_with_placeholders.extend(job_order_checker.keys_with_placeholders)
+            self.keys_with_missing_values.extend(job_order_checker.keys_with_missing_values)
+        else:
+            self.keys_with_null_values.append('job_order')
+
+        self.raise_if_necessary()
+
+    def raise_if_necessary(self):
+        msg = ""
+        if self.keys_with_missing_values:
+            msg += 'Null values: ' + ','.join(self.keys_with_missing_values)
+        if msg:
+            msg += 'Placeholder values: ' + ','.join(self.keys_with_placeholders)
+        if msg:
+            raise InvalidJobTemplateException(msg)
+
+    def validate_required_field(self, key, value):
+        if not value:
+            self.keys_with_null_values.append(key)
+        elif self.is_placeholder_value(value):
+            self.keys_with_placeholders.append(key)
+
+    @staticmethod
+    def is_placeholder_value(value):
+        return value in USER_PLACEHOLDER_VALUES
+
+
+class JobOrderWalker(object):
+    def walk(self, obj):
+        for key in obj.keys():
+            self._walk_job_order(key, obj[key])
+
+    def _walk_job_order(self, top_level_key, obj):
+        if self._is_list_but_not_string(obj):
+            return [self._walk_job_order(top_level_key, item) for item in obj]
+        elif isinstance(obj, dict):
+            if 'class' in obj.keys():
+                self.on_class_value(top_level_key, obj)
+            else:
+                for key in obj:
+                    self._walk_job_order(top_level_key, obj[key])
+        else:
+            # base object string or int or something
+            self.on_simple_value(top_level_key, obj)
+
+    @staticmethod
+    def _is_list_but_not_string(obj):
+        return isinstance(obj, list) and not isinstance(obj, str)
+
+    def on_class_value(self, top_level_key, value):
+        pass
+
+    def on_simple_value(self, top_level_key, value):
+        pass
+
+    @staticmethod
+    def format_file_path(path):
+        """
+        Create a valid file path based on a dds placeholder url
+        :param path: str: format dds://<projectname>/<filepath>
+        :return: str: file path to be used for staging data when running the workflow
+        """
+        if path.startswith(DUKEDS_PATH_PREFIX):
+            return path.replace(DUKEDS_PATH_PREFIX, "dds_").replace("/", "_").replace(":", "_")
+        return path
+
+
+class JobOrderValuesCheck(JobOrderWalker):
+    def __init__(self, user_job_fields):
+        self.keys_with_missing_values = set()
+        self.keys_with_placeholders = set()
+        self.user_job_keys = [field['name'] for field in user_job_fields]
+
+    def walk(self, obj):
+        for required_key in self.user_job_keys:
+            if not required_key in obj:
+                complete_name = 'job_order.{}'.format(required_key)
+                self.keys_with_missing_values.add(complete_name)
+        super(JobOrderValuesCheck, self).walk(obj)
+
+    def on_class_value(self, top_level_key, value):
+        if value['class'] == 'File':
+            path = value.get('path')
+            if path and JobTemplateValidator.is_placeholder_value(path):
+                self.keys_with_placeholders.add(top_level_key)
+
+    def on_simple_value(self, top_level_key, value):
+        if JobTemplateValidator.is_placeholder_value(value):
+            self.keys_with_placeholders.add(top_level_key)

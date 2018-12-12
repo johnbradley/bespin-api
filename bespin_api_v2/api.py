@@ -78,6 +78,15 @@ class JobTemplateInitView(generics.CreateAPIView):
         job_template.populate_job_order()
 
 
+class JobTemplateValidateJobView(generics.CreateAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = JobTemplateMinimalSerializer
+
+    def perform_create(self, serializer):
+        job_template = serializer.save()
+        job_template.validate()
+
+
 class JobTemplateCreateJobView(generics.CreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobTemplateSerializer
