@@ -135,8 +135,7 @@ class JobTemplate(object):
 
 class JobTemplateValidator(object):
     def __init__(self):
-        self.keys_with_missing_values = []
-        self.keys_with_placeholders = []
+        self.keys_requiring_values = []
 
     def run(self, job_template, user_job_fields):
         self.validate_required_field('name', job_template.name)
@@ -144,27 +143,21 @@ class JobTemplateValidator(object):
         if job_template.job_order:
             job_order_checker = JobOrderValuesCheck(user_job_fields)
             job_order_checker.walk(job_template.job_order)
-            self.keys_with_placeholders.extend(job_order_checker.keys_with_placeholders)
-            self.keys_with_missing_values.extend(job_order_checker.keys_with_missing_values)
+            self.keys_requiring_values.extend(sorted(job_order_checker.keys_requiring_values))
         else:
-            self.keys_with_null_values.append('job_order')
-
+            self.keys_requiring_values.append('job_order')
         self.raise_if_necessary()
-
-    def raise_if_necessary(self):
-        msg = ""
-        if self.keys_with_missing_values:
-            msg += 'Null values: ' + ','.join(self.keys_with_missing_values)
-        if msg:
-            msg += 'Placeholder values: ' + ','.join(self.keys_with_placeholders)
-        if msg:
-            raise InvalidJobTemplateException(msg)
 
     def validate_required_field(self, key, value):
         if not value:
-            self.keys_with_null_values.append(key)
+            self.keys_requiring_values.append(key)
         elif self.is_placeholder_value(value):
-            self.keys_with_placeholders.append(key)
+            self.keys_requiring_values.append(key)
+
+    def raise_if_necessary(self):
+        if self.keys_requiring_values:
+            msg = 'Missing required fields: {}'.format(', '.join(self.keys_requiring_values))
+            raise InvalidJobTemplateException(msg)
 
     @staticmethod
     def is_placeholder_value(value):
@@ -213,23 +206,25 @@ class JobOrderWalker(object):
 
 class JobOrderValuesCheck(JobOrderWalker):
     def __init__(self, user_job_fields):
-        self.keys_with_missing_values = set()
-        self.keys_with_placeholders = set()
+        self.keys_requiring_values = set()
         self.user_job_keys = [field['name'] for field in user_job_fields]
 
     def walk(self, obj):
         for required_key in self.user_job_keys:
             if not required_key in obj:
-                complete_name = 'job_order.{}'.format(required_key)
-                self.keys_with_missing_values.add(complete_name)
+                self._on_placeholder_value(required_key)
         super(JobOrderValuesCheck, self).walk(obj)
 
     def on_class_value(self, top_level_key, value):
         if value['class'] == 'File':
             path = value.get('path')
             if path and JobTemplateValidator.is_placeholder_value(path):
-                self.keys_with_placeholders.add(top_level_key)
+                self._on_placeholder_value(top_level_key)
 
     def on_simple_value(self, top_level_key, value):
         if JobTemplateValidator.is_placeholder_value(value):
-            self.keys_with_placeholders.add(top_level_key)
+            self._on_placeholder_value(top_level_key)
+
+    def _on_placeholder_value(self, key):
+        complete_name = 'job_order.{}'.format(key)
+        self.keys_requiring_values.add(complete_name)

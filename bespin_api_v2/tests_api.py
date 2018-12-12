@@ -524,6 +524,47 @@ class JobTemplatesViewSetTestCase(APITestCase):
         self.assertEqual(response.data['job_order'],
                          {'threads': INT_VALUE_PLACEHOLDER, 'items': STRING_VALUE_PLACEHOLDER})
 
+    def test_validate(self):
+        user = self.user_login.become_normal_user()
+        url = reverse('v2-jobtemplate_validate')
+        response = self.client.post(url, format='json', data={
+            'tag': 'exomeseq/v1/b37xGen',
+            'name': 'My Job',
+            'fund_code': '001',
+            'job_order': {'items': 'cheese', 'threads': 1},
+            'share_group': None,
+            'stage_group': None,
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_validate_missing_values(self):
+        user = self.user_login.become_normal_user()
+        url = reverse('v2-jobtemplate_validate')
+        response = self.client.post(url, format='json', data={
+            'tag': 'exomeseq/v1/b37xGen',
+            'job_order': {'threads': 1},
+            'share_group': None,
+            'stage_group': None,
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        error_detail = response.data['detail']
+        self.assertEqual(error_detail, 'Missing required fields: name, fund_code, job_order.items')
+
+    def test_validate_placeholder_valuees(self):
+        user = self.user_login.become_normal_user()
+        url = reverse('v2-jobtemplate_validate')
+        response = self.client.post(url, format='json', data={
+            'tag': 'exomeseq/v1/b37xGen',
+            'name': STRING_VALUE_PLACEHOLDER,
+            'fund_code': '001',
+            'job_order': {'items': STRING_VALUE_PLACEHOLDER, 'threads': INT_VALUE_PLACEHOLDER},
+            'share_group': None,
+            'stage_group': None,
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        error_detail = response.data['detail']
+        self.assertEqual(error_detail, 'Missing required fields: name, job_order.items, job_order.threads')
+
     def test_create_job(self):
         user = self.user_login.become_normal_user()
         DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
