@@ -549,9 +549,9 @@ class JobTemplatesViewSetTestCase(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         error_detail = response.data['detail']
-        self.assertEqual(error_detail, 'Missing required fields: name, fund_code, job_order.items')
+        self.assertEqual(error_detail, 'Missing required field(s): name, fund_code, job_order.items')
 
-    def test_validate_placeholder_valuees(self):
+    def test_validate_placeholder_values(self):
         user = self.user_login.become_normal_user()
         url = reverse('v2-jobtemplate_validate')
         response = self.client.post(url, format='json', data={
@@ -564,7 +564,7 @@ class JobTemplatesViewSetTestCase(APITestCase):
         })
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         error_detail = response.data['detail']
-        self.assertEqual(error_detail, 'Missing required fields: name, job_order.items, job_order.threads')
+        self.assertEqual(error_detail, 'Missing required field(s): name, job_order.items, job_order.threads')
 
     def test_create_job(self):
         user = self.user_login.become_normal_user()

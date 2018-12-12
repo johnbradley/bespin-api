@@ -156,7 +156,7 @@ class JobTemplateValidator(object):
 
     def raise_if_necessary(self):
         if self.keys_requiring_values:
-            msg = 'Missing required fields: {}'.format(', '.join(self.keys_requiring_values))
+            msg = 'Missing required field(s): {}'.format(', '.join(self.keys_requiring_values))
             raise InvalidJobTemplateException(msg)
 
     @staticmethod
