@@ -1,4 +1,4 @@
-from rest_framework.exceptions import APIException, ValidationError
+from rest_framework.exceptions import APIException
 
 
 class DataServiceUnavailable(APIException):
