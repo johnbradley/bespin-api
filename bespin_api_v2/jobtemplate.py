@@ -1,5 +1,5 @@
 from data.jobfactory import JobFactory
-from data.exceptions import InvalidWorkflowTagException, InvalidJobTemplateException
+from data.exceptions import InvalidWorkflowTagException
 from data.models import WorkflowVersion, WorkflowConfiguration
 from rest_framework.fields import Field
 from rest_framework import serializers

@@ -51,8 +51,3 @@ class EmailAlreadySentException(APIException):
 class InvalidWorkflowTagException(APIException):
     status_code = 400
     default_detail = 'Invalid workflow tag'
-
-
-class InvalidJobTemplateException(ValidationError):
-    status_code = 400
-    default_detail = 'Invalid job template'

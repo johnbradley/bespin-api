@@ -1,9 +1,8 @@
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
 from bespin_api_v2.jobtemplate import WorkflowVersionConfiguration, JobTemplate, InvalidWorkflowTagException, \
-    JobOrderWalker, JobOrderValuesCheck, JobTemplateValidator, InvalidJobTemplateException, \
-    STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER, FILE_PLACEHOLDER, \
-    REQUIRED_ERROR_MESSAGE, PLACEHOLDER_ERROR_MESSAGE
+    JobOrderWalker, JobOrderValuesCheck, JobTemplateValidator, STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER, \
+    FILE_PLACEHOLDER, REQUIRED_ERROR_MESSAGE, PLACEHOLDER_ERROR_MESSAGE
 from mock import patch, ANY, Mock, call
 
 
