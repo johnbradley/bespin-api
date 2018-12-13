@@ -1,9 +1,10 @@
 import json
-from rest_framework import serializers
+from rest_framework import serializers, fields
 from django.contrib.auth.models import User
 from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, VMStrategy, \
     ShareGroup, VMFlavor, Job
-from bespin_api_v2.jobtemplate import JobTemplate
+from bespin_api_v2.jobtemplate import JobTemplate, WorkflowVersionConfiguration, JobTemplateValidator, \
+    REQUIRED_ERROR_MESSAGE, PLACEHOLDER_ERROR_MESSAGE
 
 
 class AdminWorkflowSerializer(serializers.ModelSerializer):
@@ -70,18 +71,21 @@ class JobTemplateMinimalSerializer(serializers.Serializer):
         return JobTemplate(**validated_data)
 
 
-class JobTemplateSerializer(serializers.Serializer):
-    tag = serializers.CharField()
-    name = serializers.CharField()
-    fund_code = serializers.CharField()
-    job_order = serializers.DictField()
+class JobTemplateValidatingSerializer(JobTemplateMinimalSerializer):
+    """
+    Adds validation that requires all fields to have valid values including
+    checking the contents of the job order dictionary against fields in the database.
+    """
+    def validate(self, data):
+        JobTemplateValidator(data).run()
+        return data
+
+
+class JobTemplateSerializer(JobTemplateValidatingSerializer):
     stage_group = serializers.PrimaryKeyRelatedField(queryset=JobFileStageGroup.objects.all())
     job_vm_strategy = serializers.PrimaryKeyRelatedField(
         queryset=VMStrategy.objects.all(), required=False)
     job = serializers.PrimaryKeyRelatedField(required=False, read_only=True)
-
-    def create(self, validated_data):
-        return JobTemplate(**validated_data)
 
 
 class ShareGroupSerializer(serializers.ModelSerializer):

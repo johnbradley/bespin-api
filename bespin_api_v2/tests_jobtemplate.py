@@ -1,7 +1,9 @@
 from django.test import TestCase
+from rest_framework.exceptions import ValidationError
 from bespin_api_v2.jobtemplate import WorkflowVersionConfiguration, JobTemplate, InvalidWorkflowTagException, \
     JobOrderWalker, JobOrderValuesCheck, JobTemplateValidator, InvalidJobTemplateException, \
-    STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER, FILE_PLACEHOLDER
+    STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER, FILE_PLACEHOLDER, \
+    REQUIRED_ERROR_MESSAGE, PLACEHOLDER_ERROR_MESSAGE
 from mock import patch, ANY, Mock, call
 
 
@@ -134,58 +136,71 @@ class JobTemplateTestCase(TestCase):
 
 class JobTemplateValidatorTestCase(TestCase):
     @patch('bespin_api_v2.jobtemplate.JobOrderValuesCheck')
-    def test_run_null_required_fields(self, mock_job_order_values_check):
-        job_template = Mock()
-        job_template.name = None
-        job_template.fund_code = None
-        job_template.job_order = None
-        user_job_fields = Mock()
-        validator = JobTemplateValidator()
-        with self.assertRaises(InvalidJobTemplateException) as raised_exception:
-            validator.run(job_template, user_job_fields)
-        self.assertEqual(str(raised_exception.exception), 'Missing required field(s): name, fund_code, job_order')
+    @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
+    def test_run_null_required_fields(self, mock_workflow_version_configuration, mock_job_order_values_check):
+        mock_workflow_version_configuration.return_value.user_job_fields.return_value = []
+        mock_job_order_values_check.return_value = Mock(errors=[])
+        validator = JobTemplateValidator({
+            'tag': 'exome/v1/human',
+        })
+        with self.assertRaises(ValidationError) as raised_exception:
+            validator.run()
+        self.assertEqual(raised_exception.exception.detail, {
+            'name': [REQUIRED_ERROR_MESSAGE],
+            'fund_code': [REQUIRED_ERROR_MESSAGE],
+            'job_order': [REQUIRED_ERROR_MESSAGE],
+        })
+
+    @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
+    def test_run_with_placeholders(self, mock_workflow_version_configuration):
+        mock_workflow_version_configuration.return_value.user_job_fields.return_value = []
+        validator = JobTemplateValidator({
+            'tag': 'exome/v1/human',
+            'name': STRING_VALUE_PLACEHOLDER,
+            'fund_code': STRING_VALUE_PLACEHOLDER,
+            'job_order': {
+                'threads': INT_VALUE_PLACEHOLDER
+            }
+        })
+        with self.assertRaises(ValidationError) as raised_exception:
+            validator.run()
+        self.assertEqual(raised_exception.exception.detail, {
+            'name': [PLACEHOLDER_ERROR_MESSAGE],
+            'fund_code': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.threads': [PLACEHOLDER_ERROR_MESSAGE],
+        })
 
     @patch('bespin_api_v2.jobtemplate.JobOrderValuesCheck')
-    def test_run_with_placeholders(self, mock_job_order_values_check):
-        job_template = Mock()
-        job_template.name = STRING_VALUE_PLACEHOLDER
-        job_template.fund_code = STRING_VALUE_PLACEHOLDER
-        job_template.job_order = {
-            'threads': 12
-        }
-        user_job_fields = Mock()
-        validator = JobTemplateValidator()
-        with self.assertRaises(InvalidJobTemplateException) as raised_exception:
-            validator.run(job_template, user_job_fields)
-        self.assertEqual(str(raised_exception.exception), 'Missing required field(s): name, fund_code')
+    @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
+    def test_run(self, mock_workflow_version_configuration, mock_job_order_values_check):
+        mock_workflow_version_configuration.return_value.user_job_fields.return_value = []
+        mock_job_order_values_check.return_value = Mock(errors=[])
+        validator = JobTemplateValidator({
+            'tag': 'exome/v1/human',
+            'name': 'myjob',
+            'fund_code': '001',
+            'job_order': {
+                'threads': 12
+            }
+        })
+        validator.run()
 
-    @patch('bespin_api_v2.jobtemplate.JobOrderValuesCheck')
-    def test_run(self, mock_job_order_values_check):
-        job_template = Mock()
-        job_template.name = 'myjob'
-        job_template.fund_code = '001'
-        job_template.job_order = {
-            'threads': 12
-        }
-        user_job_fields = Mock()
-        mock_job_order_values_check.return_value = Mock(keys_requiring_values=[])
-        validator = JobTemplateValidator()
-        validator.run(job_template, user_job_fields)
-
-    @patch('bespin_api_v2.jobtemplate.JobOrderValuesCheck')
-    def test_run_check_job_order_values(self, mock_job_order_values_check):
-        job_template = Mock()
-        job_template.name = 'myjob'
-        job_template.fund_code = '001'
-        job_template.job_order = {
-            'threads': 12
-        }
-        user_job_fields = Mock()
-        mock_job_order_values_check.return_value = Mock(keys_requiring_values=['badfield'])
-        validator = JobTemplateValidator()
-        with self.assertRaises(InvalidJobTemplateException) as raised_exception:
-            validator.run(job_template, user_job_fields)
-        self.assertEqual(str(raised_exception.exception), 'Missing required field(s): badfield')
+    @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
+    def test_run_check_job_order_values(self, mock_workflow_version_configuration):
+        mock_workflow_version_configuration.return_value.user_job_fields.return_value = [{"name":"bad_field"}]
+        validator = JobTemplateValidator({
+            'tag': 'exome/v1/human',
+            'name': 'myjob',
+            'fund_code': '001',
+            'job_order': {
+                'threads': 12
+            }
+        })
+        with self.assertRaises(ValidationError) as raised_exception:
+            validator.run()
+        self.assertEqual(raised_exception.exception.detail, {
+            'job_order.bad_field': [REQUIRED_ERROR_MESSAGE]
+        })
 
     def test_is_placeholder_value(self):
         self.assertEqual(JobTemplateValidator.is_placeholder_value("<String Value>"), True)
@@ -301,12 +316,17 @@ class JobOrderValuesCheckTestCase(TestCase):
                 'location': 'https://github.com/datafile1.dat'
             },
         }
-        expected_keys = [
-            'job_order.bad_str', 'job_order.bad_int', 'job_order.bad_file', 'job_order.bad_str_ary',
-            'job_order.bad_file_ary', 'job_order.bad_file_dict', 'job_order.missing_field',
-        ]
+        expected_keys = {
+            'job_order.bad_str': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.bad_int': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.bad_file': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.bad_str_ary': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.bad_file_ary': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.bad_file_dict': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.missing_field': [REQUIRED_ERROR_MESSAGE],
+        }
 
         checker = JobOrderValuesCheck(user_job_fields=[{'name': 'missing_field'}])
         checker.walk(job_order)
 
-        self.assertEqual(checker.keys_requiring_values, set(expected_keys))
+        self.assertEqual(checker.errors, expected_keys)

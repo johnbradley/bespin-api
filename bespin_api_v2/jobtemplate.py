@@ -1,6 +1,8 @@
 from data.jobfactory import JobFactory
 from data.exceptions import InvalidWorkflowTagException, InvalidJobTemplateException
 from data.models import WorkflowVersion, WorkflowConfiguration
+from rest_framework.fields import Field
+from rest_framework import serializers
 
 DUKEDS_PATH_PREFIX = "dds://"
 STRING_VALUE_PLACEHOLDER = "<String Value>"
@@ -37,6 +39,8 @@ USER_PLACEHOLDER_DICT = {
         }]
     }
 }
+REQUIRED_ERROR_MESSAGE = str(Field.default_error_messages['required'])
+PLACEHOLDER_ERROR_MESSAGE = 'This field contains a placeholder value.'
 
 
 class WorkflowVersionConfiguration(object):
@@ -128,36 +132,39 @@ class JobTemplate(object):
         job_factory = self.create_job_factory(user)
         self.job = job_factory.create_job()
 
-    def validate(self):
-        user_job_fields = WorkflowVersionConfiguration(self.tag).user_job_fields()
-        JobTemplateValidator().run(job_template=self, user_job_fields=user_job_fields)
-
 
 class JobTemplateValidator(object):
-    def __init__(self):
-        self.keys_requiring_values = []
+    def __init__(self, data):
+        self.data = data
+        self.errors = {}
 
-    def run(self, job_template, user_job_fields):
-        self.validate_required_field('name', job_template.name)
-        self.validate_required_field('fund_code', job_template.fund_code)
-        if job_template.job_order:
-            job_order_checker = JobOrderValuesCheck(user_job_fields)
-            job_order_checker.walk(job_template.job_order)
-            self.keys_requiring_values.extend(sorted(job_order_checker.keys_requiring_values))
-        else:
-            self.keys_requiring_values.append('job_order')
-        self.raise_if_necessary()
+    def run(self):
+        self.validate_required_field('name')
+        self.validate_required_field('fund_code')
+        self.validate_job_order()
+        if self.errors:
+            raise serializers.ValidationError(self.errors)
 
-    def validate_required_field(self, key, value):
+    def validate_required_field(self, key):
+        value = self.data.get(key)
         if not value:
-            self.keys_requiring_values.append(key)
+            self.errors[key] = [REQUIRED_ERROR_MESSAGE]
         elif self.is_placeholder_value(value):
-            self.keys_requiring_values.append(key)
+            self.errors[key] = [PLACEHOLDER_ERROR_MESSAGE]
 
-    def raise_if_necessary(self):
-        if self.keys_requiring_values:
-            msg = 'Missing required field(s): {}'.format(', '.join(self.keys_requiring_values))
-            raise InvalidJobTemplateException(msg)
+    def validate_job_order(self):
+        job_order = self.data.get('job_order')
+        if job_order:
+            user_job_fields = self.get_user_job_fields()
+            checker = JobOrderValuesCheck(user_job_fields)
+            checker.walk(job_order)
+            self.errors.update(checker.errors)
+        else:
+            self.errors['job_order'] = [REQUIRED_ERROR_MESSAGE]
+
+    def get_user_job_fields(self):
+        tag = self.data['tag']
+        return WorkflowVersionConfiguration(tag).user_job_fields()
 
     @staticmethod
     def is_placeholder_value(value):
@@ -206,25 +213,25 @@ class JobOrderWalker(object):
 
 class JobOrderValuesCheck(JobOrderWalker):
     def __init__(self, user_job_fields):
-        self.keys_requiring_values = set()
         self.user_job_keys = [field['name'] for field in user_job_fields]
+        self.errors = {}
 
     def walk(self, obj):
         for required_key in self.user_job_keys:
             if not required_key in obj:
-                self._on_placeholder_value(required_key)
+                self._on_bad_value(required_key, REQUIRED_ERROR_MESSAGE)
         super(JobOrderValuesCheck, self).walk(obj)
 
     def on_class_value(self, top_level_key, value):
         if value['class'] == 'File':
             path = value.get('path')
             if path and JobTemplateValidator.is_placeholder_value(path):
-                self._on_placeholder_value(top_level_key)
+                self._on_bad_value(top_level_key, PLACEHOLDER_ERROR_MESSAGE)
 
     def on_simple_value(self, top_level_key, value):
         if JobTemplateValidator.is_placeholder_value(value):
-            self._on_placeholder_value(top_level_key)
+            self._on_bad_value(top_level_key, PLACEHOLDER_ERROR_MESSAGE)
 
-    def _on_placeholder_value(self, key):
+    def _on_bad_value(self, key, error_message):
         complete_name = 'job_order.{}'.format(key)
-        self.keys_requiring_values.add(complete_name)
+        self.errors[complete_name] = [error_message]
