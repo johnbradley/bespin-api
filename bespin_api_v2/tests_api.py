@@ -5,7 +5,8 @@ from rest_framework import status
 from data.tests_api import UserLogin
 from data.models import Workflow, WorkflowVersion, WorkflowConfiguration, VMStrategy, ShareGroup, VMFlavor, \
     VMSettings, CloudSettings, VMProject, JobFileStageGroup, DDSUserCredential, DDSEndpoint, Job
-from bespin_api_v2.jobtemplate import STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER
+from bespin_api_v2.jobtemplate import STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER, \
+    REQUIRED_ERROR_MESSAGE, PLACEHOLDER_ERROR_MESSAGE
 
 
 class AdminWorkflowViewSetTestCase(APITestCase):
@@ -525,6 +526,68 @@ class JobTemplatesViewSetTestCase(APITestCase):
         self.assertEqual(response.data['job_order'],
                          {'threads': INT_VALUE_PLACEHOLDER, 'items': STRING_VALUE_PLACEHOLDER})
 
+    def test_validate(self):
+        user = self.user_login.become_normal_user()
+        url = reverse('v2-jobtemplate_validate')
+        response = self.client.post(url, format='json', data={
+            'tag': 'exomeseq/v1/b37xGen',
+            'name': 'My Job',
+            'fund_code': '001',
+            'job_order': {'items': 'cheese', 'threads': 1},
+            'share_group': None,
+            'stage_group': None,
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_validate_no_tag(self):
+        user = self.user_login.become_normal_user()
+        url = reverse('v2-jobtemplate_validate')
+        response = self.client.post(url, format='json', data={
+            'name': 'My Job',
+            'fund_code': '001',
+            'job_order': {'items': 'cheese', 'threads': 1},
+            'share_group': None,
+            'stage_group': None,
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {
+            'tag': [REQUIRED_ERROR_MESSAGE]
+        })
+
+    def test_validate_missing_values(self):
+        user = self.user_login.become_normal_user()
+        url = reverse('v2-jobtemplate_validate')
+        response = self.client.post(url, format='json', data={
+            'tag': 'exomeseq/v1/b37xGen',
+            'job_order': {'threads': 1},
+            'share_group': None,
+            'stage_group': None,
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {
+            'name': [REQUIRED_ERROR_MESSAGE],
+            'fund_code': [REQUIRED_ERROR_MESSAGE],
+            'job_order.items': [REQUIRED_ERROR_MESSAGE],
+        })
+
+    def test_validate_placeholder_values(self):
+        user = self.user_login.become_normal_user()
+        url = reverse('v2-jobtemplate_validate')
+        response = self.client.post(url, format='json', data={
+            'tag': 'exomeseq/v1/b37xGen',
+            'name': STRING_VALUE_PLACEHOLDER,
+            'fund_code': '001',
+            'job_order': {'items': STRING_VALUE_PLACEHOLDER, 'threads': INT_VALUE_PLACEHOLDER},
+            'share_group': None,
+            'stage_group': None,
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {
+            'name': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.items': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.threads': [PLACEHOLDER_ERROR_MESSAGE],
+        })
+
     def test_create_job(self):
         user = self.user_login.become_normal_user()
         DDSUserCredential.objects.create(endpoint=self.endpoint, user=user, token='secret1', dds_id='1')
@@ -535,7 +598,7 @@ class JobTemplatesViewSetTestCase(APITestCase):
             'name': 'My Job',
             'fund_code': '001',
             'stage_group': stage_group.id,
-            'job_order': {'color': 'red'},
+            'job_order': {'threads': 12, 'items': 'pie'},
             'share_group': self.share_group.id
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -545,7 +608,7 @@ class JobTemplatesViewSetTestCase(APITestCase):
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0].name, 'My Job')
         self.assertEqual(jobs[0].fund_code, '001')
-        self.assertEqual(jobs[0].job_order, '{"A": "B", "color": "red"}')
+        self.assertEqual(json.loads(jobs[0].job_order), {'A':'B', 'threads': 12, 'items': 'pie'})
 
     def test_create_job_with_vm_strategy(self):
         user = self.user_login.become_normal_user()
@@ -557,7 +620,7 @@ class JobTemplatesViewSetTestCase(APITestCase):
             'name': 'My Job',
             'fund_code': '001',
             'stage_group': stage_group.id,
-            'job_order': {'color': 'red'},
+            'job_order': {'threads': 12, 'items': 'pie'},
             'share_group': self.share_group.id,
             'job_vm_strategy': self.vm_strategy.id,
         })
@@ -568,7 +631,7 @@ class JobTemplatesViewSetTestCase(APITestCase):
         self.assertEqual(len(jobs), 1)
         self.assertEqual(jobs[0].name, 'My Job')
         self.assertEqual(jobs[0].fund_code, '001')
-        self.assertEqual(jobs[0].job_order, '{"A": "B", "color": "red"}')
+        self.assertEqual(json.loads(jobs[0].job_order), {'A': 'B', 'threads': 12, 'items': 'pie'})
 
 
 class ShareGroupViewSetTestCase(APITestCase):

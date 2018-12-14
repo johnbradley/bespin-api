@@ -6,7 +6,7 @@ from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from bespin_api_v2.serializers import AdminWorkflowSerializer, AdminWorkflowVersionSerializer, VMStrategySerializer, \
     WorkflowConfigurationSerializer, JobTemplateMinimalSerializer, JobTemplateSerializer, WorkflowVersionSerializer, \
-    ShareGroupSerializer
+    ShareGroupSerializer, JobTemplateValidatingSerializer
 from data.serializers import JobSerializer
 from data.models import Workflow, WorkflowVersion, VMStrategy, WorkflowConfiguration, JobFileStageGroup, ShareGroup
 from data.exceptions import BespinAPIException
@@ -79,6 +79,11 @@ class JobTemplateInitView(generics.CreateAPIView):
     def perform_create(self, serializer):
         job_template = serializer.save()
         job_template.populate_job_order()
+
+
+class JobTemplateValidateView(generics.CreateAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = JobTemplateValidatingSerializer
 
 
 class JobTemplateCreateJobView(generics.CreateAPIView):

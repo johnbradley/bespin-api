@@ -1,7 +1,10 @@
 from data.jobfactory import JobFactory
 from data.exceptions import InvalidWorkflowTagException
 from data.models import WorkflowVersion, WorkflowConfiguration
+from rest_framework.fields import Field
+from rest_framework.serializers import ValidationError
 
+DUKEDS_PATH_PREFIX = "dds://"
 STRING_VALUE_PLACEHOLDER = "<String Value>"
 INT_VALUE_PLACEHOLDER = "<Integer Value>"
 FILE_PLACEHOLDER = "dds://<Project Name>/<File Path>"
@@ -36,6 +39,8 @@ USER_PLACEHOLDER_DICT = {
         }]
     }
 }
+REQUIRED_ERROR_MESSAGE = str(Field.default_error_messages['required'])
+PLACEHOLDER_ERROR_MESSAGE = 'This field contains a placeholder value.'
 
 
 class WorkflowVersionConfiguration(object):
@@ -126,3 +131,107 @@ class JobTemplate(object):
     def create_and_populate_job(self, user):
         job_factory = self.create_job_factory(user)
         self.job = job_factory.create_job()
+
+
+class JobTemplateValidator(object):
+    def __init__(self, data):
+        self.data = data
+        self.errors = {}
+
+    def run(self):
+        self.validate_required_field('name')
+        self.validate_required_field('fund_code')
+        self.validate_job_order()
+        if self.errors:
+            raise ValidationError(self.errors)
+
+    def validate_required_field(self, key):
+        value = self.data.get(key)
+        if not value:
+            self.errors[key] = [REQUIRED_ERROR_MESSAGE]
+        elif self.is_placeholder_value(value):
+            self.errors[key] = [PLACEHOLDER_ERROR_MESSAGE]
+
+    def validate_job_order(self):
+        job_order = self.data.get('job_order')
+        if job_order:
+            user_job_fields = self.get_user_job_fields()
+            checker = JobOrderValuesCheck(user_job_fields)
+            checker.walk(job_order)
+            self.errors.update(checker.errors)
+        else:
+            self.errors['job_order'] = [REQUIRED_ERROR_MESSAGE]
+
+    def get_user_job_fields(self):
+        tag = self.data['tag']
+        return WorkflowVersionConfiguration(tag).user_job_fields()
+
+    @staticmethod
+    def is_placeholder_value(value):
+        return value in USER_PLACEHOLDER_VALUES
+
+
+class JobOrderWalker(object):
+    def walk(self, obj):
+        for key in obj.keys():
+            self._walk_job_order(key, obj[key])
+
+    def _walk_job_order(self, top_level_key, obj):
+        if self._is_list_but_not_string(obj):
+            return [self._walk_job_order(top_level_key, item) for item in obj]
+        elif isinstance(obj, dict):
+            if 'class' in obj.keys():
+                self.on_class_value(top_level_key, obj)
+            else:
+                for key in obj:
+                    self._walk_job_order(top_level_key, obj[key])
+        else:
+            # base object string or int or something
+            self.on_simple_value(top_level_key, obj)
+
+    @staticmethod
+    def _is_list_but_not_string(obj):
+        return isinstance(obj, list) and not isinstance(obj, str)
+
+    def on_class_value(self, top_level_key, value):
+        pass
+
+    def on_simple_value(self, top_level_key, value):
+        pass
+
+    @staticmethod
+    def format_file_path(path):
+        """
+        Create a valid file path based on a dds placeholder url
+        :param path: str: format dds://<projectname>/<filepath>
+        :return: str: file path to be used for staging data when running the workflow
+        """
+        if path.startswith(DUKEDS_PATH_PREFIX):
+            return path.replace(DUKEDS_PATH_PREFIX, "dds_").replace("/", "_").replace(":", "_")
+        return path
+
+
+class JobOrderValuesCheck(JobOrderWalker):
+    def __init__(self, user_job_fields):
+        self.user_job_keys = [field['name'] for field in user_job_fields]
+        self.errors = {}
+
+    def walk(self, obj):
+        for required_key in self.user_job_keys:
+            if not required_key in obj:
+                self._on_bad_value(required_key, REQUIRED_ERROR_MESSAGE)
+        super(JobOrderValuesCheck, self).walk(obj)
+
+    def on_class_value(self, top_level_key, value):
+        if value['class'] == 'File':
+            path = value.get('path')
+            if path and JobTemplateValidator.is_placeholder_value(path):
+                self._on_bad_value(top_level_key, PLACEHOLDER_ERROR_MESSAGE)
+
+    def on_simple_value(self, top_level_key, value):
+        if JobTemplateValidator.is_placeholder_value(value):
+            self._on_bad_value(top_level_key, PLACEHOLDER_ERROR_MESSAGE)
+
+    def _on_bad_value(self, key, error_message):
+        complete_name = 'job_order.{}'.format(key)
+        self.errors[complete_name] = [error_message]

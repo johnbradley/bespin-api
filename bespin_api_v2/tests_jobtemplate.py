@@ -1,7 +1,9 @@
 from django.test import TestCase
+from rest_framework.exceptions import ValidationError
 from bespin_api_v2.jobtemplate import WorkflowVersionConfiguration, JobTemplate, InvalidWorkflowTagException, \
-    STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER, FILE_PLACEHOLDER
-from mock import patch, ANY, Mock
+    JobOrderWalker, JobOrderValuesCheck, JobTemplateValidator, STRING_VALUE_PLACEHOLDER, INT_VALUE_PLACEHOLDER, \
+    FILE_PLACEHOLDER, REQUIRED_ERROR_MESSAGE, PLACEHOLDER_ERROR_MESSAGE
+from mock import patch, ANY, Mock, call
 
 
 class WorkflowVersionConfigurationTestCase(TestCase):
@@ -129,3 +131,201 @@ class JobTemplateTestCase(TestCase):
         self.assertEqual(job_template.job, None)
         job_template.create_and_populate_job(Mock())
         self.assertEqual(job_template.job, mock_job_factory.return_value.create_job.return_value)
+
+
+class JobTemplateValidatorTestCase(TestCase):
+    @patch('bespin_api_v2.jobtemplate.JobOrderValuesCheck')
+    @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
+    def test_run_null_required_fields(self, mock_workflow_version_configuration, mock_job_order_values_check):
+        mock_workflow_version_configuration.return_value.user_job_fields.return_value = []
+        mock_job_order_values_check.return_value = Mock(errors=[])
+        validator = JobTemplateValidator({
+            'tag': 'exome/v1/human',
+        })
+        with self.assertRaises(ValidationError) as raised_exception:
+            validator.run()
+        self.assertEqual(raised_exception.exception.detail, {
+            'name': [REQUIRED_ERROR_MESSAGE],
+            'fund_code': [REQUIRED_ERROR_MESSAGE],
+            'job_order': [REQUIRED_ERROR_MESSAGE],
+        })
+
+    @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
+    def test_run_with_placeholders(self, mock_workflow_version_configuration):
+        mock_workflow_version_configuration.return_value.user_job_fields.return_value = []
+        validator = JobTemplateValidator({
+            'tag': 'exome/v1/human',
+            'name': STRING_VALUE_PLACEHOLDER,
+            'fund_code': STRING_VALUE_PLACEHOLDER,
+            'job_order': {
+                'threads': INT_VALUE_PLACEHOLDER
+            }
+        })
+        with self.assertRaises(ValidationError) as raised_exception:
+            validator.run()
+        self.assertEqual(raised_exception.exception.detail, {
+            'name': [PLACEHOLDER_ERROR_MESSAGE],
+            'fund_code': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.threads': [PLACEHOLDER_ERROR_MESSAGE],
+        })
+
+    @patch('bespin_api_v2.jobtemplate.JobOrderValuesCheck')
+    @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
+    def test_run(self, mock_workflow_version_configuration, mock_job_order_values_check):
+        mock_workflow_version_configuration.return_value.user_job_fields.return_value = []
+        mock_job_order_values_check.return_value = Mock(errors=[])
+        validator = JobTemplateValidator({
+            'tag': 'exome/v1/human',
+            'name': 'myjob',
+            'fund_code': '001',
+            'job_order': {
+                'threads': 12
+            }
+        })
+        validator.run()
+
+    @patch('bespin_api_v2.jobtemplate.WorkflowVersionConfiguration')
+    def test_run_check_job_order_values(self, mock_workflow_version_configuration):
+        mock_workflow_version_configuration.return_value.user_job_fields.return_value = [{"name":"bad_field"}]
+        validator = JobTemplateValidator({
+            'tag': 'exome/v1/human',
+            'name': 'myjob',
+            'fund_code': '001',
+            'job_order': {
+                'threads': 12
+            }
+        })
+        with self.assertRaises(ValidationError) as raised_exception:
+            validator.run()
+        self.assertEqual(raised_exception.exception.detail, {
+            'job_order.bad_field': [REQUIRED_ERROR_MESSAGE]
+        })
+
+    def test_is_placeholder_value(self):
+        self.assertEqual(JobTemplateValidator.is_placeholder_value("<String Value>"), True)
+        self.assertEqual(JobTemplateValidator.is_placeholder_value("<Integer Value>"), True)
+        self.assertEqual(JobTemplateValidator.is_placeholder_value("dds://<Project Name>/<File Path>"), True)
+        self.assertEqual(JobTemplateValidator.is_placeholder_value("test"), False)
+        self.assertEqual(JobTemplateValidator.is_placeholder_value(123), False)
+
+
+class JobOrderWalkerTestCase(TestCase):
+    def test_walk(self):
+        walker = JobOrderWalker()
+        walker.on_class_value = Mock()
+        walker.on_simple_value = Mock()
+        walker.walk({
+            'color': 'red',
+            'weight': 123,
+            'file1': {
+                'class': 'File',
+                'path': 'somepath'
+            },
+            'file_ary': [
+                {
+                    'class': 'File',
+                    'path': 'somepath1'
+                }, {
+                    'class': 'File',
+                    'path': 'somepath2'
+                },
+            ],
+            'nested': {
+                'a': [{
+                    'class': 'File',
+                    'path': 'somepath3'
+                }]
+            },
+            'plain_path_file': {
+                'class': 'File',
+                'path': '/tmp/data.txt'
+            },
+            'url_file': {
+                'class': 'File',
+                'location': 'https://github.com/datafile1.dat'
+            },
+        })
+
+        walker.on_simple_value.assert_has_calls([
+            call('color', 'red'),
+            call('weight', 123),
+        ])
+        walker.on_class_value.assert_has_calls([
+            call('file1', {'class': 'File', 'path': 'somepath'}),
+            call('file_ary', {'class': 'File', 'path': 'somepath1'}),
+            call('file_ary', {'class': 'File', 'path': 'somepath2'}),
+            call('nested', {'class': 'File', 'path': 'somepath3'}),
+        ])
+
+    def test_format_file_path(self):
+        data = [
+            # input    expected
+            ('https://placeholder.data/stuff/data.txt', 'https://placeholder.data/stuff/data.txt'),
+            ('dds://myproject/rawData/SAAAA_R1_001.fastq.gz', 'dds_myproject_rawData_SAAAA_R1_001.fastq.gz'),
+            ('dds://project/somepath.txt', 'dds_project_somepath.txt'),
+            ('dds://project/dir/somepath.txt', 'dds_project_dir_somepath.txt'),
+        ]
+        for input_val, expected_val in data:
+            self.assertEqual(JobOrderWalker.format_file_path(input_val), expected_val)
+
+
+class JobOrderValuesCheckTestCase(TestCase):
+    def test_walk(self):
+        job_order = {
+            'good_str': 'a',
+            'bad_str': STRING_VALUE_PLACEHOLDER,
+            'good_int': 123,
+            'bad_int': INT_VALUE_PLACEHOLDER,
+            'good_file': {
+                'class': 'File',
+                'path': 'somepath.txt',
+            },
+            'bad_file': {
+                'class': 'File',
+                'path': FILE_PLACEHOLDER,
+            },
+            'good_str_ary': ['a', 'b', 'c'],
+            'bad_str_ary': ['a', STRING_VALUE_PLACEHOLDER, 'c'],
+            'good_file_ary': [{
+                'class': 'File',
+                'path': 'somepath.txt',
+            }],
+            'bad_file_ary': [{
+                'class': 'File',
+                'path': FILE_PLACEHOLDER,
+            }],
+            'good_file_dict': {
+                'stuff': {
+                    'class': 'File',
+                    'path': 'somepath.txt',
+                }
+            },
+            'bad_file_dict': {
+                'stuff': {
+                    'class': 'File',
+                    'path': FILE_PLACEHOLDER,
+                }
+            },
+            'plain_path_file': {
+                'class': 'File',
+                'path': '/tmp/data.txt'
+            },
+            'url_file': {
+                'class': 'File',
+                'location': 'https://github.com/datafile1.dat'
+            },
+        }
+        expected_keys = {
+            'job_order.bad_str': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.bad_int': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.bad_file': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.bad_str_ary': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.bad_file_ary': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.bad_file_dict': [PLACEHOLDER_ERROR_MESSAGE],
+            'job_order.missing_field': [REQUIRED_ERROR_MESSAGE],
+        }
+
+        checker = JobOrderValuesCheck(user_job_fields=[{'name': 'missing_field'}])
+        checker.walk(job_order)
+
+        self.assertEqual(checker.errors, expected_keys)
