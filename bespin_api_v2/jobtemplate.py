@@ -2,7 +2,7 @@ from data.jobfactory import JobFactory
 from data.exceptions import InvalidWorkflowTagException
 from data.models import WorkflowVersion, WorkflowConfiguration
 from rest_framework.fields import Field
-from rest_framework import serializers
+from rest_framework.serializers import ValidationError
 
 DUKEDS_PATH_PREFIX = "dds://"
 STRING_VALUE_PLACEHOLDER = "<String Value>"
@@ -143,7 +143,7 @@ class JobTemplateValidator(object):
         self.validate_required_field('fund_code')
         self.validate_job_order()
         if self.errors:
-            raise serializers.ValidationError(self.errors)
+            raise ValidationError(self.errors)
 
     def validate_required_field(self, key):
         value = self.data.get(key)
