@@ -81,7 +81,7 @@ class JobTemplateInitView(generics.CreateAPIView):
         job_template.populate_job_order()
 
 
-class JobTemplateValidateJobView(generics.CreateAPIView):
+class JobTemplateValidateView(generics.CreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     serializer_class = JobTemplateValidatingSerializer
 
