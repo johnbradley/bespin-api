@@ -3,6 +3,7 @@ from data.exceptions import InvalidWorkflowTagException
 from data.models import WorkflowVersion, WorkflowConfiguration
 from rest_framework.fields import Field
 from rest_framework.serializers import ValidationError
+import six
 
 DUKEDS_PATH_PREFIX = "dds://"
 STRING_VALUE_PLACEHOLDER = "<String Value>"
@@ -93,24 +94,29 @@ class JobTemplate(object):
         for user_field in workflow_version_config.user_job_fields():
             field_type = user_field.get('type')
             field_name = user_field.get('name')
-            if isinstance(field_type, dict):
-                if field_type['type'] == 'array':
-                    value = self.create_placeholder_value(field_type['items'], is_array=True)
-                else:
-                    value = self.create_placeholder_value(field_type['type'], is_array=False)
-            else:
-                value = self.create_placeholder_value(field_type, is_array=False)
-            formatted_user_fields[field_name] = value
+            value = self.create_placeholder_value(field_type)
+            if value:
+                formatted_user_fields[field_name] = value
         self.job_order = formatted_user_fields
 
-    def create_placeholder_value(self, type_name, is_array):
-        if is_array:
-            return [self.create_placeholder_value(type_name, is_array=False)]
-        else:  # single item type
-            placeholder = USER_PLACEHOLDER_DICT.get(type_name)
+    def create_placeholder_value(self, type_value):
+        if isinstance(type_value, six.string_types):
+            placeholder = USER_PLACEHOLDER_DICT.get(type_value)
             if not placeholder:
-                return STRING_VALUE_PLACEHOLDER
+                placeholder = STRING_VALUE_PLACEHOLDER
             return placeholder
+        elif isinstance(type_value, list):
+            first_element = type_value[0]
+            if first_element == "null":
+                return None
+            else:
+                value = self.create_placeholder_value(first_element, is_array=False)
+        elif isinstance(type_value, dict):
+            if type_value['type'] == 'array':
+                return [self.create_placeholder_value(type_value['items'])]
+            else:
+                raise ValueError("Unknown type {}".format(type_value))
+        raise ValueError("Unknown type {}".format(type_value))
 
     def get_vm_strategy(self, workflow_configuration):
         if self.job_vm_strategy:

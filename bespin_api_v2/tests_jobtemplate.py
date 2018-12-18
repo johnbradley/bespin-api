@@ -42,40 +42,45 @@ class JobTemplateTestCase(TestCase):
         user_fields = [
             {"type": "int", "name": "myint"},
             {"type": "string", "name": "mystr"},
-            {"type": {"type": "array",  "items": "int"}, "name": "intary"}
+            {"type": {"type": "array",  "items": "int"}, "name": "intary"},
+            {"name": "interval_padding", "type": [ "null", "int"]},
+            {"name": "two_d_ary", "type": {"type": "array", "items": {"type": "array", "items": "int"}}},
         ]
         job_template = JobTemplate(tag="exome/v1/human", job_order={})
         mock_workflow_version_configuration.return_value.user_job_fields.return_value = user_fields
         job_template.populate_job_order()
         self.assertEqual(job_template.job_order, {
-             'intary': [INT_VALUE_PLACEHOLDER], 'myint': INT_VALUE_PLACEHOLDER, 'mystr': STRING_VALUE_PLACEHOLDER
+            'intary': [INT_VALUE_PLACEHOLDER],
+            'myint': INT_VALUE_PLACEHOLDER,
+            'mystr': STRING_VALUE_PLACEHOLDER,
+            'two_d_ary': [[INT_VALUE_PLACEHOLDER]],
         })
 
     def test_create_placeholder_value(self):
         job_template = JobTemplate(tag="exome/v1/human", job_order={"A": "B"})
         self.assertEqual(
-            job_template.create_placeholder_value(type_name='string', is_array=False),
+            job_template.create_placeholder_value(type_value='string'),
             STRING_VALUE_PLACEHOLDER)
         self.assertEqual(
-            job_template.create_placeholder_value(type_name='int', is_array=False),
+            job_template.create_placeholder_value(type_value='int'),
             INT_VALUE_PLACEHOLDER)
         self.assertEqual(
-            job_template.create_placeholder_value(type_name='int', is_array=True),
+            job_template.create_placeholder_value(type_value={'type': 'array', 'items': 'int'}),
             [INT_VALUE_PLACEHOLDER])
         self.assertEqual(
-            job_template.create_placeholder_value(type_name='File', is_array=False),
+            job_template.create_placeholder_value(type_value='File'),
             {
                 "class": "File",
                 "path": FILE_PLACEHOLDER
             })
         self.assertEqual(
-            job_template.create_placeholder_value(type_name='File', is_array=True),
+            job_template.create_placeholder_value(type_value={'type': 'array', 'items': 'File'}),
             [{
                 "class": "File",
                 "path": FILE_PLACEHOLDER
             }])
         self.assertEqual(
-            job_template.create_placeholder_value(type_name='NamedFASTQFilePairType', is_array=False),
+            job_template.create_placeholder_value(type_value='NamedFASTQFilePairType'),
             {
                 "name": STRING_VALUE_PLACEHOLDER,
                 "file1": {
@@ -88,7 +93,7 @@ class JobTemplateTestCase(TestCase):
                 }
             })
         self.assertEqual(
-            job_template.create_placeholder_value(type_name='NamedFASTQFilePairType', is_array=True),
+            job_template.create_placeholder_value(type_value={'type': 'array', 'items': 'NamedFASTQFilePairType'}),
             [{
                 "name": STRING_VALUE_PLACEHOLDER,
                 "file1": {
@@ -100,6 +105,20 @@ class JobTemplateTestCase(TestCase):
                     "path": FILE_PLACEHOLDER
                 }
             }])
+
+    def test_create_placeholder_value_null(self):
+        job_template = JobTemplate(tag="exome/v1/human", job_order={"A": "B"})
+        self.assertEqual(
+            job_template.create_placeholder_value(["null", "int"]),
+            None
+        )
+
+    def test_create_placeholder_value_nested_array(self):
+        job_template = JobTemplate(tag="exome/v1/human", job_order={"A": "B"})
+        self.assertEqual(
+            job_template.create_placeholder_value({"type": "array", "items": {"type": "array", "items": "File"}}),
+            [[{'class': 'File', 'path': 'dds://<Project Name>/<File Path>'}]]
+        )
 
     def test_get_vm_strategy(self):
         mock_workflow_configuration = Mock(default_vm_strategy='good')
