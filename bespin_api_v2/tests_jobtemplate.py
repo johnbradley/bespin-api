@@ -106,12 +106,14 @@ class JobTemplateTestCase(TestCase):
                 }
             }])
 
-    def test_create_placeholder_value_null(self):
+    def test_create_placeholder_value_dicts(self):
         job_template = JobTemplate(tag="exome/v1/human", job_order={"A": "B"})
         self.assertEqual(
             job_template.create_placeholder_value(["null", "int"]),
             None
         )
+        with self.assertRaises(ValueError):
+            job_template.create_placeholder_value(["int"])
 
     def test_create_placeholder_value_nested_array(self):
         job_template = JobTemplate(tag="exome/v1/human", job_order={"A": "B"})

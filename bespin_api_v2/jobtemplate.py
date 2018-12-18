@@ -109,13 +109,9 @@ class JobTemplate(object):
             first_element = type_value[0]
             if first_element == "null":
                 return None
-            else:
-                value = self.create_placeholder_value(first_element, is_array=False)
         elif isinstance(type_value, dict):
             if type_value['type'] == 'array':
                 return [self.create_placeholder_value(type_value['items'])]
-            else:
-                raise ValueError("Unknown type {}".format(type_value))
         raise ValueError("Unknown type {}".format(type_value))
 
     def get_vm_strategy(self, workflow_configuration):
