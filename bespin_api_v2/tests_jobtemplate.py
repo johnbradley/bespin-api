@@ -117,10 +117,41 @@ class JobTemplateTestCase(TestCase):
 
     def test_create_placeholder_value_nested_array(self):
         job_template = JobTemplate(tag="exome/v1/human", job_order={"A": "B"})
+        array_2D = {
+            "type": "array",
+            "items": {
+                "type": "array",
+                "items": "File"
+            }
+        }
         self.assertEqual(
-            job_template.create_placeholder_value({"type": "array", "items": {"type": "array", "items": "File"}}),
+            job_template.create_placeholder_value(array_2D),
             [[{'class': 'File', 'path': 'dds://<Project Name>/<File Path>'}]]
         )
+
+        array_3D = {
+            "type": "array",
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": "int"
+                }
+            }
+        }
+        self.assertEqual(
+            job_template.create_placeholder_value(array_3D),
+            [[['<Integer Value>']]]
+        )
+
+    def test_create_placeholder_value_unknown_types(self):
+        job_template = JobTemplate(tag="exome/v1/human", job_order={"A": "B"})
+
+        with self.assertRaises(ValueError):
+            job_template.create_placeholder_value(["junk"])  # array without null
+
+        with self.assertRaises(ValueError):
+            job_template.create_placeholder_value({'type': 'unknown'})  # dictionary with non-array type
 
     def test_get_vm_strategy(self):
         mock_workflow_configuration = Mock(default_vm_strategy='good')
