@@ -59,3 +59,5 @@ REQUIRED_GROUP_MANAGER_GROUP = os.getenv('BESPIN_REQUIRED_GROUPMANAGER_GROUP')
 REQUIRE_JOB_TOKENS = False
 if os.getenv('BESPIN_REQUIRE_JOB_TOKENS'):
     REQUIRE_JOB_TOKENS = True
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
