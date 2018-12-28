@@ -60,4 +60,3 @@ REQUIRE_JOB_TOKENS = False
 if os.getenv('BESPIN_REQUIRE_JOB_TOKENS'):
     REQUIRE_JOB_TOKENS = True
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
